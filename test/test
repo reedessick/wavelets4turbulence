@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+
+"""a simple testing script to figure out syntax and which calculations are useful
+"""
+__author__ = "Reed Essick (reed.essick@gmail.com)"
+
+#-------------------------------------------------
+
+import numpy as np
+
+from argparse import ArgumentParser
+
+### non-standard libraries
+from PLASMAtools.read_funcs.read import Fields
+
+#-------------------------------------------------
+
+parser = ArgumentParser()
+
+parser.add_argument('path', type=str,
+    help='path to an HDF file containing simulation data')
+
+parser.add_argument('-f', '--field', required=True, default=[], type=str, action='append',
+    help='load and manipulate this field. Can be repeated. eg, --field vel --field mag --field dens')
+
+parser.add_argument('-v', '--verbose', default=False, action='store_true')
+
+args = parser.parse_args()
+
+#-------------------------------------------------
+
+if args.verbose:
+    print('loading: '+args.path)
+
+turb = Fields(args.path, reformat=True)
+
+# read the fields
+for field in args.field:
+    turb.read(field)
+    if args.verbose:
+        print('    '+field, getattr(turb, field).shape) # a replacement for this syntax: print(turb.vel.shape)
+                                                        # expect [num_dim, num_x, num_y, num_z]
+
+#-------------------------------------------------
+
+raise NotImplementedError('''
+make some basic visualizations
+
+at each resolution/scale
+
+    2D figures
+        imshow of slices (step through in all directions?)
+
+    3D figures
+        vector --> quiver
+        scalar --> scatter with color to indicate intensity?
+''')

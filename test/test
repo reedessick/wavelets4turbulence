@@ -80,8 +80,10 @@ for field in args.field:
     print('ndim', ha.ndim)
     print('shape', ha.shape)
 
-    print('levels', ha.levels)
     print('active', ha.active)
+    print('levels', ha.levels)
+    print('scales', ha.scales)
+    print('wavenumbers', ha.wavenumbers)
 
     #---
 
@@ -93,15 +95,19 @@ for field in args.field:
         ha.haar(axis=axis)
 
         print(ha.array)
-        print('levels', ha.levels)
         print('active', ha.active)
+        print('levels', ha.levels)
+        print('scales', ha.scales)
+        print('wavenumbers', ha.wavenumbers)
 
         # try taking inverse decompositions
         ha.ihaar(axis=axis)
 
         print(ha.array)
-        print('levels', ha.levels)
         print('active', ha.active)
+        print('levels', ha.levels)
+        print('scales', ha.scales)
+        print('wavenumbers', ha.wavenumbers)
 
     #---
 
@@ -117,28 +123,36 @@ for field in args.field:
 
     print('HAAR 1')
     print(ha.array)
-    print('levels', ha.levels)
     print('active', ha.active)
+    print('levels', ha.levels)
+    print('scales', ha.scales)
+    print('wavenumbers', ha.wavenumbers)
 
     ha.haar()
 
     print('HAAR 2')
     print(ha.array)
-    print('levels', ha.levels)
     print('active', ha.active)
+    print('levels', ha.levels)
+    print('scales', ha.scales)
+    print('wavenumbers', ha.wavenumbers)
 
     ha.ihaar()
 
     print('HAAR 1')
     print(ha.array)
-    print('levels', ha.levels)
     print('active', ha.active)
+    print('levels', ha.levels)
+    print('scales', ha.scales)
+    print('wavenumbers', ha.wavenumbers)
 
     ha.ihaar()
     print('HAAR 0')
     print(ha.array)
-    print('levels', ha.levels)
     print('active', ha.active)
+    print('levels', ha.levels)
+    print('scales', ha.scales)
+    print('wavenumbers', ha.wavenumbers)
 
     #---
 
@@ -147,14 +161,18 @@ for field in args.field:
     ha.decompose()
 
     print(ha.array)
-    print('levels', ha.levels)
     print('active', ha.active)
+    print('levels', ha.levels)
+    print('scales', ha.scales)
+    print('wavenumbers', ha.wavenumbers)
 
     ha.idecompose()
 
     print(ha.array)
-    print('levels', ha.levels)
     print('active', ha.active)
+    print('levels', ha.levels)
+    print('scales', ha.scales)
+    print('wavenumbers', ha.wavenumbers)
 
     #---
 

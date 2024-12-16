@@ -90,9 +90,19 @@ class HaarArray(object):
     def ndim(self):
         return self._ndim
 
+    #---
+
     @property
     def levels(self):
         return self._levels
+
+    @property
+    def scales(self):
+        return tuple(2**l for l in self.levels)
+
+    @ property
+    def wavenumbers(self):
+        return tuple(1./scale for scale in self.scales)
 
     #---
 
@@ -100,7 +110,7 @@ class HaarArray(object):
     def active(self):
         """return the indexes of the lowest level of the decomposition
         """
-        return tuple(int(n/2**l) for n, l in zip(self.shape, self.levels))
+        return tuple(n//s for n, s in zip(self.shape, self.scales))
 
     #---
 
@@ -199,7 +209,7 @@ class HaarArray(object):
         """
         raise NotImplementedError
 
-    def pixesl(self, levels):
+    def pixels(self, levels):
         """compute the pixel boundaries corresponding to the coefficients of the decomposition at levels
         """
         raise NotImplementedError

@@ -5,13 +5,18 @@
 
 #-------------------------------------------------
 
-OPTDIR="../opt"
+OPTDIR="opt"
 mkdir -p $OPTDIR
 
 #------------------------
 
-# install James Beattie's FLASH wrappers
+# install FLASH wrappers from James Beattie (jbeattie@cita.utoronto.ca)
 
 pushd $OPTDIR
 git clone https://github.com/AstroJames/PLASMAtools.git
 popd
+
+#------------------------
+
+# install this module
+pip install . --prefix $OPTDIR

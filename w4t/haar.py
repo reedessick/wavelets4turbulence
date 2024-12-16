@@ -5,6 +5,7 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 #-------------------------------------------------
 
 import numpy as np
+import copy
 
 #-------------------------------------------------
 
@@ -56,16 +57,149 @@ def ihaar(approx, detail, axis=None):
     inds = np.arange(num)*2
     jnds = inds + 1
 
-    np.put_along_axis(array, inds, 0.5*(approx+detail), axis)
-    np.put_along_axis(array, jnds, 0.5*(approx-detail), axis)
+    shape = tuple(num if a==axis else 1 for a in range(len(shape)))
+    np.put_along_axis(array, inds.reshape(shape), 0.5*(approx-detail), axis)
+    np.put_along_axis(array, jnds.reshape(shape), 0.5*(approx+detail), axis)
 
     # return
     return array
 
 #------------------------
 
-# FIXME
-# write method to compute detail and approx coefficients in an ND cube
-# it will probably be ok if I lose information during this (i.e., if the transform is not invertible)
-# since we will primarily be interested in decomposing a field and examining it at different scales without necessarily
-# reassembling it after the fact
+class HaarArray(object):
+    """an object that manages storage and Haar decompositions of ND arrays
+    """
+
+    def __init__(self, array):
+        self._array = copy.deepcopy(array) # make a copy of the array
+        self._shape = self.array.shape
+        self._ndim = len(self.shape)
+        self._levels = [0]*self.ndim
+
+    #---
+
+    @property
+    def array(self):
+        return self._array
+
+    @property
+    def shape(self):
+        return self._shape
+
+    @property
+    def ndim(self):
+        return self._ndim
+
+    @property
+    def levels(self):
+        return self._levels
+
+    #---
+
+    @property
+    def active(self):
+        """return the indexes of the lowest level of the decomposition
+        """
+        return tuple(int(n/2**l) for n, l in zip(self.shape, self.levels))
+
+    #---
+
+    def haar(self, axis=None):
+        """apply the Haar decomposition to axis. If axis=None, apply it to all axes
+        """
+        if axis is not None:
+            # determine appropriate indexes
+            if axis < 0:
+                axis = self.ndim + axis
+
+            assert 2**self.levels[axis] < self.shape[axis], 'cannot decompose axis=%d further!' % axis
+
+            ind = self.active[axis]
+            inds = np.arange(ind)
+
+            # perform decomposition
+            a, d = haar(np.take(self.array, inds, axis=axis), axis=axis)
+
+            # update in place
+            num = ind//2
+            shape = tuple(num if a==axis else 1 for a in range(self.ndim))
+
+            np.put_along_axis(self.array, inds[:num].reshape(shape), a, axis=axis)
+            np.put_along_axis(self.array, inds[num:].reshape(shape), d, axis=axis)
+
+            # increment level
+            self.levels[axis] += 1
+
+        else:
+            for axis in range(self.ndim):
+                self.haar(axis=axis)
+
+    def ihaar(self, axis=None):
+        """apply the inverse Haar decomposition to axis. If axis=None, apply it to all axes
+        """
+        if axis is not None:
+            # determine appropriate indexes
+            if axis < 0:
+                axis = self.ndim + axis
+
+            assert self.levels[axis] > 0, 'cannot inverse-decompose axis=%d further!' % axis
+
+            ind = self.active[axis]
+
+            # perform inverse decomposition
+            x = ihaar(
+                np.take(self.array, np.arange(ind), axis=axis),
+                np.take(self.array, np.arange(ind, 2*ind), axis=axis),
+                axis=axis,
+            )
+
+            # update in place
+            np.put_along_axis(
+                self.array,
+                np.arange(2*ind).reshape(tuple(2*ind if a==axis else 1 for a in range(self.ndim))),
+                x,
+                axis=axis,
+            )
+
+            # increment level
+            self.levels[axis] -= 1
+
+        else:
+            for axis in range(self.ndim):
+                self.ihaar(axis=axis)
+
+    #---
+
+    def decompose(self, axis=None):
+        """completely decompose a particular axis as far as it will go
+        """
+        if axis is not None:
+            while self.active[axis] > 1: ### keep decomposing
+                self.haar(axis=axis)
+
+        else:
+            for axis in range(self.ndim):
+                self.decompose(axis=axis)
+
+    def idecompose(self, axis=None):
+        """completely undo decomposition of a particular axis as far as it will go
+        """
+        if axis is not None:
+            while self.levels[axis] > 0: ### keep inverting
+                self.ihaar(axis=axis)
+
+        else:
+            for axis in range(self.ndim):
+                self.idecompose(axis=axis)
+
+    #---
+
+    def coefficients(self, levels):
+        """extract and return the coefficients corresponding to decomposition at levels
+        """
+        raise NotImplementedError
+
+    def pixesl(self, levels):
+        """compute the pixel boundaries corresponding to the coefficients of the decomposition at levels
+        """
+        raise NotImplementedError

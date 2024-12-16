@@ -13,12 +13,17 @@ from argparse import ArgumentParser
 ### non-standard libraries
 from PLASMAtools.read_funcs.read import Fields
 
+from w4t import haar
+
 #-------------------------------------------------
 
 parser = ArgumentParser()
 
-parser.add_argument('path', type=str,
+parser.add_argument('--path', type=str, default=None,
     help='path to an HDF file containing simulation data')
+
+parser.add_argument('-n', '--num-grid', type=int, default=32,
+    help='the number of grid points used when constructing random data instead of reading from --path')
 
 parser.add_argument('-f', '--field', required=True, default=[], type=str, action='append',
     help='load and manipulate this field. Can be repeated. eg, --field vel --field mag --field dens')
@@ -29,21 +34,131 @@ args = parser.parse_args()
 
 #-------------------------------------------------
 
-if args.verbose:
-    print('loading: '+args.path)
+data = dict()
 
-turb = Fields(args.path, reformat=True)
-
-# read the fields
-for field in args.field:
-    turb.read(field)
+if args.path is not None: # read data from file
     if args.verbose:
-        print('    '+field, getattr(turb, field).shape) # a replacement for this syntax: print(turb.vel.shape)
-                                                        # expect [num_dim, num_x, num_y, num_z]
+        print('loading: '+args.path)
+
+    turb = Fields(args.path, reformat=True)
+
+    # read the fields
+    for field in args.field:
+        turb.read(field)
+        data[field] = getattr(turb, field) # replacement for this syntax: turb.vel
+
+    del turb # get rid of this object to save memory
+
+else: # generate random data on a big-ish 3D array
+
+    shape = (1,)+(args.num_grid,)*3
+    if args.verbose:
+        print('generating randomized data with shape: %s' % (shape,))
+
+    for field in args.field:
+        data[field] = np.random.random((1,)+(args.num_grid,)*3)
+
+#---
+
+if args.verbose:
+    print('    '+field, data[field].shape) # expect [num_dim, num_x, num_y, num_z]
 
 #-------------------------------------------------
 
-raise NotImplementedError('''
+# compute Haar decomposition of all fields
+
+for field in args.field:
+    if args.verbose:
+        print('testing Haar decomposition of: '+field)
+
+    #---
+
+    # basic instantiation
+    ha = haar.HaarArray(data[field][0]) # FIXME: only grab the first element for now
+
+    print(ha.array)
+    print('ndim', ha.ndim)
+    print('shape', ha.shape)
+
+    print('levels', ha.levels)
+    print('active', ha.active)
+
+    #---
+
+    # 1D decompositions
+    for axis in range(3):
+        print('--- axis=%d' % axis)
+
+        # try taking decompositions
+        ha.haar(axis=axis)
+
+        print(ha.array)
+        print('levels', ha.levels)
+        print('active', ha.active)
+
+        # try taking inverse decompositions
+        ha.ihaar(axis=axis)
+
+        print(ha.array)
+        print('levels', ha.levels)
+        print('active', ha.active)
+
+    #---
+
+    # automatic decompositions
+    print('--- all axes')
+
+    print('HAAR 0')
+    print(ha.array)
+    print('levels', ha.levels)
+    print('active', ha.active)
+
+    ha.haar()
+
+    print('HAAR 1')
+    print(ha.array)
+    print('levels', ha.levels)
+    print('active', ha.active)
+
+    ha.haar()
+
+    print('HAAR 2')
+    print(ha.array)
+    print('levels', ha.levels)
+    print('active', ha.active)
+
+    ha.ihaar()
+
+    print('HAAR 1')
+    print(ha.array)
+    print('levels', ha.levels)
+    print('active', ha.active)
+
+    ha.ihaar()
+    print('HAAR 0')
+    print(ha.array)
+    print('levels', ha.levels)
+    print('active', ha.active)
+
+    #---
+
+    print('--- decompose')
+
+    ha.decompose()
+
+    print(ha.array)
+    print('levels', ha.levels)
+    print('active', ha.active)
+
+    ha.idecompose()
+
+    print(ha.array)
+    print('levels', ha.levels)
+    print('active', ha.active)
+
+    #---
+
+    raise NotImplementedError('''
 make some basic visualizations
 
 at each resolution/scale

@@ -251,7 +251,7 @@ for field in args.field:
 #            ax1.tick_params(**tick_params)
 
             AX1 = fig.add_subplot(2, 2, 3)
-            AX1.hist(a.flatten(), bins=max(10, int(0.5*np.prod(a.shape)**0.5)), histtype='step')
+            AX1.hist(a.flatten(), bins=min(100, max(10, int(0.5*np.prod(a.shape)**0.5))), histtype='step')
 
             xlim = 4 # np.max(np.abs(AX1.set_xlim()))
             AX1.set_xlim(xmin=-xlim, xmax=+xlim)
@@ -270,7 +270,7 @@ for field in args.field:
 #            ax2.tick_params(**tick_params)
 
             AX2 = fig.add_subplot(2, 2, 4)
-            AX2.hist(d.flatten(), bins=max(10, int(0.5*np.prod(d.shape)**0.5)), histtype='step')
+            AX2.hist(d.flatten(), bins=min(100, max(10, int(0.5*np.prod(d.shape)**0.5))), histtype='step')
 
             AX2.yaxis.tick_right()
 

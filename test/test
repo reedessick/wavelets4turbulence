@@ -25,6 +25,18 @@ from w4t import haar
 
 #-------------------------------------------------
 
+
+tick_params = dict(
+    left=True,
+    right=True,
+    top=True,
+    bottom=True,
+    which='both',
+    direction='in',
+)
+
+#-------------------------------------------------
+
 parser = ArgumentParser()
 
 parser.add_argument('--path', type=str, default=None,
@@ -33,12 +45,21 @@ parser.add_argument('--path', type=str, default=None,
 parser.add_argument('-n', '--num-grid', type=int, default=32,
     help='the number of grid points used when constructing random data instead of reading from --path')
 
+parser.add_argument('--seed', default=None, type=int)
+
 parser.add_argument('-f', '--field', required=True, default=[], type=str, action='append',
     help='load and manipulate this field. Can be repeated. eg, --field vel --field mag --field dens')
 
 parser.add_argument('-v', '--verbose', default=False, action='store_true')
 
 args = parser.parse_args()
+
+#-------------------------------------------------
+
+if args.seed is not None:
+    if args.verbose:
+        print('setting numpy.random.seed=%d' % args.seed)
+    np.random.seed(args.seed)
 
 #-------------------------------------------------
 
@@ -212,9 +233,13 @@ for field in args.field:
 
         # make 3D scatter plot
 
+        # FIXME: make both color and alpha track the value
+
         fig = plt.figure()
 
-        xs = np.arange(ha.active[0]) # NOTE this could be fragile
+        ind = ha.active[0]
+        xs = np.arange(ind) / ind # NOTE this could be fragile
+
         xs, ys, zs = np.meshgrid(xs, xs, xs, indexing='ij')
     
         if len(a):    
@@ -223,8 +248,18 @@ for field in args.field:
             ax1.scatter(xs.flatten(), ys.flatten(), zs.flatten(), marker='.', c=cs.flatten(), alpha=0.25)
             ax1.set_title('approx')
 
+#            ax1.tick_params(**tick_params)
+
             AX1 = fig.add_subplot(2, 2, 3)
             AX1.hist(a.flatten(), bins=max(10, int(0.5*np.prod(a.shape)**0.5)), histtype='step')
+
+            xlim = 4 # np.max(np.abs(AX1.set_xlim()))
+            AX1.set_xlim(xmin=-xlim, xmax=+xlim)
+            AX1.tick_params(**tick_params)
+
+            ylim = AX1.get_ylim()[1]
+            AX1.text(-0.95*xlim, 0.95*ylim, 'num = %d' % np.prod(a.shape), ha='left', va='top')
+            AX1.set_ylim(ymin=0, ymax=ylim)
 
         if len(d):
             ax2 = fig.add_subplot(2, 2, 2, projection='3d')
@@ -232,12 +267,29 @@ for field in args.field:
             ax2.scatter(xs.flatten(), ys.flatten(), zs.flatten(), marker='.', c=cs.flatten(), alpha=0.25)
             ax2.set_title('detail')
 
+#            ax2.tick_params(**tick_params)
+
             AX2 = fig.add_subplot(2, 2, 4)
             AX2.hist(d.flatten(), bins=max(10, int(0.5*np.prod(d.shape)**0.5)), histtype='step')
 
+            AX2.yaxis.tick_right()
+
+            xlim = 4 # np.max(np.abs(AX2.set_xlim()))
+            AX2.set_xlim(xmin=-xlim, xmax=+xlim)
+            AX2.tick_params(**tick_params)
+
+            ylim = AX2.get_ylim()[1]
+            AX2.text(-0.95*xlim, 0.95*ylim, 'num = %d' % np.prod(d.shape), ha='left', va='top')
+            AX2.set_ylim(ymin=0, ymax=ylim)
+
         #---
 
-        figname = 'test-quiver-%s.png' % ('-'.join('%03d'%_ for _ in ha.scales))
+        scales = '-'.join('%03d'%_ for _ in ha.scales)
+        fig.suptitle('scales : '+scales)
+
+        #---
+
+        figname = 'test-scatter-%s.png' % scales
         if args.verbose:
             print('    saving: '+figname)
         fig.savefig(figname)

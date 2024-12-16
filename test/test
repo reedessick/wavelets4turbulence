@@ -11,7 +11,10 @@ import numpy as np
 from argparse import ArgumentParser
 
 ### non-standard libraries
-from PLASMAtools.read_funcs.read import Fields
+try:
+    from PLASMAtools.read_funcs.read import Fields
+except ImportError:
+    Fields = None
 
 from w4t import haar
 
@@ -40,6 +43,9 @@ if args.path is not None: # read data from file
     if args.verbose:
         print('loading: '+args.path)
 
+    if Fields is None:
+        raise ImportError('could not import PLASMAtools.read_funcs.read.Fields')
+
     turb = Fields(args.path, reformat=True)
 
     # read the fields
@@ -57,6 +63,8 @@ else: # generate random data on a big-ish 3D array
 
     for field in args.field:
         data[field] = np.random.random((1,)+(args.num_grid,)*3)
+
+    ### FIXME: consider adding Gaussian noise on top of some sort of coherent structure?
 
 #---
 

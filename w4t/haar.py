@@ -76,7 +76,7 @@ class HaarArray(object):
         self._ndim = len(self.shape)
         self._levels = [0]*self.ndim
 
-    #---
+    #--------------------
 
     @property
     def array(self):
@@ -90,11 +90,19 @@ class HaarArray(object):
     def ndim(self):
         return self._ndim
 
-    #---
+    #--------------------
 
     @property
     def levels(self):
         return self._levels
+
+    @property
+    def active(self):
+        """return the indexes of the lowest level of the decomposition
+        """
+        return tuple(n//s for n, s in zip(self.shape, self.scales))
+
+    #---
 
     @property
     def scales(self):
@@ -104,15 +112,7 @@ class HaarArray(object):
     def wavenumbers(self):
         return tuple(1./scale for scale in self.scales)
 
-    #---
-
-    @property
-    def active(self):
-        """return the indexes of the lowest level of the decomposition
-        """
-        return tuple(n//s for n, s in zip(self.shape, self.scales))
-
-    #---
+    #--------------------
 
     def haar(self, axis=None):
         """apply the Haar decomposition to axis. If axis=None, apply it to all axes
@@ -178,7 +178,7 @@ class HaarArray(object):
             for axis in range(self.ndim):
                 self.ihaar(axis=axis)
 
-    #---
+    #-------
 
     def decompose(self, axis=None):
         """completely decompose a particular axis as far as it will go
@@ -202,7 +202,7 @@ class HaarArray(object):
             for axis in range(self.ndim):
                 self.idecompose(axis=axis)
 
-    #---
+    #--------------------
 
     def coefficients(self, levels):
         """extract and return the coefficients corresponding to decomposition at levels

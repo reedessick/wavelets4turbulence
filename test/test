@@ -67,7 +67,8 @@ else: # generate random data on a big-ish 3D array
         print('generating randomized data with shape: %s' % (shape,))
 
     for field in args.field:
-        data[field] = np.random.random((1,)+(args.num_grid,)*3)
+#        data[field] = np.random.random((1,)+(args.num_grid,)*3)
+        data[field] = np.random.normal(size=(1,)+(args.num_grid,)*3)
 
     ### FIXME: consider adding Gaussian noise on top of some sort of coherent structure?
 
@@ -217,16 +218,22 @@ for field in args.field:
         xs, ys, zs = np.meshgrid(xs, xs, xs, indexing='ij')
     
         if len(a):    
-            ax1 = fig.add_subplot(1, 2, 1, projection='3d')
+            ax1 = fig.add_subplot(2, 2, 1, projection='3d')
             cs = (a-np.min(a)) / (np.max(a)-np.min(a))
             ax1.scatter(xs.flatten(), ys.flatten(), zs.flatten(), marker='.', c=cs.flatten(), alpha=0.25)
             ax1.set_title('approx')
 
+            AX1 = fig.add_subplot(2, 2, 3)
+            AX1.hist(a.flatten(), bins=max(10, int(0.5*np.prod(a.shape)**0.5)), histtype='step')
+
         if len(d):
-            ax2 = fig.add_subplot(1, 2, 2, projection='3d')
+            ax2 = fig.add_subplot(2, 2, 2, projection='3d')
             cs = (d-np.min(d)) / (np.max(d)-np.min(d))
             ax2.scatter(xs.flatten(), ys.flatten(), zs.flatten(), marker='.', c=cs.flatten(), alpha=0.25)
             ax2.set_title('detail')
+
+            AX2 = fig.add_subplot(2, 2, 4)
+            AX2.hist(d.flatten(), bins=max(10, int(0.5*np.prod(d.shape)**0.5)), histtype='step')
 
         #---
 

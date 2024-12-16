@@ -114,6 +114,22 @@ class HaarArray(object):
 
     #--------------------
 
+    @property
+    def approx(self):
+        """grab the current approximate coefficients
+        """
+        inds = self.active
+        return self.array[tuple(slice(ind) for ind in inds)]
+
+    @property
+    def detail(self):
+        """grab the current detail coefficients
+        """
+        inds = self.active
+        return self.array[tuple(slice(ind, 2*ind) for ind in inds)]
+
+    #--------------------
+
     def haar(self, axis=None):
         """apply the Haar decomposition to axis. If axis=None, apply it to all axes
         """

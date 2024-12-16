@@ -8,6 +8,11 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 import numpy as np
 
+import matplotlib
+matplotlib.use("Agg")
+from matplotlib import pyplot as plt
+plt.rcParams['text.usetex'] = True
+
 from argparse import ArgumentParser
 
 ### non-standard libraries
@@ -81,8 +86,11 @@ for field in args.field:
 
     #---
 
+    if len(data[field] > 1) and args.verbose:
+        print('WARNING: only examining index 0 of field')
+
     # basic instantiation
-    ha = haar.HaarArray(data[field][0]) # FIXME: only grab the first element for now
+    ha = haar.HaarArray(data[field][0])
 
     print(ha.array)
     print('ndim', ha.ndim)
@@ -182,17 +190,52 @@ for field in args.field:
     print('scales', ha.scales)
     print('wavenumbers', ha.wavenumbers)
 
-    #---
+    #--------------------
 
-    raise NotImplementedError('''
-make some basic visualizations
+    # make quiver plots in 3D
+    # NOTE: assumes all grid dimensions have the same number of points, which could be fragile
 
-at each resolution/scale
+    if args.verbose:
+        print('plotting')
 
-    2D figures
-        imshow of slices (step through in all directions?)
+    while ha.active[0] > 1: # keep decomposing
 
-    3D figures
-        vector --> quiver
-        scalar --> scatter with color to indicate intensity?
-''')
+        a = ha.approx # grab coefficients
+        d = ha.detail
+
+        #---
+
+        # FIXME: make 2D scans
+
+        #---
+
+        # make 3D scatter plot
+
+        fig = plt.figure()
+
+        xs = np.arange(ha.active[0]) # NOTE this could be fragile
+        xs, ys, zs = np.meshgrid(xs, xs, xs, indexing='ij')
+    
+        if len(a):    
+            ax1 = fig.add_subplot(1, 2, 1, projection='3d')
+            cs = (a-np.min(a)) / (np.max(a)-np.min(a))
+            ax1.scatter(xs.flatten(), ys.flatten(), zs.flatten(), marker='.', c=cs.flatten(), alpha=0.25)
+            ax1.set_title('approx')
+
+        if len(d):
+            ax2 = fig.add_subplot(1, 2, 2, projection='3d')
+            cs = (d-np.min(d)) / (np.max(d)-np.min(d))
+            ax2.scatter(xs.flatten(), ys.flatten(), zs.flatten(), marker='.', c=cs.flatten(), alpha=0.25)
+            ax2.set_title('detail')
+
+        #---
+
+        figname = 'test-quiver-%s.png' % ('-'.join('%03d'%_ for _ in ha.scales))
+        if args.verbose:
+            print('    saving: '+figname)
+        fig.savefig(figname)
+        plt.close(fig)
+
+        #---
+
+        ha.haar()

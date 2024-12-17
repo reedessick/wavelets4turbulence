@@ -52,6 +52,8 @@ It is surely helpful, but the 3D structure is clearly visible even with minimal 
 
 Note again that the distribution of approx coefficients develops a long tail, whereas the distribution of detail coefficients remains consistently Gaussian.
 
+|resolution         |figure                                     |
+|-------------------|-------------------------------------------|
 |256 points per side|<img src="test-3d-scatter-001-001-001.png">|
 |128 points per side|<img src="test-3d-scatter-002-002-002.png">|
 | 64 points per side|<img src="test-3d-scatter-004-004-004.png">|

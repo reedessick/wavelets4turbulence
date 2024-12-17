@@ -6,6 +6,12 @@ As a simple test, I construct a scalar field within the unit-cube as follows
 I consider a unit-cube with `256` grid points per side.
 I then take Haar decompositions of the field and look for the appearence of structure.
 
+These plots were generated via
+
+```
+./test -v -f dens -n 256 --seed 123
+```
+
 ## 2-dimensional tests (looking at the mid-plane)
 
 First, I examine the behavior of the field at different scales along the mid-plane (`z=0.5`).

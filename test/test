@@ -50,6 +50,8 @@ parser.add_argument('--seed', default=None, type=int)
 parser.add_argument('-f', '--field', required=True, default=[], type=str, action='append',
     help='load and manipulate this field. Can be repeated. eg, --field vel --field mag --field dens')
 
+parser.add_argument('--test-transform', action='store_true', default=False)
+
 parser.add_argument('-v', '--verbose', default=False, action='store_true')
 
 args = parser.parse_args()
@@ -105,13 +107,8 @@ if args.verbose:
 
 #-------------------------------------------------
 
-# compute Haar decomposition of all fields
 
 for field in args.field:
-    if args.verbose:
-        print('testing Haar decomposition of: '+field)
-
-    #---
 
     if len(data[field] > 1) and args.verbose:
         print('WARNING: only examining index 0 of field')
@@ -130,12 +127,83 @@ for field in args.field:
 
     #---
 
-    # 1D decompositions
-    for axis in range(3):
-        print('--- axis=%d' % axis)
+    if args.test_transform:
 
-        # try taking decompositions
-        ha.haar(axis=axis)
+        if args.verbose:
+            print('testing Haar decomposition of: '+field)
+
+        # 1D decompositions
+        for axis in range(3):
+            print('--- axis=%d' % axis)
+
+            # try taking decompositions
+            ha.haar(axis=axis)
+
+            print(ha.array)
+            print('active', ha.active)
+            print('levels', ha.levels)
+            print('scales', ha.scales)
+            print('wavenumbers', ha.wavenumbers)
+
+            # try taking inverse decompositions
+            ha.ihaar(axis=axis)
+
+            print(ha.array)
+            print('active', ha.active)
+            print('levels', ha.levels)
+            print('scales', ha.scales)
+            print('wavenumbers', ha.wavenumbers)
+
+        #---
+
+        # automatic decompositions
+        print('--- all axes')
+
+        print('HAAR 0')
+        print(ha.array)
+        print('levels', ha.levels)
+        print('active', ha.active)
+
+        ha.haar()
+
+        print('HAAR 1')
+        print(ha.array)
+        print('active', ha.active)
+        print('levels', ha.levels)
+        print('scales', ha.scales)
+        print('wavenumbers', ha.wavenumbers)
+
+        ha.haar()
+
+        print('HAAR 2')
+        print(ha.array)
+        print('active', ha.active)
+        print('levels', ha.levels)
+        print('scales', ha.scales)
+        print('wavenumbers', ha.wavenumbers)
+
+        ha.ihaar()
+
+        print('HAAR 1')
+        print(ha.array)
+        print('active', ha.active)
+        print('levels', ha.levels)
+        print('scales', ha.scales)
+        print('wavenumbers', ha.wavenumbers)
+
+        ha.ihaar()
+        print('HAAR 0')
+        print(ha.array)
+        print('active', ha.active)
+        print('levels', ha.levels)
+        print('scales', ha.scales)
+        print('wavenumbers', ha.wavenumbers)
+
+        #---
+
+        print('--- decompose')
+
+        ha.decompose()
 
         print(ha.array)
         print('active', ha.active)
@@ -143,82 +211,17 @@ for field in args.field:
         print('scales', ha.scales)
         print('wavenumbers', ha.wavenumbers)
 
-        # try taking inverse decompositions
-        ha.ihaar(axis=axis)
+        ha.idecompose()
 
         print(ha.array)
         print('active', ha.active)
         print('levels', ha.levels)
         print('scales', ha.scales)
         print('wavenumbers', ha.wavenumbers)
-
-    #---
-
-    # automatic decompositions
-    print('--- all axes')
-
-    print('HAAR 0')
-    print(ha.array)
-    print('levels', ha.levels)
-    print('active', ha.active)
-
-    ha.haar()
-
-    print('HAAR 1')
-    print(ha.array)
-    print('active', ha.active)
-    print('levels', ha.levels)
-    print('scales', ha.scales)
-    print('wavenumbers', ha.wavenumbers)
-
-    ha.haar()
-
-    print('HAAR 2')
-    print(ha.array)
-    print('active', ha.active)
-    print('levels', ha.levels)
-    print('scales', ha.scales)
-    print('wavenumbers', ha.wavenumbers)
-
-    ha.ihaar()
-
-    print('HAAR 1')
-    print(ha.array)
-    print('active', ha.active)
-    print('levels', ha.levels)
-    print('scales', ha.scales)
-    print('wavenumbers', ha.wavenumbers)
-
-    ha.ihaar()
-    print('HAAR 0')
-    print(ha.array)
-    print('active', ha.active)
-    print('levels', ha.levels)
-    print('scales', ha.scales)
-    print('wavenumbers', ha.wavenumbers)
-
-    #---
-
-    print('--- decompose')
-
-    ha.decompose()
-
-    print(ha.array)
-    print('active', ha.active)
-    print('levels', ha.levels)
-    print('scales', ha.scales)
-    print('wavenumbers', ha.wavenumbers)
-
-    ha.idecompose()
-
-    print(ha.array)
-    print('active', ha.active)
-    print('levels', ha.levels)
-    print('scales', ha.scales)
-    print('wavenumbers', ha.wavenumbers)
 
     #--------------------
 
+    # make some plots
     # NOTE: assumes all grid dimensions have the same number of points, which could be fragile
 
     if args.verbose:

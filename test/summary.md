@@ -12,14 +12,17 @@ First, I examine the behavior of the field at different scales along the mid-pla
 Structure identified in this slice therefore only uses spatial information from the x- and y-directions.
 
 The original field
+
 <img src="test-2d-scatter-001-001.png">
 
 The coefficients after 2 Haar decompositions (256/4=64 points per side).
 We begin to see structure visually.
+
 <img src="test-2d-scatter-004-004.png">
 
 The coefficients after 3 Haar decompositions (256/8=32 poitns per side).
 In addition to the clearer visual structure, the histogram of values begins to show a clear tail.
+
 <img src="test-2d-scatter-008-008.png">
 
 ## 2-dimensional tests (collapsed along the z-axis)

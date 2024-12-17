@@ -11,24 +11,16 @@ I then take Haar decompositions of the field and look for the appearence of stru
 First, I examine the behavior of the field at different scales along the mid-plane (`z=0.5`).
 Structure identified in this slice therefore only uses spatial information from the x- and y-directions.
 
-The original field
-
-<img src="test-2d-scatter-001-001.png">
-
-The coefficients after a single Haar decomposition (256/2=128 points per side).
-
-<img src="test-2d-scatter-002-002.png">
-
-The coefficients after 2 Haar decompositions (256/4=64 points per side).
-We begin to see structure visually.
-
-<img src="test-2d-scatter-004-004.png">
-
-The coefficients after 3 Haar decompositions (256/8=32 poitns per side).
-In addition to the clearer visual structure, the histogram of approx coefficients begins to show a clear tail.
+Note that we beging to see structure after only a few decompositions (spatial averaging).
+The histogram of approx coefficients begins to show a clear tail.
 Note, however, that the distribution of detail coefficients remains quite Gaussian.
 
-<img src="test-2d-scatter-008-008.png">
+|resolution|figure|
+|---|---|
+|256^2|<img src="test-2d-scatter-001-001.png">|
+|128^2|<img src="test-2d-scatter-002-002.png">|
+| 64^2|<img src="test-2d-scatter-004-004.png">|
+| 32^2|<img src="test-2d-scatter-008-008.png">|
 
 ## 2-dimensional tests (collapsed along the z-axis)
 
@@ -36,13 +28,12 @@ We then consider 2-dimensional structure when we first completely decompose the 
 In this case, the structure is much more visible immediately.
 This is likely because the coordinate system is aligned with the direction of the "vertical tube"
 
-<img src="test-2da-scatter-001-001.png">
-
-<img src="test-2da-scatter-002-002.png">
-
-<img src="test-2da-scatter-004-004.png">
-
-<img src="test-2da-scatter-008-008.png">
+|resolution|figure|
+|---|---|
+|256^2|<img src="test-2da-scatter-001-001.png">|
+|128^2|<img src="test-2da-scatter-002-002.png">|
+| 64^2|<img src="test-2da-scatter-004-004.png">|
+| 32^2|<img src="test-2da-scatter-008-008.png">|
 
 ## 3-dimensional tests
 
@@ -52,9 +43,9 @@ It is surely helpful, but the 3D structure is clearly visible even with minimal 
 
 Note again that the distribution of approx coefficients develops a long tail, whereas the distribution of detail coefficients remains consistently Gaussian.
 
-|resolution         |figure                                     |
-|-------------------|-------------------------------------------|
-|256 points per side|<img src="test-3d-scatter-001-001-001.png">|
-|128 points per side|<img src="test-3d-scatter-002-002-002.png">|
-| 64 points per side|<img src="test-3d-scatter-004-004-004.png">|
-| 32 points per side|<img src="test-3d-scatter-008-008-008.png">|
+|resolution|figure|
+|---|---|
+|256^3|<img src="test-3d-scatter-001-001-001.png">|
+|128^3|<img src="test-3d-scatter-002-002-002.png">|
+| 64^3|<img src="test-3d-scatter-004-004-004.png">|
+| 32^3|<img src="test-3d-scatter-008-008-008.png">|

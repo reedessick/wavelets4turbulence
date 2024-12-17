@@ -21,7 +21,8 @@ We begin to see structure visually.
 <img src="test-2d-scatter-004-004.png">
 
 The coefficients after 3 Haar decompositions (256/8=32 poitns per side).
-In addition to the clearer visual structure, the histogram of values begins to show a clear tail.
+In addition to the clearer visual structure, the histogram of approx coefficients begins to show a clear tail.
+Note, however, that the distribution of detail coefficients remains quite Gaussian.
 
 <img src="test-2d-scatter-008-008.png">
 
@@ -31,11 +32,11 @@ We then consider 2-dimensional structure when we first completely decompose the 
 In this case, the structure is much more visible immediately.
 This is likely because the coordinate system is aligned with the direction of the "vertical tube"
 
-<img src="test-2d-scatter-001-001.png">
+<img src="test-2da-scatter-001-001.png">
 
-<img src="test-2d-scatter-004-004.png">
+<img src="test-2da-scatter-004-004.png">
 
-<img src="test-2d-scatter-008-008.png">
+<img src="test-2da-scatter-008-008.png">
 
 ## 3-dimensional tests
 

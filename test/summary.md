@@ -1,7 +1,7 @@
 As a simple test, I construct a scalar field within the unit-cube as follows
 
-  * independent draws from a standard normal distribution at each grid point
-  * an additive "vertical tube" with a smaller amplitude than the Gaussian noise: `0.5*np.exp(-0.5*((x-0.5)**2 + (y-0.5)**2)/0.1**2)`
+  * independent draws from a standard normal distribution at each grid point: `f ~ np.exp(-0.5*f**2)`
+  * an additive "vertical tube" with a smaller amplitude than the Gaussian noise: `f = 0.5*np.exp(-0.5*((x-0.5)**2 + (y-0.5)**2)/0.1**2)`
 
 I consider a unit-cube with `256` grid points per side.
 I then take Haar decompositions of the field and look for the appearence of structure.

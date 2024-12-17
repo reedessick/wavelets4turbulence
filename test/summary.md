@@ -15,6 +15,10 @@ The original field
 
 <img src="test-2d-scatter-001-001.png">
 
+The coefficients after a single Haar decomposition (256/2=128 points per side).
+
+<img src="test-2d-scatter-002-002.png">
+
 The coefficients after 2 Haar decompositions (256/4=64 points per side).
 We begin to see structure visually.
 
@@ -34,17 +38,22 @@ This is likely because the coordinate system is aligned with the direction of th
 
 <img src="test-2da-scatter-001-001.png">
 
+<img src="test-2da-scatter-002-002.png">
+
 <img src="test-2da-scatter-004-004.png">
 
 <img src="test-2da-scatter-008-008.png">
 
 ## 3-dimensional tests
 
-test-3d-scatter-001-001-001.png
-test-3d-scatter-002-002-002.png
-test-3d-scatter-004-004-004.png
-test-3d-scatter-008-008-008.png
-test-3d-scatter-016-016-016.png
-test-3d-scatter-032-032-032.png
-test-3d-scatter-064-064-064.png
-test-3d-scatter-128-128-128.png
+Finally, we also examine 3-dimensional decompositions to look for the appearence of structure.
+While the vertical tube is aligned with the z-axis, this is likely not a necessary assumption for structure discovery.
+It is surely helpful, but the 3D structure is clearly visible even with minimal spatial averaging through the Haar decomposition.
+
+<img src="test-3d-scatter-001-001-001.png">
+
+<img src="test-3d-scatter-002-002-002.png">
+
+<img src="test-3d-scatter-004-004-004.png">
+
+<img src="test-3d-scatter-008-008-008.png">

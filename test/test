@@ -94,6 +94,7 @@ else: # generate random data on a big-ish 3D array
     x, y, z = np.meshgrid(x, x, x, indexing='ij')
 
     coherent = 0.5*np.exp(-0.5*((x-0.5)**2 + (y-0.5)**2)/0.1**2) ### a vertical tube
+#    coherent = 0.5*np.exp(-0.5*((x-z)**2 + (y-z)**2)/0.1**2) ### a vertical tube
 
     # iterate through fields and add Gaussia noise
     size = (1,)+(args.num_grid,)*3
@@ -342,6 +343,7 @@ for field in args.field:
         #---
 
         figname = 'test-3d-scatter-%s.png' % scales
+#        figname = 'test-3da-scatter-%s.png' % scales
         if args.verbose:
             print('    saving: '+figname)
         fig.savefig(figname)

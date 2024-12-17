@@ -55,3 +55,13 @@ Note again that the distribution of approx coefficients develops a long tail, wh
 |128^3|<img src="test-3d-scatter-002-002-002.png">|
 | 64^3|<img src="test-3d-scatter-004-004-004.png">|
 | 32^3|<img src="test-3d-scatter-008-008-008.png">|
+
+As a further proof of principle, I repeated the experiment but with a tube that is not aligned with any of the coordinate axes.
+The approx coefficients are still able to quickly identify the structure and show similar statistical behavior in the distributions over positions at different resolutions.
+
+|resolution|figure|
+|---|---|
+|256^3|<img src="test-3da-scatter-001-001-001.png">|
+|128^3|<img src="test-3da-scatter-002-002-002.png">|
+| 64^3|<img src="test-3da-scatter-004-004-004.png">|
+| 32^3|<img src="test-3da-scatter-008-008-008.png">|

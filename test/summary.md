@@ -50,10 +50,9 @@ Finally, we also examine 3-dimensional decompositions to look for the appearence
 While the vertical tube is aligned with the z-axis, this is likely not a necessary assumption for structure discovery.
 It is surely helpful, but the 3D structure is clearly visible even with minimal spatial averaging through the Haar decomposition.
 
-<img src="test-3d-scatter-001-001-001.png">
+Note again that the distribution of approx coefficients develops a long tail, whereas the distribution of detail coefficients remains consistently Gaussian.
 
-<img src="test-3d-scatter-002-002-002.png">
-
-<img src="test-3d-scatter-004-004-004.png">
-
-<img src="test-3d-scatter-008-008-008.png">
+|256 points per side|<img src="test-3d-scatter-001-001-001.png">|
+|128 points per side|<img src="test-3d-scatter-002-002-002.png">|
+| 64 points per side|<img src="test-3d-scatter-004-004-004.png">|
+| 32 points per side|<img src="test-3d-scatter-008-008-008.png">|

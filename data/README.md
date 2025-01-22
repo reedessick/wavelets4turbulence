@@ -3,5 +3,5 @@ I grabbed a single turbulent box as an example dataset for testing/exploration o
 ```
 scp \
     essick@gw.cita.utoronto.ca:/fs/lustre/project/plasmaastro/jbeattie/turbulent_boxes/M05MA10/Turb_hdf5_plt_cnt_0050 \
-    ./
+    ./Turb_hdf5_plt_cnt_0050
 ```

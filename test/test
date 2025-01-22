@@ -6,6 +6,8 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 #-------------------------------------------------
 
+import os
+
 import numpy as np
 
 import matplotlib
@@ -54,7 +56,15 @@ parser.add_argument('--test-transform', action='store_true', default=False)
 
 parser.add_argument('-v', '--verbose', default=False, action='store_true')
 
+parser.add_argument('-o', '--output-dir', default='.', type=str)
+parser.add_argument('-t', '--tag', default='', type=str)
+
 args = parser.parse_args()
+
+os.makedirs(args.output_dir, exist_ok=True)
+
+if args.tag:
+    args.tag = "_"+args.tag
 
 #-------------------------------------------------
 
@@ -342,8 +352,7 @@ for field in args.field:
 
         #---
 
-        figname = 'test-3d-scatter-%s.png' % scales
-#        figname = 'test-3da-scatter-%s.png' % scales
+        figname = os.path.join(args.output_dir, 'test-3d-scatter-%s%s.png' % (scales, args.tag))
         if args.verbose:
             print('    saving: '+figname)
         fig.savefig(figname)
@@ -482,7 +491,7 @@ for field in args.field:
 
         #---
 
-        figname = 'test-2d-scatter-%s.png' % scales
+        figname = os.path.join(args.output_dir, 'test-2d-scatter-%s%s.png' % (scales, args.tag))
         if args.verbose:
             print('    saving: '+figname)
         fig.savefig(figname)
@@ -623,7 +632,7 @@ for field in args.field:
 
         #---
 
-        figname = 'test-2da-scatter-%s.png' % scales
+        figname = os.path.join(args.output_dir, 'test-2da-scatter-%s%s.png' % (scales, args.tag))
         if args.verbose:
             print('    saving: '+figname)
         fig.savefig(figname)

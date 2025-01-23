@@ -228,13 +228,13 @@ def scatter3d(fig, ax, AX, xs, ys, zs, data, quantile=DEFAULT_SCATTER_QUANTILE, 
         shrink=0.75,
     )
 
-    ax1.set_xlim(xmin=0, xmax=1)
-    ax1.set_ylim(ymin=0, ymax=1)
-    ax1.set_zlim(zmin=0, zmax=1)
+    ax.set_xlim(xmin=0, xmax=1)
+    ax.set_ylim(ymin=0, ymax=1)
+    ax.set_zlim(zmin=0, zmax=1)
 
     #---
 
-    nbsin = min(100, max(10, int(0.5*np.prod(data.shape)**0.5)))
+    nbins = min(100, max(10, int(0.5*np.prod(data.shape)**0.5)))
     AX.hist(data.flatten(), bins=nbins, histtype='step', density=True)
 
     xlim = np.max(np.abs(AX.get_xlim()))
@@ -528,7 +528,6 @@ for field in args.field:
             scatter2d(fig, ax1, AX1, xs, ys, a, quantile=args.scatter_quantile, cmap=APPROX_CMAP)
 
             ax1.set_title('approx')
-
 
         if np.prod(d.shape):
             ax2 = fig.add_subplot(2, 2, 2)

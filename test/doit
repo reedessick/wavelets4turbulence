@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# a simple command line
+# Reed Essick (reed.essick@gmail.com)
+
+#-------------------------------------------------
+
+python -i \
+./test \
+    --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
+    --output-dir M05MA10 \
+    --tag Turb_hdf5_plt_cnt_0050 \
+    --field dens \
+    --scatter-quantile 0.99 \
+    --max-edgelength 512 \
+    --verbose \
+|| exit 1

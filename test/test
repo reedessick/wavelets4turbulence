@@ -27,6 +27,9 @@ from w4t import haar
 
 #-------------------------------------------------
 
+DEFAULT_SCATTER_QUANTILE = 0.9
+
+#------------------------
 
 tick_params = dict(
     left=True,
@@ -39,7 +42,229 @@ tick_params = dict(
 
 #-------------------------------------------------
 
+def test_transform(ha):
+    """perform some basic tests of the tranform object
+    """
+    # 1D decompositions
+    for axis in range(ha.ndim):
+        print('--- axis=%d' % axis)
+
+        # try taking decompositions
+        ha.haar(axis=axis)
+
+        print(ha.array)
+        print('active', ha.active)
+        print('levels', ha.levels)
+        print('scales', ha.scales)
+        print('wavenumbers', ha.wavenumbers)
+
+        # try taking inverse decompositions
+        ha.ihaar(axis=axis)
+
+        print(ha.array)
+        print('active', ha.active)
+        print('levels', ha.levels)
+        print('scales', ha.scales)
+        print('wavenumbers', ha.wavenumbers)
+
+    #---
+
+    # automatic decompositions
+    print('--- all axes')
+
+    print('HAAR 0')
+    print(ha.array)
+    print('levels', ha.levels)
+    print('active', ha.active)
+
+    ha.haar()
+
+    print('HAAR 1')
+    print(ha.array)
+    print('active', ha.active)
+    print('levels', ha.levels)
+    print('scales', ha.scales)
+    print('wavenumbers', ha.wavenumbers)
+
+    ha.haar()
+
+    print('HAAR 2')
+    print(ha.array)
+    print('active', ha.active)
+    print('levels', ha.levels)
+    print('scales', ha.scales)
+    print('wavenumbers', ha.wavenumbers)
+
+    ha.ihaar()
+
+    print('HAAR 1')
+    print(ha.array)
+    print('active', ha.active)
+    print('levels', ha.levels)
+    print('scales', ha.scales)
+    print('wavenumbers', ha.wavenumbers)
+
+    ha.ihaar()
+
+    print('HAAR 0')
+    print(ha.array)
+    print('active', ha.active)
+    print('levels', ha.levels)
+    print('scales', ha.scales)
+    print('wavenumbers', ha.wavenumbers)
+
+    #---
+
+    print('--- decompose')
+
+    ha.decompose()
+
+    print(ha.array)
+    print('active', ha.active)
+    print('levels', ha.levels)
+    print('scales', ha.scales)
+    print('wavenumbers', ha.wavenumbers)
+
+    ha.idecompose()
+
+    print(ha.array)
+    print('active', ha.active)
+    print('levels', ha.levels)
+    print('scales', ha.scales)
+    print('wavenumbers', ha.wavenumbers)
+
+#-------------------------------------------------
+
+def meshgrid(ind, ndim=2):
+    xs = np.arange(ind) / ind # NOTE this could be fragile
+    xs += (xs[1]-xs[0])/2
+    return np.meshgrid(*(xs for _ in range(ndim)), indexing='ij')
+
+#------------------------
+
+def scatter2d(ax, AX, data, quantile=DEFAULT_SCATTER_QUANTILE):
+    """generate 2D scatter-plots with histograms underneath
+    """
+    raise NotImplementedError('''
+        if np.prod(a.shape):
+            ax1 = fig.add_subplot(2, 2, 1)
+            cs = a / np.max(np.abs(a))
+
+            sel = np.ones_like(a.flatten(), dtype=bool)
+
+            fig.colorbar(
+                ax1.scatter(
+                    xs.flatten()[sel],
+                    ys.flatten()[sel],
+                    c=cs.flatten()[sel],
+                    alpha=0.25,
+                    vmin=-1,
+                    vmax=+1,
+                    marker='.',
+                    cmap='RdGy',
+                ),
+                cmap='RdGy',
+                ax=ax1,
+                location='left',
+                shrink=0.75,
+            )
+
+            ax1.set_xlim(xmin=0, xmax=1)
+            ax1.set_ylim(ymin=0, ymax=1)
+
+            ax1.set_title('approx')
+#            ax1.tick_params(**tick_params)
+
+            AX1 = fig.add_subplot(2, 2, 3)
+            AX1.hist(a.flatten(), bins=min(100, max(10, int(0.5*np.prod(a.shape)**0.5))), histtype='step', density=True)
+
+            xlim = 4 # np.max(np.abs(AX1.set_xlim()))
+#            AX1.set_xlim(xmin=-xlim, xmax=+xlim)
+            AX1.tick_params(**tick_params)
+
+            ylim = AX1.get_ylim()[1]
+            AX1.text(-0.95*xlim, 0.95*ylim, 'num = %d' % np.prod(a.shape), ha='left', va='top')
+
+            AX1 = fig.add_subplot(2, 2, 3)
+            AX1.hist(a.flatten(), bins=min(100, max(10, int(0.5*np.prod(a.shape)**0.5))), histtype='step', density=True)
+
+            xlim = 4 # np.max(np.abs(AX1.set_xlim()))
+#            AX1.set_xlim(xmin=-xlim, xmax=+xlim)
+            AX1.tick_params(**tick_params)
+
+            ylim = AX1.get_ylim()[1]
+            AX1.text(-0.95*xlim, 0.95*ylim, 'num = %d' % np.prod(a.shape), ha='left', va='top')
+            AX1.set_ylim(ymin=0, ymax=ylim)
+
+            AX1.grid(True, which='both')
+''')
+
+#------------------------
+
+def scatter3d(ax, AX, data, quantile=DEFAULT_SCATTER_QUANTILE):
+    """generate 3D scatter-plots with histograms underneath
+    """
+    raise NotImplementedError('''
+        # FIXME: make both color and alpha track the value?
+
+        ind = ha.active[0]
+        xs = np.arange(ind) / ind # NOTE this could be fragile
+        xs += (xs[1]-xs[0])/2
+
+        xs, ys, zs = np.meshgrid(xs, xs, xs, indexing='ij')
+
+        if len(a):
+            ax1 = fig.add_subplot(2, 2, 1, projection='3d')
+            cs = a / np.max(np.abs(a))
+
+            # find the 90% quantile of "a"
+            flat_a = a.flatten()
+            val = flat_a[np.argsort(flat_a)[int(len(flat_a)*args.scatter_quantile)]]
+            sel = np.abs(flat_a) > val
+
+            fig.colorbar(
+                ax1.scatter(
+                    xs.flatten()[sel],
+                    ys.flatten()[sel],
+                    zs.flatten()[sel],
+                    c=cs.flatten()[sel],
+                    alpha=0.25,
+                    vmin=-1,
+                    vmax=+1,
+                    marker='.',
+                    cmap='RdGy',
+                ),
+                cmap='RdGy',
+                ax=ax1,
+                location='left',
+                shrink=0.75,
+            )
+
+            ax1.set_xlim(xmin=0, xmax=1)
+            ax1.set_ylim(ymin=0, ymax=1)
+            ax1.set_zlim(zmin=0, zmax=1)
+
+            ax1.set_title('approx')
+#            ax1.tick_params(**tick_params)
+
+            AX1 = fig.add_subplot(2, 2, 3)
+            AX1.hist(a.flatten(), bins=min(100, max(10, int(0.5*np.prod(a.shape)**0.5))), histtype='step', density=True)
+
+            xlim = 4 # np.max(np.abs(AX1.set_xlim()))
+#            AX1.set_xlim(xmin=-xlim, xmax=+xlim)
+            AX1.tick_params(**tick_params)
+
+            ylim = AX1.get_ylim()[1]
+            AX1.text(-0.95*xlim, 0.95*ylim, 'num = %d' % np.prod(a.shape), ha='left', va='top')
+            AX1.plot([val]*2, [0, ylim], color='grey', linestyle='dashed') # add marker to denoty selection
+            AX1.set_ylim(ymin=0, ymax=ylim)
+''')
+
+#-------------------------------------------------
+
 parser = ArgumentParser()
+
+#---
 
 parser.add_argument('--path', type=str, default=None,
     help='path to an HDF file containing simulation data')
@@ -49,15 +274,31 @@ parser.add_argument('-n', '--num-grid', type=int, default=32,
 
 parser.add_argument('--seed', default=None, type=int)
 
+#---
+
 parser.add_argument('-f', '--field', required=True, default=[], type=str, action='append',
     help='load and manipulate this field. Can be repeated. eg, --field vel --field mag --field dens')
 
+parser.add_argument('--max-edgelength', default=None, type=int,
+    help='if specified, limit the size of each dimension to be at most this many samples. Although not required, \
+it is a good idea to make this a power of 2 (for the Haar transform to work well)')
+
+parser.add_argument('--scatter-quantile', default=DEFAULT_SCATTER_QUANTILE, type=float,
+    help='only plot values above this quantile in the distribution within scatter plots. DEFAULT=%f' % DEFAULT_SCATTER_QUANTILE)
+
+#---
+
 parser.add_argument('--test-transform', action='store_true', default=False)
 
+#---
+
 parser.add_argument('-v', '--verbose', default=False, action='store_true')
+parser.add_argument('-V', '--Verbose', default=False, action='store_true')
 
 parser.add_argument('-o', '--output-dir', default='.', type=str)
 parser.add_argument('-t', '--tag', default='', type=str)
+
+#---
 
 args = parser.parse_args()
 
@@ -65,6 +306,8 @@ os.makedirs(args.output_dir, exist_ok=True)
 
 if args.tag:
     args.tag = "_"+args.tag
+
+args.verbose |= args.Verbose
 
 #-------------------------------------------------
 
@@ -118,122 +361,48 @@ if args.verbose:
 
 #-------------------------------------------------
 
+if args.max_edgelength is not None:
+    if args.verbose:
+        print('limiting data size by selecting the first max(edgelength)=%d samples' % args.max_edgelength)
+
+    for key in data.keys():
+        data[key] = data[key][:, :args.max_edgelength, :args.max_edgelength, :args.max_edgelength]
+
+#-------------------------------------------------
 
 for field in args.field:
 
-    if len(data[field] > 1) and args.verbose:
+    if args.verbose:
+        print('examining field: '+field)
+
+    if (data[field].shape[0] > 1) and args.Verbose:
         print('WARNING: only examining index 0 of field')
 
     # basic instantiation
     ha = haar.HaarArray(data[field][0])
 
-    print(ha.array)
-    print('ndim', ha.ndim)
-    print('shape', ha.shape)
+    if args.Verbose:
+        print(ha.array)
 
-    print('active', ha.active)
-    print('levels', ha.levels)
-    print('scales', ha.scales)
-    print('wavenumbers', ha.wavenumbers)
+    if args.verbose:
+        print('ndim', ha.ndim)
+        print('shape', ha.shape)
+
+        print('active', ha.active)
+        print('levels', ha.levels)
+        print('scales', ha.scales)
+        print('wavenumbers', ha.wavenumbers)
 
     #---
 
     if args.test_transform:
-
         if args.verbose:
             print('testing Haar decomposition of: '+field)
-
-        # 1D decompositions
-        for axis in range(3):
-            print('--- axis=%d' % axis)
-
-            # try taking decompositions
-            ha.haar(axis=axis)
-
-            print(ha.array)
-            print('active', ha.active)
-            print('levels', ha.levels)
-            print('scales', ha.scales)
-            print('wavenumbers', ha.wavenumbers)
-
-            # try taking inverse decompositions
-            ha.ihaar(axis=axis)
-
-            print(ha.array)
-            print('active', ha.active)
-            print('levels', ha.levels)
-            print('scales', ha.scales)
-            print('wavenumbers', ha.wavenumbers)
-
-        #---
-
-        # automatic decompositions
-        print('--- all axes')
-
-        print('HAAR 0')
-        print(ha.array)
-        print('levels', ha.levels)
-        print('active', ha.active)
-
-        ha.haar()
-
-        print('HAAR 1')
-        print(ha.array)
-        print('active', ha.active)
-        print('levels', ha.levels)
-        print('scales', ha.scales)
-        print('wavenumbers', ha.wavenumbers)
-
-        ha.haar()
-
-        print('HAAR 2')
-        print(ha.array)
-        print('active', ha.active)
-        print('levels', ha.levels)
-        print('scales', ha.scales)
-        print('wavenumbers', ha.wavenumbers)
-
-        ha.ihaar()
-
-        print('HAAR 1')
-        print(ha.array)
-        print('active', ha.active)
-        print('levels', ha.levels)
-        print('scales', ha.scales)
-        print('wavenumbers', ha.wavenumbers)
-
-        ha.ihaar()
-        print('HAAR 0')
-        print(ha.array)
-        print('active', ha.active)
-        print('levels', ha.levels)
-        print('scales', ha.scales)
-        print('wavenumbers', ha.wavenumbers)
-
-        #---
-
-        print('--- decompose')
-
-        ha.decompose()
-
-        print(ha.array)
-        print('active', ha.active)
-        print('levels', ha.levels)
-        print('scales', ha.scales)
-        print('wavenumbers', ha.wavenumbers)
-
-        ha.idecompose()
-
-        print(ha.array)
-        print('active', ha.active)
-        print('levels', ha.levels)
-        print('scales', ha.scales)
-        print('wavenumbers', ha.wavenumbers)
+        test_transform(ha, verbose=args.verbose)
 
     #--------------------
 
     # make some plots
-    # NOTE: assumes all grid dimensions have the same number of points, which could be fragile
 
     if args.verbose:
         print('plotting 3D distributions')
@@ -245,105 +414,23 @@ for field in args.field:
         a = ha.approx # grab coefficients
         d = ha.detail
 
+        xs, ys, zs = meshgrid(ha.active[0], ndim=3)
+    
         #---
 
         # make 3D scatter plot
 
-        # FIXME: make both color and alpha track the value?
-
         fig = plt.figure()
 
-        ind = ha.active[0]
-        xs = np.arange(ind) / ind # NOTE this could be fragile
-        xs += (xs[1]-xs[0])/2
-
-        xs, ys, zs = np.meshgrid(xs, xs, xs, indexing='ij')
-    
         if len(a):    
             ax1 = fig.add_subplot(2, 2, 1, projection='3d')
-            cs = a / np.max(np.abs(a))
-
-            sel = np.abs(a.flatten()) > 4.0
-
-            fig.colorbar(
-                ax1.scatter(
-                    xs.flatten()[sel],
-                    ys.flatten()[sel],
-                    zs.flatten()[sel],
-                    c=cs.flatten()[sel],
-                    alpha=0.25,
-                    vmin=-1,
-                    vmax=+1,
-                    marker='.',
-                    cmap='RdGy',
-                ),
-                cmap='RdGy',
-                ax=ax1,
-                location='left',
-                shrink=0.75,
-            )
-
-            ax1.set_xlim(xmin=0, xmax=1)
-            ax1.set_ylim(ymin=0, ymax=1)
-            ax1.set_zlim(zmin=0, zmax=1)
-
-            ax1.set_title('approx')
-#            ax1.tick_params(**tick_params)
-
             AX1 = fig.add_subplot(2, 2, 3)
-            AX1.hist(a.flatten(), bins=min(100, max(10, int(0.5*np.prod(a.shape)**0.5))), histtype='step', density=True)
-
-            xlim = 4 # np.max(np.abs(AX1.set_xlim()))
-#            AX1.set_xlim(xmin=-xlim, xmax=+xlim)
-            AX1.tick_params(**tick_params)
-
-            ylim = AX1.get_ylim()[1]
-            AX1.text(-0.95*xlim, 0.95*ylim, 'num = %d' % np.prod(a.shape), ha='left', va='top')
-            AX1.set_ylim(ymin=0, ymax=ylim)
+            scatter3d(ax1, AX1, a, quantile=args.scatter_quantile)
 
         if len(d):
             ax2 = fig.add_subplot(2, 2, 2, projection='3d')
-            cs = d / np.max(np.abs(d))
-
-            sel = np.abs(d.flatten()) > 1.0
-
-            fig.colorbar(
-                ax2.scatter(
-                    xs.flatten(),
-                    ys.flatten(),
-                    zs.flatten(),
-                    c=cs.flatten(),
-                    alpha=0.25,
-                    vmin=-1,
-                    vmax=+1,
-                    marker='.',
-                    cmap='PuOr',
-                ),
-                cmap='PuOr',
-                ax=ax2,
-                location='left',
-                shrink=0.75,
-            )
-
-            ax2.set_xlim(xmin=0, xmax=1)
-            ax2.set_ylim(ymin=0, ymax=1)
-            ax2.set_zlim(zmin=0, zmax=1)
-
-            ax2.set_title('detail')
-#            ax2.tick_params(**tick_params)
-
             AX2 = fig.add_subplot(2, 2, 4)
-            AX2.hist(d.flatten(), bins=min(100, max(10, int(0.5*np.prod(d.shape)**0.5))), histtype='step', density=True)
-
-            AX2.yaxis.tick_right()
-
-            xlim = 4 # np.max(np.abs(AX2.set_xlim()))
-#            AX2.set_xlim(xmin=-xlim, xmax=+xlim)
-            AX2.tick_params(**tick_params)
-
-            ylim = AX2.get_ylim()[1]
-            AX2.text(-0.95*xlim, 0.95*ylim, 'num = %d' % np.prod(d.shape), ha='left', va='top')
-            AX2.set_ylim(ymin=0, ymax=ylim)
+            scatter3d(ax2, AX2, d, quantile=args.scatter_quantile)
 
         #---
 
@@ -369,7 +456,7 @@ for field in args.field:
 
     ha.idecompose()
 
-    # make an object that only knows about hte mid-plane
+    # make an object that only knows about the mid-plane
     ha2d = haar.HaarArray(ha.array[:,:,ha.shape[2]//2])
 
     while ha2d.active[0] > 1:
@@ -377,112 +464,21 @@ for field in args.field:
         a = ha2d.approx # grab coefficients
         d = ha2d.detail
 
+        xs, ys = meshgrid(ha2d.active[0], ndim=2)
+
         #---
 
         fig = plt.figure()
 
-        ind = ha2d.active[0]
-        xs = np.arange(ind) / ind # NOTE this could be fragile
-        xs += (xs[1]-xs[0])/2
-
-        xs, ys = np.meshgrid(xs, xs, indexing='ij')
-
         if np.prod(a.shape):
             ax1 = fig.add_subplot(2, 2, 1)
-            cs = a / np.max(np.abs(a))
-
-#            sel = np.abs(a.flatten()) > 1.0
-            sel = np.ones_like(a.flatten(), dtype=bool)
-
-            fig.colorbar(
-                ax1.scatter(
-                    xs.flatten()[sel],
-                    ys.flatten()[sel],
-                    c=cs.flatten()[sel],
-                    alpha=0.25,
-                    vmin=-1,
-                    vmax=+1,
-                    marker='.',
-                    cmap='RdGy',
-                ),
-                cmap='RdGy',
-                ax=ax1,
-                location='left',
-                shrink=0.75,
-            )
-
-            ax1.set_xlim(xmin=0, xmax=1)
-            ax1.set_ylim(ymin=0, ymax=1)
-
-            ax1.set_title('approx')
-#            ax1.tick_params(**tick_params)
-
             AX1 = fig.add_subplot(2, 2, 3)
-            AX1.hist(a.flatten(), bins=min(100, max(10, int(0.5*np.prod(a.shape)**0.5))), histtype='step', density=True)
-
-            xlim = 4 # np.max(np.abs(AX1.set_xlim()))
-#            AX1.set_xlim(xmin=-xlim, xmax=+xlim)
-            AX1.tick_params(**tick_params)
-
-            ylim = AX1.get_ylim()[1]
-            AX1.text(-0.95*xlim, 0.95*ylim, 'num = %d' % np.prod(a.shape), ha='left', va='top')
-
-            AX1 = fig.add_subplot(2, 2, 3)
-            AX1.hist(a.flatten(), bins=min(100, max(10, int(0.5*np.prod(a.shape)**0.5))), histtype='step', density=True)
-
-            xlim = 4 # np.max(np.abs(AX1.set_xlim()))
-#            AX1.set_xlim(xmin=-xlim, xmax=+xlim)
-            AX1.tick_params(**tick_params)
-
-            ylim = AX1.get_ylim()[1]
-            AX1.text(-0.95*xlim, 0.95*ylim, 'num = %d' % np.prod(a.shape), ha='left', va='top')
-            AX1.set_ylim(ymin=0, ymax=ylim)
-
-            AX1.grid(True, which='both')
+            scatter2d(ax1, AX1, a, quantile=args.scatter_quantile)
 
         if np.prod(d.shape):
             ax2 = fig.add_subplot(2, 2, 2)
-            cs = d / np.max(np.abs(d))
-
-            sel = np.abs(d.flatten()) > 1.0
-
-            fig.colorbar(
-                ax2.scatter(
-                    xs.flatten(),
-                    ys.flatten(),
-                    c=cs.flatten(),
-                    alpha=0.25,
-                    vmin=-1,
-                    vmax=+1,
-                    marker='.',
-                    cmap='PuOr',
-                ),
-                cmap='PuOr',
-                ax=ax2,
-                location='left',
-                shrink=0.75,
-            )
-
-            ax2.set_xlim(xmin=0, xmax=1)
-            ax2.set_ylim(ymin=0, ymax=1)
-
-            ax2.set_title('detail')
-#            ax2.tick_params(**tick_params)
-
             AX2 = fig.add_subplot(2, 2, 4)
-            AX2.hist(d.flatten(), bins=min(100, max(10, int(0.5*np.prod(d.shape)**0.5))), histtype='step', density=True)
-
-            AX2.yaxis.tick_right()
-
-            xlim = 4 # np.max(np.abs(AX2.set_xlim()))
-#            AX2.set_xlim(xmin=-xlim, xmax=+xlim)
-            AX2.tick_params(**tick_params)
-
-            ylim = AX2.get_ylim()[1]
-            AX2.text(-0.95*xlim, 0.95*ylim, 'num = %d' % np.prod(d.shape), ha='left', va='top')
-            AX2.set_ylim(ymin=0, ymax=ylim)
-
-            AX2.grid(True, which='both')
+            scatter2d(ax2, AX2, d, quantile=args.scatter_quantile)
 
         #---
 
@@ -518,112 +514,21 @@ for field in args.field:
         a = ha2d.approx # grab coefficients
         d = ha2d.detail
 
+        xs, ys = meshgrid(ha2d.active[0], ndim=2)
+
         #---
 
         fig = plt.figure()
 
-        ind = ha2d.active[0]
-        xs = np.arange(ind) / ind # NOTE this could be fragile
-        xs += (xs[1]-xs[0])/2
-
-        xs, ys = np.meshgrid(xs, xs, indexing='ij')
-
         if np.prod(a.shape):
             ax1 = fig.add_subplot(2, 2, 1)
-            cs = a / np.max(np.abs(a))
-
-#            sel = np.abs(a.flatten()) > 1.0
-            sel = np.ones_like(a.flatten(), dtype=bool)
-
-            fig.colorbar(
-                ax1.scatter(
-                    xs.flatten()[sel],
-                    ys.flatten()[sel],
-                    c=cs.flatten()[sel],
-                    alpha=0.25,
-                    vmin=-1,
-                    vmax=+1,
-                    marker='.',
-                    cmap='RdGy',
-                ),
-                cmap='RdGy',
-                ax=ax1,
-                location='left',
-                shrink=0.75,
-            )
-
-            ax1.set_xlim(xmin=0, xmax=1)
-            ax1.set_ylim(ymin=0, ymax=1)
-
-            ax1.set_title('approx')
-#            ax1.tick_params(**tick_params)
-
             AX1 = fig.add_subplot(2, 2, 3)
-            AX1.hist(a.flatten(), bins=min(100, max(10, int(0.5*np.prod(a.shape)**0.5))), histtype='step', density=True)
-
-            xlim = 4 # np.max(np.abs(AX1.set_xlim()))
-#            AX1.set_xlim(xmin=-xlim, xmax=+xlim)
-            AX1.tick_params(**tick_params)
-
-            ylim = AX1.get_ylim()[1]
-            AX1.text(-0.95*xlim, 0.95*ylim, 'num = %d' % np.prod(a.shape), ha='left', va='top')
-
-            AX1 = fig.add_subplot(2, 2, 3)
-            AX1.hist(a.flatten(), bins=min(100, max(10, int(0.5*np.prod(a.shape)**0.5))), histtype='step', density=True)
-
-            xlim = 4 # np.max(np.abs(AX1.set_xlim()))
-#            AX1.set_xlim(xmin=-xlim, xmax=+xlim)
-            AX1.tick_params(**tick_params)
-
-            ylim = AX1.get_ylim()[1]
-            AX1.text(-0.95*xlim, 0.95*ylim, 'num = %d' % np.prod(a.shape), ha='left', va='top')
-            AX1.set_ylim(ymin=0, ymax=ylim)
-
-            AX1.grid(True, which='both')
+            scatter2D(ax1, AX1, a, quantile=args.scatter_quantile)
 
         if np.prod(d.shape):
             ax2 = fig.add_subplot(2, 2, 2)
-            cs = d / np.max(np.abs(d))
-
-            sel = np.abs(d.flatten()) > 1.0
-
-            fig.colorbar(
-                ax2.scatter(
-                    xs.flatten(),
-                    ys.flatten(),
-                    c=cs.flatten(),
-                    alpha=0.25,
-                    vmin=-1,
-                    vmax=+1,
-                    marker='.',
-                    cmap='PuOr',
-                ),
-                cmap='PuOr',
-                ax=ax2,
-                location='left',
-                shrink=0.75,
-            )
-
-            ax2.set_xlim(xmin=0, xmax=1)
-            ax2.set_ylim(ymin=0, ymax=1)
-
-            ax2.set_title('detail')
-#            ax2.tick_params(**tick_params)
-
             AX2 = fig.add_subplot(2, 2, 4)
-            AX2.hist(d.flatten(), bins=min(100, max(10, int(0.5*np.prod(d.shape)**0.5))), histtype='step', density=True)
-
-            AX2.yaxis.tick_right()
-
-            xlim = 4 # np.max(np.abs(AX2.set_xlim()))
-#            AX2.set_xlim(xmin=-xlim, xmax=+xlim)
-            AX2.tick_params(**tick_params)
-
-            ylim = AX2.get_ylim()[1]
-            AX2.text(-0.95*xlim, 0.95*ylim, 'num = %d' % np.prod(d.shape), ha='left', va='top')
-            AX2.set_ylim(ymin=0, ymax=ylim)
-
-            AX2.grid(True, which='both')
+            scatter2D(ax2, AX2, d, quantile=args.scatter_quantile)
 
         #---
 

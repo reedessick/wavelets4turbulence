@@ -8,12 +8,28 @@
 python -i \
 ./test \
     --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
-    --output-dir M05MA10 \
-    --tag Turb_hdf5_plt_cnt_0050 \
     --field dens \
     --field mag \
     --field vel \
-    --scatter-quantile 0.99 \
     --max-edgelength 512 \
     --verbose \
 || exit 1
+
+#---
+
+# FIXME add test-scaling
+
+#---
+
+python -i \
+ ./plot \
+     --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
+-    --output-dir M05MA10 \
+-    --tag Turb_hdf5_plt_cnt_0050 \
+     --field dens \
+     --field mag \
+     --field vel \
+     --max-edgelength 512 \
+-    --scatter-quantile 0.99 \
+     --verbose \
+ || exit 1

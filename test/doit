@@ -5,7 +5,7 @@
 
 #-------------------------------------------------
 
-python -i \
+echo \
 ./test \
     --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
     --field dens \
@@ -17,19 +17,25 @@ python -i \
 
 #---
 
-# FIXME add test-scaling
-
-#---
-
-python -i \
- ./plot \
+echo \
+./plot \
      --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
--    --output-dir M05MA10 \
--    --tag Turb_hdf5_plt_cnt_0050 \
+     --output-dir M05MA10 \
+     --tag Turb_hdf5_plt_cnt_0050 \
      --field dens \
      --field mag \
      --field vel \
      --max-edgelength 512 \
--    --scatter-quantile 0.99 \
+     --scatter-quantile 0.99 \
      --verbose \
- || exit 1
+|| exit 1
+
+#---
+
+# set up a loop to iterate through different data sizes
+
+echo \
+./test-scaling \
+    --num-grid 32 \
+    --verbose \
+|| exit 1

@@ -425,7 +425,7 @@ for field in args.field:
 
             scatter3d(fig, ax2, AX2, xs, ys, zs, d, quantile=args.scatter_quantile)
 
-            ax2.set_title('approx')
+            ax2.set_title('detail')
 
         #---
 

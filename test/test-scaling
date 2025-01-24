@@ -6,10 +6,16 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 #-------------------------------------------------
 
-import tracemalloc
-import time
+import os
+import tracemalloc # used to check memory usage
+import time # used to check runtime
 
 import numpy as np
+
+import matplotlib
+matplotlib.use("Agg")
+from matplotlib import pyplot as plt
+plt.rcParams['text.usetex'] = True
 
 from argparse import ArgumentParser
 
@@ -19,16 +25,12 @@ import utils # local!
 
 #-------------------------------------------------
 
-fields = ['field']
-
-#-------------------------------------------------
-
 parser = ArgumentParser()
 
 #---
 
-parser.add_argument('-n', '--num-grid', type=int, default=32,
-    help='the number of grid points used when constructing random data instead of reading from --path')
+parser.add_argument('grid_range', nargs=2, type=int,
+    help='the min and max number of grid points used when constructing synthetic data')
 
 parser.add_argument('--seed', default=None, type=int)
 
@@ -40,13 +42,18 @@ parser.add_argument('-N', '--num-trials', default=10, type=int,
 #---
 
 parser.add_argument('-v', '--verbose', default=False, action='store_true')
-parser.add_argument('-V', '--Verbose', default=False, action='store_true')
+
+parser.add_argument('-o', '--output-dir', default='.', type=str)
+parser.add_argument('-t', '--tag', default='', type=str)
 
 #---
 
 args = parser.parse_args()
 
-args.verbose |= args.Verbose
+os.makedirs(args.output_dir, exist_ok=True)
+
+if args.tag:
+    args.tag = "_"+args.tag
 
 #-------------------------------------------------
 
@@ -54,23 +61,32 @@ utils.seed(args.seed, verbose=args.verbose)
 
 #-------------------------------------------------
 
-data = utils.load(
-    fields,
-    num_grid=args.num_grid,
-    verbose=args.verbose,
-)
+# iterate through grid sizes
+num = 2
+while num < args.grid_range[0]:
+    num *= 2
 
-#-------------------------------------------------
+summary = {
+    'grid size' : [],
+    'HaarArray.decompose' : [],
+    'HaarArray.idecompose' : [],
+}
 
-for field in fields:
+while num <= args.grid_range[1]:
+
+    # generate fake data
+    data = utils.load(
+        ['dummy'],
+        num_grid=num,
+    )
+
+    ha = haar.HaarArray(data['dummy'][0])
+
+    #---
+
+    # perform tests
     if args.verbose:
-        print('testing field=%s with %d trials' %(field, args.num_trials))
-
-    if (data[field].shape[0] > 1) and args.Verbose:
-        print('WARNING: only examining index 0 of field')
-
-    # instantiate
-    ha = haar.HaarArray(data[field][0])
+        print('num_grid = %d (%d trials)' %(num, args.num_trials))
 
     # take decompositions to and estimate how long they take to run
     decomp = []
@@ -95,10 +111,112 @@ for field in fields:
     del ha
 
     # report
+    summary['grid size'].append(num)
+
     for label, run, mem in [
-            ('decompose', decomp, decomp_mem),
-            ('idecompose', idecomp, idecomp_mem),
+            ('HaarArray.decompose', decomp, decomp_mem),
+            ('HaarArray.idecompose', idecomp, idecomp_mem),
         ]:
-        print('''%s
-    runtime = %.6f +/- %.6f ms
-    memory  = %.1f +/- %.1f KB''' % (label, np.mean(run)*1e3, np.std(run)*1e3, np.mean(mem)/1e3, np.std(mem)/1e3))
+        mr = np.mean(run) * 1e3 # ms
+        sr = np.std(run) * 1e3
+
+        mm = np.mean(mem) / 1e3 # kB
+        sm = np.std(mem) / 1e3
+
+        summary[label].append((mr, sr, mm, sm))
+
+        if args.verbose:
+            print('''\
+    %s
+        runtime = %.6f +/- %.6f ms
+        memory  = %.1f +/- %.1f KB''' % (label, mr, sr, mm, sm))
+
+    #---
+
+    # increment grid size
+    num *= 2
+
+for key, val in summary.items():
+    summary[key] = np.array(val)
+
+#------------------------
+
+# make plots of scaling with grid size
+if args.verbose:
+    print('plotting')
+
+fig = plt.figure()
+axr = plt.subplot(2,1,1)
+axm = plt.subplot(2,1,2)
+
+for label, color in [
+        ('HaarArray.decompose', 'k'),
+        ('HaarArray.idecompose', 'r')
+    ]:
+    labeled = False
+    for ind, num in enumerate(summary['grid size']):
+        mr, sr, mm, sm = summary[label][ind]
+
+        num = np.log(num)
+
+        _label = label if (not labeled) else None
+
+        axr.plot(num, mr, marker='o', linestyle='none', markeredgecolor=color, markerfacecolor='none', label=_label)
+        axr.plot([num]*2, [mr-sr, mr+sr], color=color)
+
+        axm.plot(num, mm, marker='o', linestyle='none', markeredgecolor=color, markerfacecolor='none', label=_label)
+        axm.plot([num]*2, [mm-sm, mm+sm], color=color)
+
+        labeled = True
+
+    # add expected scalings to guide the eye
+#    grid = np.logspace(*np.log(args.grid_range), 101)
+#    axm.plot(np.log(grid), 10*(grid/4)**3, linestyle='dashed')
+
+# decorate
+
+axr.legend(loc='upper left')
+
+for ax in fig.axes:
+
+    ax.set_yscale('log')
+
+    ax.set_xlim(
+        xmin=np.log(max(1, args.grid_range[0]/1.1)),
+        xmax=np.log(args.grid_range[1]*1.1),
+    )
+
+    ax.tick_params(
+        left=True,
+        right=True,
+        top=True,
+        bottom=True,
+        which='both',
+        direction='in',
+    )
+
+    ax.grid(True, which='both')
+
+plt.subplots_adjust(
+    left=0.10,
+    right=0.95,
+    top=0.95,
+    bottom=0.10,
+    hspace=0.05,
+)
+
+axm.set_xticks(np.log(summary['grid size']))
+axm.set_xticklabels(['%d'%_ for _ in summary['grid size']])
+axm.set_xlabel('1D grid size')
+axm.set_ylabel('memory [kB]')
+
+axr.set_xticks(axm.get_xticks())
+plt.setp(axr.get_xticklabels(), visible=False)
+axr.set_ylabel('runtime [ms]')
+
+# save
+figname = os.path.join(args.output_dir, 'test-scaling%s.png' % args.tag)
+if args.verbose:
+    print('    saving: '+figname)
+fig.savefig(figname)
+plt.close(fig)

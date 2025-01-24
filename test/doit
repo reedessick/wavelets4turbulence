@@ -36,21 +36,10 @@ echo \
 
 # set up a loop to iterate through different data sizes
 
-grid=1
-
-for n2 in $(seq 1 6)
-do
-
-    grid=$(($grid * 2))
-
-    echo ">> grid = $grid"
-
-    echo \
-    /usr/bin/time -v \
-    ./test-scaling \
-        --num-grid $grid \
-        --num-trials 100 \
-        --verbose \
-    || exit 1
-
-done
+echo \
+/usr/bin/time -v \
+./test-scaling \
+    4 32 \
+    --num-trials 100 \
+    --verbose \
+|| exit 1

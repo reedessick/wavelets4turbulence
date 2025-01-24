@@ -6,259 +6,19 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 #-------------------------------------------------
 
-import os
-
 import numpy as np
-
-import matplotlib
-matplotlib.use("Agg")
-from matplotlib import pyplot as plt
-plt.rcParams['text.usetex'] = True
 
 from argparse import ArgumentParser
 
 ### non-standard libraries
-try:
-    from PLASMAtools.read_funcs.read import Fields
-except ImportError:
-    Fields = None
-
 from w4t import haar
-
-#-------------------------------------------------
-
-DEFAULT_SCATTER_QUANTILE = 0.9
-
-#---
-
-APPROX_CMAP = 'RdGy'
-DETAIL_CMAP = 'PuOr'
-
-DEFAULT_CMAP = APPROX_CMAP
-
-#------------------------
-
-hist_tick_params = dict(
-    left=True,
-    right=True,
-    top=True,
-    bottom=True,
-    which='both',
-    direction='in',
-)
-
-#-------------------------------------------------
-
-def test_transform(ha):
-    """perform some basic tests of the tranform object
-    """
-    # 1D decompositions
-    for axis in range(ha.ndim):
-        print('--- axis=%d' % axis)
-
-        # try taking decompositions
-        ha.haar(axis=axis)
-
-        print(ha.array)
-        print('active', ha.active)
-        print('levels', ha.levels)
-        print('scales', ha.scales)
-        print('wavenumbers', ha.wavenumbers)
-
-        # try taking inverse decompositions
-        ha.ihaar(axis=axis)
-
-        print(ha.array)
-        print('active', ha.active)
-        print('levels', ha.levels)
-        print('scales', ha.scales)
-        print('wavenumbers', ha.wavenumbers)
-
-    #---
-
-    # automatic decompositions
-    print('--- all axes')
-
-    print('HAAR 0')
-    print(ha.array)
-    print('levels', ha.levels)
-    print('active', ha.active)
-
-    ha.haar()
-
-    print('HAAR 1')
-    print(ha.array)
-    print('active', ha.active)
-    print('levels', ha.levels)
-    print('scales', ha.scales)
-    print('wavenumbers', ha.wavenumbers)
-
-    ha.haar()
-
-    print('HAAR 2')
-    print(ha.array)
-    print('active', ha.active)
-    print('levels', ha.levels)
-    print('scales', ha.scales)
-    print('wavenumbers', ha.wavenumbers)
-
-    ha.ihaar()
-
-    print('HAAR 1')
-    print(ha.array)
-    print('active', ha.active)
-    print('levels', ha.levels)
-    print('scales', ha.scales)
-    print('wavenumbers', ha.wavenumbers)
-
-    ha.ihaar()
-
-    print('HAAR 0')
-    print(ha.array)
-    print('active', ha.active)
-    print('levels', ha.levels)
-    print('scales', ha.scales)
-    print('wavenumbers', ha.wavenumbers)
-
-    #---
-
-    print('--- decompose')
-
-    ha.decompose()
-
-    print(ha.array)
-    print('active', ha.active)
-    print('levels', ha.levels)
-    print('scales', ha.scales)
-    print('wavenumbers', ha.wavenumbers)
-
-    ha.idecompose()
-
-    print(ha.array)
-    print('active', ha.active)
-    print('levels', ha.levels)
-    print('scales', ha.scales)
-    print('wavenumbers', ha.wavenumbers)
-
-#-------------------------------------------------
-
-def meshgrid(ind, ndim=2):
-    xs = np.arange(ind) / ind # NOTE this could be fragile
-    xs += (xs[1]-xs[0])/2
-    return np.meshgrid(*(xs for _ in range(ndim)), indexing='ij')
-
-def sel_by_quantile(data, quantile=None):
-    if quantile is not None:
-        flat = data.flatten()
-        val = flat[np.argsort(flat)[int(len(flat)*quantile)]]
-        return (np.abs(flat) > val), val
-    else:
-        return np.ones_like(data.flatten(), dtype=bool), None
-
-#------------------------
-
-def scatter2d(fig, ax, AX, xs, ys, data, quantile=DEFAULT_SCATTER_QUANTILE, cmap=DEFAULT_CMAP):
-    """generate 2D scatter-plots with histograms underneath
-    """
-    cs = data / np.max(np.abs(data))
-    sel, val = sel_by_quantile(data, quantile=quantile)
-
-    fig.colorbar(
-        ax.scatter(
-            xs.flatten()[sel],
-            ys.flatten()[sel],
-            c=cs.flatten()[sel],
-            alpha=0.25,
-            vmin=-1,
-            vmax=+1,
-            marker='.',
-            cmap=cmap,
-        ),
-        cmap=cmap,
-        ax=ax,
-        location='left',
-        shrink=0.75,
-    )
-
-    ax.set_xlim(xmin=0, xmax=1)
-    ax.set_ylim(ymin=0, ymax=1)
-
-    #---
-
-    nbins = min(100, max(10, int(0.5*np.prod(data.shape)**0.5)))
-    AX.hist(data.flatten(), bins=nbins, histtype='step', density=True)
-
-    xlim = np.max(np.abs(AX.get_xlim()))
-    AX.set_xlim(xmin=-xlim, xmax=+xlim)
-
-    ylim = AX.get_ylim()[1]
-    AX.text(-0.95*xlim, 0.95*ylim, 'num = %d' % np.prod(data.shape), ha='left', va='top')
-    if val is not None:
-        AX.plot([val]*2, [0, ylim], color='grey', linestyle='dashed') # add marker to denoty selection
-        AX.plot([-val]*2, [0, ylim], color='grey', linestyle='dashed') # add marker to denoty selection
-    AX.set_ylim(ymin=0, ymax=ylim)
-
-    AX.tick_params(**hist_tick_params)
-    AX.grid(True, which='both')
-
-#------------------------
-
-def scatter3d(fig, ax, AX, xs, ys, zs, data, quantile=DEFAULT_SCATTER_QUANTILE, cmap=DEFAULT_CMAP):
-    """generate 3D scatter-plots with histograms underneath
-    """
-    # FIXME: make both color and alpha track the value?
-
-    cs = data / np.max(np.abs(data))
-    sel, val = sel_by_quantile(data, quantile=quantile)
-
-    fig.colorbar(
-        ax.scatter(
-            xs.flatten()[sel],
-            ys.flatten()[sel],
-            zs.flatten()[sel],
-            c=cs.flatten()[sel],
-            alpha=0.25,
-            vmin=-1,
-            vmax=+1,
-            marker='.',
-            cmap=cmap,
-        ),
-        cmap=cmap,
-        ax=ax,
-        location='left',
-        shrink=0.75,
-    )
-
-    ax.set_xlim(xmin=0, xmax=1)
-    ax.set_ylim(ymin=0, ymax=1)
-    ax.set_zlim(zmin=0, zmax=1)
-
-    #---
-
-    nbins = min(100, max(10, int(0.5*np.prod(data.shape)**0.5)))
-    AX.hist(data.flatten(), bins=nbins, histtype='step', density=True)
-
-    xlim = np.max(np.abs(AX.get_xlim()))
-    AX.set_xlim(xmin=-xlim, xmax=+xlim)
-
-    ylim = AX.get_ylim()[1]
-    AX.text(-0.95*xlim, 0.95*ylim, 'num = %d' % np.prod(data.shape), ha='left', va='top')
-    if val is not None:
-        AX.plot([val]*2, [0, ylim], color='grey', linestyle='dashed') # add marker to denoty selection
-        AX.plot([-val]*2, [0, ylim], color='grey', linestyle='dashed') # add marker to denoty selection
-    AX.set_ylim(ymin=0, ymax=ylim)
-
-    AX.tick_params(**hist_tick_params)
-    AX.grid(True, which='both')
+import utils # local!
 
 #-------------------------------------------------
 
 parser = ArgumentParser()
 
 #---
-
-parser.add_argument('--path', type=str, default=None,
-    help='path to an HDF file containing simulation data')
 
 parser.add_argument('-n', '--num-grid', type=int, default=32,
     help='the number of grid points used when constructing random data instead of reading from --path')
@@ -267,100 +27,34 @@ parser.add_argument('--seed', default=None, type=int)
 
 #---
 
-parser.add_argument('-f', '--field', required=True, default=[], type=str, action='append',
-    help='load and manipulate this field. Can be repeated. eg, --field vel --field mag --field dens')
-
-parser.add_argument('--max-edgelength', default=None, type=int,
-    help='if specified, limit the size of each dimension to be at most this many samples. Although not required, \
-it is a good idea to make this a power of 2 (for the Haar transform to work well)')
-
-parser.add_argument('--scatter-quantile', default=DEFAULT_SCATTER_QUANTILE, type=float,
-    help='only plot values above this quantile in the distribution within scatter plots. DEFAULT=%f' % DEFAULT_SCATTER_QUANTILE)
-
-#---
-
-parser.add_argument('--test-transform', action='store_true', default=False)
-
-#---
-
 parser.add_argument('-v', '--verbose', default=False, action='store_true')
 parser.add_argument('-V', '--Verbose', default=False, action='store_true')
-
-parser.add_argument('-o', '--output-dir', default='.', type=str)
-parser.add_argument('-t', '--tag', default='', type=str)
 
 #---
 
 args = parser.parse_args()
 
-os.makedirs(args.output_dir, exist_ok=True)
-
-if args.tag:
-    args.tag = "_"+args.tag
-
 args.verbose |= args.Verbose
 
 #-------------------------------------------------
 
-if args.seed is not None:
-    if args.verbose:
-        print('setting numpy.random.seed=%d' % args.seed)
-    np.random.seed(args.seed)
+utils.seed(args.seed, verbose=args.verbose)
 
 #-------------------------------------------------
 
-data = dict()
-
-if args.path is not None: # read data from file
-    if args.verbose:
-        print('loading: '+args.path)
-
-    if Fields is None:
-        raise ImportError('could not import PLASMAtools.read_funcs.read.Fields')
-
-    turb = Fields(args.path, reformat=True)
-
-    # read the fields
-    for field in args.field:
-        turb.read(field)
-        data[field] = getattr(turb, field) # replacement for this syntax: turb.vel
-
-    del turb # get rid of this object to save memory
-
-else: # generate random data on a big-ish 3D array
-
-    shape = (1,)+(args.num_grid,)*3
-    if args.verbose:
-        print('generating randomized data with shape: %s' % (shape,))
-
-    # use grid to compute coherent structure
-    x = np.arange(args.num_grid) / args.num_grid
-    x, y, z = np.meshgrid(x, x, x, indexing='ij')
-
-    coherent = 0.5*np.exp(-0.5*((x-0.5)**2 + (y-0.5)**2)/0.1**2) ### a vertical tube
-#    coherent = 0.5*np.exp(-0.5*((x-z)**2 + (y-z)**2)/0.1**2) ### a vertical tube
-
-    # iterate through fields and add Gaussia noise
-    size = (1,)+(args.num_grid,)*3
-    for field in args.field:
-        data[field] = coherent + np.random.normal(size=size)
-
-#---
-
-if args.verbose:
-    print('    '+field, data[field].shape) # expect [num_dim, num_x, num_y, num_z]
+data = utils.load(
+    ['field'],
+    path=args.path,
+    num_grid=args.num_grid,
+    max_edgelength=args.max_edgelength,
+    verbose=args.verbose,
+)
 
 #-------------------------------------------------
 
-if args.max_edgelength is not None:
-    if args.verbose:
-        print('limiting data size by selecting the first max(edgelength)=%d samples' % args.max_edgelength)
+field = 'field'
 
-    for key in data.keys():
-        data[key] = data[key][:, :args.max_edgelength, :args.max_edgelength, :args.max_edgelength]
-
-#-------------------------------------------------
-
+raise NotImplementedError('''
 for field in args.field:
 
     if args.verbose:
@@ -386,173 +80,7 @@ for field in args.field:
 
     #---
 
-    if args.test_transform:
-        if args.verbose:
-            print('testing Haar decomposition of: '+field)
-        test_transform(ha, verbose=args.verbose)
-
-    #--------------------
-
-    # make some plots
-
     if args.verbose:
-        print('plotting 3D distributions')
-
-    ha.idecompose()
-
-    while ha.active[0] > 1: # keep decomposing
-
-        a = ha.approx # grab coefficients
-        d = ha.detail
-
-        xs, ys, zs = meshgrid(ha.active[0], ndim=3)
-    
-        #---
-
-        # make 3D scatter plot
-
-        fig = plt.figure()
-
-        if len(a):    
-            ax1 = fig.add_subplot(2, 2, 1, projection='3d')
-            AX1 = fig.add_subplot(2, 2, 3)
-
-            scatter3d(fig, ax1, AX1, xs, ys, zs, a, quantile=args.scatter_quantile)
-
-            ax1.set_title('approx')
-
-        if len(d):
-            ax2 = fig.add_subplot(2, 2, 2, projection='3d')
-            AX2 = fig.add_subplot(2, 2, 4)
-
-            scatter3d(fig, ax2, AX2, xs, ys, zs, d, quantile=args.scatter_quantile)
-
-            ax2.set_title('detail')
-
-        #---
-
-        scales = '-'.join('%03d'%_ for _ in ha.scales)
-        fig.suptitle('scales : '+scales)
-
-        #---
-
-        figname = os.path.join(args.output_dir, 'test-3d-scatter-%s-%s%s.png' % (scales, field, args.tag))
-        if args.verbose:
-            print('    saving: '+figname)
-        fig.savefig(figname)
-        plt.close(fig)
-
-        #---
-
-        ha.haar() # decompose
-
-    #--------------------
-
-    if args.verbose:
-        print('plotting 2D distributions along the midplane')
-
-    ha.idecompose()
-
-    # make an object that only knows about the mid-plane
-    ha2d = haar.HaarArray(ha.array[:,:,ha.shape[2]//2])
-
-    while ha2d.active[0] > 1:
-
-        a = ha2d.approx # grab coefficients
-        d = ha2d.detail
-
-        xs, ys = meshgrid(ha2d.active[0], ndim=2)
-
-        #---
-
-        fig = plt.figure()
-
-        if np.prod(a.shape):
-            ax1 = fig.add_subplot(2, 2, 1)
-            AX1 = fig.add_subplot(2, 2, 3)
-
-            scatter2d(fig, ax1, AX1, xs, ys, a, quantile=args.scatter_quantile, cmap=APPROX_CMAP)
-
-            ax1.set_title('approx')
-
-        if np.prod(d.shape):
-            ax2 = fig.add_subplot(2, 2, 2)
-            AX2 = fig.add_subplot(2, 2, 4)
-
-            scatter2d(fig, ax2, AX2, xs, ys, d, quantile=args.scatter_quantile, cmap=DETAIL_CMAP)
-
-            ax2.set_title('detail')
-
-        #---
-
-        scales = '-'.join('%03d'%_ for _ in ha2d.scales)
-        fig.suptitle('scales : '+scales)
-
-        #---
-
-        figname = os.path.join(args.output_dir, 'test-2d-scatter-%s-%s%s.png' % (scales, field, args.tag))
-        if args.verbose:
-            print('    saving: '+figname)
-        fig.savefig(figname)
-        plt.close(fig)
-
-        #---
-
-        # decompose
-        ha2d.haar()
-
-    #--------------------
-
-    if args.verbose:
-        print('plotting 2D distributions after averaging along the z-axis')
-
-    ha.idecompose()
-
-    # make an object that is already averaged over the entire z-direction
-    ha.decompose(axis=2)
-    ha2d = haar.HaarArray(ha.approx[:,:,0])
-
-    while ha2d.active[0] > 1:
-
-        a = ha2d.approx # grab coefficients
-        d = ha2d.detail
-
-        xs, ys = meshgrid(ha2d.active[0], ndim=2)
-
-        #---
-
-        fig = plt.figure()
-
-        if np.prod(a.shape):
-            ax1 = fig.add_subplot(2, 2, 1)
-            AX1 = fig.add_subplot(2, 2, 3)
-
-            scatter2d(fig, ax1, AX1, xs, ys, a, quantile=args.scatter_quantile, cmap=APPROX_CMAP)
-
-            ax1.set_title('approx')
-
-        if np.prod(d.shape):
-            ax2 = fig.add_subplot(2, 2, 2)
-            AX2 = fig.add_subplot(2, 2, 4)
-
-            scatter2d(fig, ax2, AX2, xs, ys, d, quantile=args.scatter_quantile, cmap=DETAIL_CMAP)
-
-            ax2.set_title('detail')
-
-        #---
-
-        scales = '-'.join('%03d'%_ for _ in ha2d.scales)
-        fig.suptitle('scales : '+scales)
-
-        #---
-
-        figname = os.path.join(args.output_dir, 'test-2da-scatter-%s-%s%s.png' % (scales, field, args.tag))
-        if args.verbose:
-            print('    saving: '+figname)
-        fig.savefig(figname)
-        plt.close(fig)
-
-        #---
-
-        # decompose
-        ha2d.haar()
+        print('testing Haar decomposition of: '+field)
+#    test_transform(ha, verbose=args.verbose)
+''')

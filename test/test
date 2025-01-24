@@ -6,8 +6,6 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 #-------------------------------------------------
 
-import os
-
 import numpy as np
 
 from argparse import ArgumentParser

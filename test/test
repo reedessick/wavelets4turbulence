@@ -195,6 +195,7 @@ def scatter2d(fig, ax, AX, xs, ys, data, quantile=DEFAULT_SCATTER_QUANTILE, cmap
     AX.text(-0.95*xlim, 0.95*ylim, 'num = %d' % np.prod(data.shape), ha='left', va='top')
     if val is not None:
         AX.plot([val]*2, [0, ylim], color='grey', linestyle='dashed') # add marker to denoty selection
+        AX.plot([-val]*2, [0, ylim], color='grey', linestyle='dashed') # add marker to denoty selection
     AX.set_ylim(ymin=0, ymax=ylim)
 
     AX.tick_params(**hist_tick_params)
@@ -244,6 +245,7 @@ def scatter3d(fig, ax, AX, xs, ys, zs, data, quantile=DEFAULT_SCATTER_QUANTILE, 
     AX.text(-0.95*xlim, 0.95*ylim, 'num = %d' % np.prod(data.shape), ha='left', va='top')
     if val is not None:
         AX.plot([val]*2, [0, ylim], color='grey', linestyle='dashed') # add marker to denoty selection
+        AX.plot([-val]*2, [0, ylim], color='grey', linestyle='dashed') # add marker to denoty selection
     AX.set_ylim(ymin=0, ymax=ylim)
 
     AX.tick_params(**hist_tick_params)
@@ -434,7 +436,7 @@ for field in args.field:
 
         #---
 
-        figname = os.path.join(args.output_dir, 'test-3d-scatter-%s%s.png' % (scales, args.tag))
+        figname = os.path.join(args.output_dir, 'test-3d-scatter-%s-%s%s.png' % (scales, field, args.tag))
         if args.verbose:
             print('    saving: '+figname)
         fig.savefig(figname)
@@ -488,7 +490,7 @@ for field in args.field:
 
         #---
 
-        figname = os.path.join(args.output_dir, 'test-2d-scatter-%s%s.png' % (scales, args.tag))
+        figname = os.path.join(args.output_dir, 'test-2d-scatter-%s-%s%s.png' % (scales, field, args.tag))
         if args.verbose:
             print('    saving: '+figname)
         fig.savefig(figname)
@@ -544,7 +546,7 @@ for field in args.field:
 
         #---
 
-        figname = os.path.join(args.output_dir, 'test-2da-scatter-%s%s.png' % (scales, args.tag))
+        figname = os.path.join(args.output_dir, 'test-2da-scatter-%s-%s%s.png' % (scales, field, args.tag))
         if args.verbose:
             print('    saving: '+figname)
         fig.savefig(figname)

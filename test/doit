@@ -11,6 +11,8 @@ python -i \
     --output-dir M05MA10 \
     --tag Turb_hdf5_plt_cnt_0050 \
     --field dens \
+    --field mag \
+    --field vel \
     --scatter-quantile 0.99 \
     --max-edgelength 512 \
     --verbose \

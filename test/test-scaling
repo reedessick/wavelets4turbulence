@@ -16,6 +16,10 @@ import utils # local!
 
 #-------------------------------------------------
 
+field = 'field'
+
+#-------------------------------------------------
+
 parser = ArgumentParser()
 
 #---
@@ -43,7 +47,7 @@ utils.seed(args.seed, verbose=args.verbose)
 #-------------------------------------------------
 
 data = utils.load(
-    ['field'],
+    [field],
     path=args.path,
     num_grid=args.num_grid,
     max_edgelength=args.max_edgelength,
@@ -52,9 +56,15 @@ data = utils.load(
 
 #-------------------------------------------------
 
-field = 'field'
 
 raise NotImplementedError('''
+
+set up a timing test of ha.decompose and ha.idecompose
+can we also measure the max memory used at any point in the program? or just rely on `/usr/bin/time -v`?
+
+
+
+
 for field in args.field:
 
     if args.verbose:

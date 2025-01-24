@@ -172,8 +172,9 @@ for label, color in [
     # add expected scalings to guide the eye
     num = np.logspace(*np.log10(args.grid_range), 101)
 
+    ### NOTE the following values might be fragile...
 #    axr.plot(np.log(num), 0.5*(num/4)**3, color='b', alpha=0.25, label='expected scaling')
-    axm.plot(np.log(num), 10*(num/4)**3, color='b', alpha=0.25)
+    axm.plot(np.log(num), 1e6*(num/256)**3, color='b', alpha=0.25)
 
 # decorate
 

@@ -6,6 +6,7 @@
 #-------------------------------------------------
 
 echo \
+/usr/bin/time -v \
 ./test \
     --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
     --field dens \
@@ -18,6 +19,7 @@ echo \
 #---
 
 echo \
+/usr/bin/time -v \
 ./plot \
      --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
      --output-dir M05MA10 \
@@ -34,8 +36,21 @@ echo \
 
 # set up a loop to iterate through different data sizes
 
-echo \
-./test-scaling \
-    --num-grid 32 \
-    --verbose \
-|| exit 1
+grid=1
+
+for n2 in $(seq 1 6)
+do
+
+    grid=$(($grid * 2))
+
+    echo ">> grid = $grid"
+
+    echo \
+    /usr/bin/time -v \
+    ./test-scaling \
+        --num-grid $grid \
+        --num-trials 100 \
+        --verbose \
+    || exit 1
+
+done

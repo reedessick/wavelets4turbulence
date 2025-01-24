@@ -6,6 +6,9 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 #-------------------------------------------------
 
+import tracemalloc
+import time
+
 import numpy as np
 
 from argparse import ArgumentParser
@@ -16,7 +19,7 @@ import utils # local!
 
 #-------------------------------------------------
 
-field = 'field'
+fields = ['field']
 
 #-------------------------------------------------
 
@@ -28,6 +31,11 @@ parser.add_argument('-n', '--num-grid', type=int, default=32,
     help='the number of grid points used when constructing random data instead of reading from --path')
 
 parser.add_argument('--seed', default=None, type=int)
+
+#---
+
+parser.add_argument('-N', '--num-trials', default=10, type=int,
+    help='the number of trials to run for timing tests')
 
 #---
 
@@ -47,50 +55,50 @@ utils.seed(args.seed, verbose=args.verbose)
 #-------------------------------------------------
 
 data = utils.load(
-    [field],
-    path=args.path,
+    fields,
     num_grid=args.num_grid,
-    max_edgelength=args.max_edgelength,
     verbose=args.verbose,
 )
 
 #-------------------------------------------------
 
-
-raise NotImplementedError('''
-
-set up a timing test of ha.decompose and ha.idecompose
-can we also measure the max memory used at any point in the program? or just rely on `/usr/bin/time -v`?
-
-
-
-
-for field in args.field:
-
+for field in fields:
     if args.verbose:
-        print('examining field: '+field)
+        print('testing field=%s with %d trials' %(field, args.num_trials))
 
     if (data[field].shape[0] > 1) and args.Verbose:
         print('WARNING: only examining index 0 of field')
 
-    # basic instantiation
+    # instantiate
     ha = haar.HaarArray(data[field][0])
 
-    if args.Verbose:
-        print(ha.array)
+    # take decompositions to and estimate how long they take to run
+    decomp = []
+    decomp_mem = []
 
-    if args.verbose:
-        print('    ndim', ha.ndim)
-        print('    shape', ha.shape)
+    idecomp = []
+    idecomp_mem = []
 
-        print('    active', ha.active)
-        print('    levels', ha.levels)
-        print('    scales', ha.scales)
-        print('    wavenumbers', ha.wavenumbers)
+    for trial in range(args.num_trials):
+        for foo, run, mem in [
+                (ha.decompose, decomp, decomp_mem),
+                (ha.idecompose, idecomp, idecomp_mem),
+            ]:
+            tracemalloc.start()
+            t0 = time.time()
+            foo()
+            run.append(time.time()-t0)
+            current, peak = tracemalloc.get_traced_memory()
+            mem.append(peak)
+            tracemalloc.stop()
 
-    #---
+    del ha
 
-    if args.verbose:
-        print('testing Haar decomposition of: '+field)
-#    test_transform(ha, verbose=args.verbose)
-''')
+    # report
+    for label, run, mem in [
+            ('decompose', decomp, decomp_mem),
+            ('idecompose', idecomp, idecomp_mem),
+        ]:
+        print('''%s
+    runtime = %.6f +/- %.6f ms
+    memory  = %.1f +/- %.1f KB''' % (label, np.mean(run)*1e3, np.std(run)*1e3, np.mean(mem)/1e3, np.std(mem)/1e3))

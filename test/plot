@@ -34,6 +34,15 @@ DEFAULT_CMAP = APPROX_CMAP
 
 #------------------------
 
+scat_tick_params = dict(
+    left=True,
+    right=True,
+    top=True,
+    bottom=True,
+    which='both',
+    direction='in',
+)
+
 hist_tick_params = dict(
     left=True,
     right=True,
@@ -43,14 +52,29 @@ hist_tick_params = dict(
     direction='in',
 )
 
+#---
+
+subplots_adjust = dict(
+    left=0.10,
+    right=0.90,
+    top=0.90,
+    bottom=0.10,
+    hspace=0.05,
+    wspace=0.05,
+)
+
 #-------------------------------------------------
 
 def meshgrid(ind, ndim=2):
+    """a helper to automate grid construction
+    """
     xs = np.arange(ind) / ind # NOTE this could be fragile
     xs += (xs[1]-xs[0])/2
     return np.meshgrid(*(xs for _ in range(ndim)), indexing='ij')
 
 def sel_by_quantile(data, quantile=None):
+    """a helper to select which points are interesting enough to plot in the scatter
+    """
     if quantile is not None:
         flat = data.flatten()
         val = flat[np.argsort(flat)[int(len(flat)*quantile)]]
@@ -60,7 +84,57 @@ def sel_by_quantile(data, quantile=None):
 
 #------------------------
 
-def scatter2d(fig, ax, AX, xs, ys, data, quantile=DEFAULT_SCATTER_QUANTILE, cmap=DEFAULT_CMAP):
+def _hist(AX1, AX2, data, vals=[], right=False, gaussian=False):
+    """a helper function to make cumulative and differential histograms
+    """
+    # cumulative
+    AX1.hist(data.flatten(), bins=min(1000, np.prod(data.shape)), histtype='step', density=True, cumulative=-1)
+
+    # differential
+    nbins = min(100, max(10, int(0.5*np.prod(data.shape)**0.5)))
+    AX2.hist(data.flatten(), bins=nbins, histtype='step', density=True, log=True)
+
+    # decorate
+    xlim1 = AX1.get_xlim()
+    xlim2 = AX2.get_xlim()
+    xlim = (min(xlim1[0], xlim2[0]), max(xlim1[1], xlim2[1]))
+
+    ylim1 = AX1.get_ylim()
+    ylim2 = AX2.get_ylim()
+    for val in vals:
+        if val is not None:
+            AX1.plot([val]*2, ylim1, color='grey', linestyle='dashed') # add marker to denoty selection
+            AX2.plot([val]*2, ylim2, color='grey', linestyle='dashed') # add marker to denoty selection
+    AX1.set_ylim(ylim1)
+    AX2.set_ylim(ylim2)
+
+    if gaussian: # add a Gaussian fit by matching moments
+        m = np.mean(data.flatten())
+        v = np.var(data.flatten())
+        x = np.linspace(*xlim, 101)
+        # add to differential histogram
+        AX2.fill_between(
+            x,
+            np.ones_like(x)*ylim2[0],
+            np.exp(-0.5*(x-m)**2/v) / (2*np.pi*v)**0.5,
+            color='grey',
+            alpha=0.25,
+        )
+
+    AX1.text(xlim[1] , ylim1[1], '%d points' % np.prod(data.shape), ha='right', va='top')
+
+    for AX in [AX1, AX2]:
+        if right:
+            AX.yaxis.tick_right()
+        AX.tick_params(**hist_tick_params)
+#        AX.grid(True, which='both')
+        AX.set_xlim(xlim)
+
+    plt.setp(AX1.get_xticklabels(), visible=False)
+
+#------------------------
+
+def scatter2d(fig, ax, AX1, AX2, xs, ys, data, quantile=DEFAULT_SCATTER_QUANTILE, cmap=DEFAULT_CMAP, right=False, gaussian=False):
     """generate 2D scatter-plots with histograms underneath
     """
     cs = data / np.max(np.abs(data))
@@ -79,35 +153,29 @@ def scatter2d(fig, ax, AX, xs, ys, data, quantile=DEFAULT_SCATTER_QUANTILE, cmap
         ),
         cmap=cmap,
         ax=ax,
-        location='left',
-        shrink=0.75,
+        location='right' if right else 'left',
+        shrink=1.0,
     )
 
     ax.set_xlim(xmin=0, xmax=1)
     ax.set_ylim(ymin=0, ymax=1)
 
+    plt.setp(ax.get_xticklabels(), visible=False)
+    plt.setp(ax.get_yticklabels(), visible=False)
+
+    ax.tick_params(**scat_tick_params)
+
     #---
 
-    nbins = min(100, max(10, int(0.5*np.prod(data.shape)**0.5)))
-    AX.hist(data.flatten(), bins=nbins, histtype='step', density=True, log=True)
+    _hist(AX1, AX2, data, vals=[-val, +val], right=right, gaussian=gaussian)
 
-    xlim = np.max(np.abs(AX.get_xlim()))
-    AX.set_xlim(xmin=-xlim, xmax=+xlim)
+    #---
 
-    ylim = AX.get_ylim()
-    AX.text(-0.95*xlim, 0.95*ylim[1], '%d points' % np.prod(data.shape), ha='left', va='top')
-    if val is not None:
-        AX.plot([val]*2, [0, ylim[1]], color='grey', linestyle='dashed') # add marker to denoty selection
-        AX.plot([-val]*2, [0, ylim[1]], color='grey', linestyle='dashed') # add marker to denoty selection
-    AX.set_ylim(ylim)
-#    AX.set_ylim(ymin=0, ymax=ylim)
-
-    AX.tick_params(**hist_tick_params)
-    AX.grid(True, which='both')
+    plt.subplots_adjust(**subplots_adjust)
 
 #------------------------
 
-def scatter3d(fig, ax, AX, xs, ys, zs, data, quantile=DEFAULT_SCATTER_QUANTILE, cmap=DEFAULT_CMAP):
+def scatter3d(fig, ax, AX1, AX2, xs, ys, zs, data, quantile=DEFAULT_SCATTER_QUANTILE, cmap=DEFAULT_CMAP, right=False, gaussian=False):
     """generate 3D scatter-plots with histograms underneath
     """
     # FIXME: make both color and alpha track the value?
@@ -129,7 +197,7 @@ def scatter3d(fig, ax, AX, xs, ys, zs, data, quantile=DEFAULT_SCATTER_QUANTILE, 
         ),
         cmap=cmap,
         ax=ax,
-        location='left',
+        location='right' if right else 'left',
         shrink=0.75,
     )
 
@@ -137,24 +205,19 @@ def scatter3d(fig, ax, AX, xs, ys, zs, data, quantile=DEFAULT_SCATTER_QUANTILE, 
     ax.set_ylim(ymin=0, ymax=1)
     ax.set_zlim(zmin=0, zmax=1)
 
+    plt.setp(ax.get_xticklabels(), visible=False)
+    plt.setp(ax.get_yticklabels(), visible=False)
+    plt.setp(ax.get_zticklabels(), visible=False)
+
+    ax.tick_params(**scat_tick_params)
+
     #---
 
-    nbins = min(100, max(10, int(0.5*np.prod(data.shape)**0.5)))
-    AX.hist(data.flatten(), bins=nbins, histtype='step', density=True, log=True)
+    _hist(AX1, AX2, data, vals=[-val, +val], right=right, gaussian=gaussian)
 
-    xlim = np.max(np.abs(AX.get_xlim()))
-    AX.set_xlim(xmin=-xlim, xmax=+xlim)
+    #---
 
-    ylim = AX.get_ylim()
-    AX.text(-0.95*xlim, 0.95*ylim[1], '%d points' % np.prod(data.shape), ha='left', va='top')
-    if val is not None:
-        AX.plot([val]*2, [0, ylim[1]], color='grey', linestyle='dashed') # add marker to denoty selection
-        AX.plot([-val]*2, [0, ylim[1]], color='grey', linestyle='dashed') # add marker to denoty selection
-    AX.set_ylim(ylim)
-#    AX.set_ylim(ymin=0, ymax=ylim)
-
-    AX.tick_params(**hist_tick_params)
-    AX.grid(True, which='both')
+    plt.subplots_adjust(**subplots_adjust)
 
 #-------------------------------------------------
 
@@ -266,20 +329,22 @@ for field in args.field:
         fig = plt.figure()
 
         if len(a):    
-            ax1 = fig.add_subplot(2, 2, 1, projection='3d')
-            AX1 = fig.add_subplot(2, 2, 3)
+            ax = fig.add_subplot(2, 2, 1, projection='3d')
+            AX1 = fig.add_subplot(4, 2, 5)
+            AX2 = fig.add_subplot(4, 2, 7)
 
-            scatter3d(fig, ax1, AX1, xs, ys, zs, a, quantile=args.scatter_quantile)
+            scatter3d(fig, ax, AX1, AX2, xs, ys, zs, a, quantile=args.scatter_quantile)
 
-            ax1.set_title('approx')
+            ax.set_title('approx')
 
         if len(d):
-            ax2 = fig.add_subplot(2, 2, 2, projection='3d')
-            AX2 = fig.add_subplot(2, 2, 4)
+            ax = fig.add_subplot(2, 2, 2, projection='3d')
+            AX1 = fig.add_subplot(4, 2, 6)
+            AX2 = fig.add_subplot(4, 2, 8)
 
-            scatter3d(fig, ax2, AX2, xs, ys, zs, d, quantile=args.scatter_quantile)
+            scatter3d(fig, ax, AX1, AX2, xs, ys, zs, d, quantile=args.scatter_quantile, right=True, gaussian=True)
 
-            ax2.set_title('detail')
+            ax.set_title('detail')
 
         #---
 
@@ -320,20 +385,22 @@ for field in args.field:
         fig = plt.figure()
 
         if np.prod(a.shape):
-            ax1 = fig.add_subplot(2, 2, 1)
-            AX1 = fig.add_subplot(2, 2, 3)
+            ax = fig.add_subplot(2, 2, 1)
+            AX1 = fig.add_subplot(4, 2, 5)
+            AX2 = fig.add_subplot(4, 2, 7)
 
-            scatter2d(fig, ax1, AX1, xs, ys, a, quantile=args.scatter_quantile, cmap=APPROX_CMAP)
+            scatter2d(fig, ax, AX1, AX2, xs, ys, a, quantile=args.scatter_quantile, cmap=APPROX_CMAP)
 
-            ax1.set_title('approx')
+            ax.set_title('approx')
 
         if np.prod(d.shape):
-            ax2 = fig.add_subplot(2, 2, 2)
-            AX2 = fig.add_subplot(2, 2, 4)
+            ax = fig.add_subplot(2, 2, 2)
+            AX1 = fig.add_subplot(4, 2, 6)
+            AX2 = fig.add_subplot(4, 2, 8)
 
-            scatter2d(fig, ax2, AX2, xs, ys, d, quantile=args.scatter_quantile, cmap=DETAIL_CMAP)
+            scatter2d(fig, ax, AX1, AX2, xs, ys, d, quantile=args.scatter_quantile, cmap=DETAIL_CMAP, right=True, gaussian=True)
 
-            ax2.set_title('detail')
+            ax.set_title('detail')
 
         #---
 
@@ -376,20 +443,22 @@ for field in args.field:
         fig = plt.figure()
 
         if np.prod(a.shape):
-            ax1 = fig.add_subplot(2, 2, 1)
-            AX1 = fig.add_subplot(2, 2, 3)
+            ax = fig.add_subplot(2, 2, 1)
+            AX1 = fig.add_subplot(4, 2, 5)
+            AX2 = fig.add_subplot(4, 2, 7)
 
-            scatter2d(fig, ax1, AX1, xs, ys, a, quantile=args.scatter_quantile, cmap=APPROX_CMAP)
+            scatter2d(fig, ax, AX1, AX2, xs, ys, a, quantile=args.scatter_quantile, cmap=APPROX_CMAP)
 
-            ax1.set_title('approx')
+            ax.set_title('approx')
 
         if np.prod(d.shape):
-            ax2 = fig.add_subplot(2, 2, 2)
-            AX2 = fig.add_subplot(2, 2, 4)
+            ax = fig.add_subplot(2, 2, 2)
+            AX1 = fig.add_subplot(4, 2, 6)
+            AX2 = fig.add_subplot(4, 2, 8)
 
-            scatter2d(fig, ax2, AX2, xs, ys, d, quantile=args.scatter_quantile, cmap=DETAIL_CMAP)
+            scatter2d(fig, ax, AX1, AX2, xs, ys, d, quantile=args.scatter_quantile, cmap=DETAIL_CMAP, right=True, gaussian=True)
 
-            ax2.set_title('detail')
+            ax.set_title('detail')
 
         #---
 

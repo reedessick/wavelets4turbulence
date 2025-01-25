@@ -41,7 +41,7 @@ echo \
 ./test-scaling \
     2 268435456 \
     --num-dim 1 \
-    --num-trials 100 \
+    --num-trials 10 \
     --output-dir scaling \
     --tag num-dim_1 \
     --Verbose \
@@ -52,7 +52,7 @@ echo \
 ./test-scaling \
     2 4096 \
     --num-dim 2 \
-    --num-trials 100 \
+    --num-trials 10 \
     --output-dir scaling \
     --tag num-dim_2 \
     --Verbose \
@@ -63,7 +63,7 @@ echo \
 ./test-scaling \
     2 512 \
     --num-dim 3 \
-    --num-trials 100 \
+    --num-trials 10 \
     --output-dir scaling \
     --tag num-dim_3 \
     --Verbose \

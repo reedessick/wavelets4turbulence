@@ -7,6 +7,8 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 #-------------------------------------------------
 
 import os
+import sys
+
 import tracemalloc # used to check memory usage
 import time # used to check runtime
 
@@ -31,6 +33,8 @@ parser = ArgumentParser()
 
 parser.add_argument('grid_range', nargs=2, type=int,
     help='the min and max number of grid points used when constructing synthetic data')
+parser.add_argument('--num-dim', default=utils.DEFAULT_NUM_DIM, type=int,
+    help='the number of dimensions to use. Must be one of 1, 2, or 3. DEFAULT=%d' % utils.DEFAULT_NUM_DIM)
 
 parser.add_argument('--seed', default=None, type=int)
 
@@ -42,6 +46,7 @@ parser.add_argument('-N', '--num-trials', default=10, type=int,
 #---
 
 parser.add_argument('-v', '--verbose', default=False, action='store_true')
+parser.add_argument('-V', '--Verbose', default=False, action='store_true')
 
 parser.add_argument('-o', '--output-dir', default='.', type=str)
 parser.add_argument('-t', '--tag', default='', type=str)
@@ -50,10 +55,14 @@ parser.add_argument('-t', '--tag', default='', type=str)
 
 args = parser.parse_args()
 
+assert args.num_dim in [1, 2, 3], '--num-dim=%d not understood! must be one of 1, 2, or 3' % args.num_dim
+
 os.makedirs(args.output_dir, exist_ok=True)
 
 if args.tag:
     args.tag = "_"+args.tag
+
+args.verbose |= args.Verbose
 
 #-------------------------------------------------
 
@@ -78,6 +87,7 @@ while num <= args.grid_range[1]:
     data = utils.load(
         ['dummy'],
         num_grid=num,
+        num_dim=args.num_dim,
     )
 
     ha = haar.HaarArray(data['dummy'][0])
@@ -86,7 +96,7 @@ while num <= args.grid_range[1]:
 
     # perform tests
     if args.verbose:
-        print('num_grid = %d (%d trials)' %(num, args.num_trials))
+        print('num_dim = %d\nnum_grid = %d\nnum_trials = %d' %(args.num_dim, num, args.num_trials))
 
     # take decompositions to and estimate how long they take to run
     decomp = []
@@ -96,6 +106,10 @@ while num <= args.grid_range[1]:
     idecomp_mem = []
 
     for trial in range(args.num_trials):
+        if args.Verbose:
+            sys.stdout.write('\r    trial %3d / %3d' % (trial, args.num_trials))
+            sys.stdout.write()
+
         for foo, run, mem in [
                 (ha.decompose, decomp, decomp_mem),
                 (ha.idecompose, idecomp, idecomp_mem),
@@ -109,6 +123,12 @@ while num <= args.grid_range[1]:
             tracemalloc.stop()
 
     del ha
+
+    if args.Verbose:
+        sys.stdout.write('\r')
+        sys.stdout.flush()
+
+    #---
 
     # report
     summary['grid size'].append(num)
@@ -175,16 +195,16 @@ num = np.logspace(*np.log10(args.grid_range), 101)
 ### NOTE the following values might be fragile...
 
 # number of opperations should scale like this
-axr.plot(
-    np.log(num),
-    2e0 * (num/32)**3 * 2*(1 - 0.5**(np.log(num)/np.log(2) - 1)), # NOTE, this is complicated, but is basically num**3
-    color='b',
-    alpha=0.25,
-    label='expected scaling',
-)
+run = num**args.num_dim * 2*(1 - 0.5**(np.log(num)/np.log(2) - 1)) # this is complicated, but is basically num**3
+run *= summary['HaarArray.idecompose'][-1][0] / run[-1] # scale this so the line looks nice
+
+axr.plot(np.log(num), run, color='b', alpha=0.25, label='expected scaling')
 
 # memory should scale with the total number of grid points
-axm.plot(np.log(num), 1e3*(num/32)**3, color='b', alpha=0.25)
+mem = num**3
+mem *= summary['HaarArray.idecompose'][-1][2] / mem[-1] # scale this to make the plot nice
+
+axm.plot(np.log(num), mem, color='b', alpha=0.25)
 
 # decorate
 

@@ -39,7 +39,7 @@ echo \
 echo \
 /usr/bin/time -v \
 ./test-scaling \
-    4 32 \
+    2 512 \
     --num-trials 100 \
     --verbose \
 || exit 1

@@ -174,10 +174,14 @@ for label, color in [
 
     ### NOTE the following values might be fragile...
 
-    # FIXME I am not confident in how the runtime should scale. Perhaps cubic with the number of grid points?
-#    axr.plot(np.log(num), 1e0*np.log(num)/np.log(16), color='b', alpha=0.25, label='expected scaling')
-#    axr.plot(np.log(num), 2e0*(num/32)**2, color='b', alpha=0.25)
-    axr.plot(np.log(num), 2e0*(num/32)**3, color='b', alpha=0.25, label='expected scaling')
+    # number of opperations should scale like this
+    axr.plot(
+        np.log(num),
+        2e0 * (num/32)**3 * 2*(1 - 0.5**(np.log(num)/np.log(2) - 1)), # NOTE, this is complicated, but is basically num**3
+        color='b',
+        alpha=0.25,
+        label='expected scaling',
+    )
 
     # memory should scale with the total number of grid points
     axm.plot(np.log(num), 1e3*(num/32)**3, color='b', alpha=0.25)

@@ -96,7 +96,7 @@ while num <= args.grid_range[1]:
 
     # perform tests
     if args.verbose:
-        print('num_dim = %d\nnum_grid = %d\nnum_trials = %d' %(args.num_dim, num, args.num_trials))
+        print('num_dim = %d\nnum_grid = %d = 2**%d\nnum_trials = %d' %(args.num_dim, num, np.log(num)/np.log(2), args.num_trials))
 
     # take decompositions to and estimate how long they take to run
     decomp = []
@@ -108,7 +108,7 @@ while num <= args.grid_range[1]:
     for trial in range(args.num_trials):
         if args.Verbose:
             sys.stdout.write('\r    trial %3d / %3d' % (trial, args.num_trials))
-            sys.stdout.write()
+            sys.stdout.flush()
 
         for foo, run, mem in [
                 (ha.decompose, decomp, decomp_mem),
@@ -232,15 +232,15 @@ for ax in fig.axes:
 
 plt.subplots_adjust(
     left=0.10,
-    right=0.95,
-    top=0.95,
+    right=0.98,
+    top=0.93,
     bottom=0.10,
     hspace=0.05,
 )
 
 axm.set_xticks(np.log(summary['grid size']))
-axm.set_xticklabels(['%d'%_ for _ in summary['grid size']])
-axm.set_xlabel('1D grid size')
+axm.set_xticklabels(['$2^{%d}$'%(np.log(_)/np.log(2)) for _ in summary['grid size']])
+axm.set_xlabel('edge length')
 axm.set_ylabel('memory [kB]')
 
 axr.set_xticks(axm.get_xticks())

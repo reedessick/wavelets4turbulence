@@ -39,7 +39,7 @@ echo \
 echo \
 /usr/bin/time -v \
 ./test-scaling \
-    2 512 \
+    2 33554432 \
     --num-dim 1 \
     --num-trials 100 \
     --output-dir scaling \

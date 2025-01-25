@@ -153,6 +153,7 @@ data = utils.load(
     num_grid=args.num_grid,
     max_edgelength=args.max_edgelength,
     verbose=args.verbose,
+    Verbose=args.Verbose,
 )
 
 #-------------------------------------------------

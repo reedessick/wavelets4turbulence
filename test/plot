@@ -89,17 +89,18 @@ def scatter2d(fig, ax, AX, xs, ys, data, quantile=DEFAULT_SCATTER_QUANTILE, cmap
     #---
 
     nbins = min(100, max(10, int(0.5*np.prod(data.shape)**0.5)))
-    AX.hist(data.flatten(), bins=nbins, histtype='step', density=True)
+    AX.hist(data.flatten(), bins=nbins, histtype='step', density=True, log=True)
 
     xlim = np.max(np.abs(AX.get_xlim()))
     AX.set_xlim(xmin=-xlim, xmax=+xlim)
 
-    ylim = AX.get_ylim()[1]
-    AX.text(-0.95*xlim, 0.95*ylim, 'num = %d' % np.prod(data.shape), ha='left', va='top')
+    ylim = AX.get_ylim()
+    AX.text(-0.95*xlim, 0.95*ylim[1], '%d points' % np.prod(data.shape), ha='left', va='top')
     if val is not None:
-        AX.plot([val]*2, [0, ylim], color='grey', linestyle='dashed') # add marker to denoty selection
-        AX.plot([-val]*2, [0, ylim], color='grey', linestyle='dashed') # add marker to denoty selection
-    AX.set_ylim(ymin=0, ymax=ylim)
+        AX.plot([val]*2, [0, ylim[1]], color='grey', linestyle='dashed') # add marker to denoty selection
+        AX.plot([-val]*2, [0, ylim[1]], color='grey', linestyle='dashed') # add marker to denoty selection
+    AX.set_ylim(ylim)
+#    AX.set_ylim(ymin=0, ymax=ylim)
 
     AX.tick_params(**hist_tick_params)
     AX.grid(True, which='both')
@@ -139,17 +140,18 @@ def scatter3d(fig, ax, AX, xs, ys, zs, data, quantile=DEFAULT_SCATTER_QUANTILE, 
     #---
 
     nbins = min(100, max(10, int(0.5*np.prod(data.shape)**0.5)))
-    AX.hist(data.flatten(), bins=nbins, histtype='step', density=True)
+    AX.hist(data.flatten(), bins=nbins, histtype='step', density=True, log=True)
 
     xlim = np.max(np.abs(AX.get_xlim()))
     AX.set_xlim(xmin=-xlim, xmax=+xlim)
 
-    ylim = AX.get_ylim()[1]
-    AX.text(-0.95*xlim, 0.95*ylim, 'num = %d' % np.prod(data.shape), ha='left', va='top')
+    ylim = AX.get_ylim()
+    AX.text(-0.95*xlim, 0.95*ylim[1], '%d points' % np.prod(data.shape), ha='left', va='top')
     if val is not None:
-        AX.plot([val]*2, [0, ylim], color='grey', linestyle='dashed') # add marker to denoty selection
-        AX.plot([-val]*2, [0, ylim], color='grey', linestyle='dashed') # add marker to denoty selection
-    AX.set_ylim(ymin=0, ymax=ylim)
+        AX.plot([val]*2, [0, ylim[1]], color='grey', linestyle='dashed') # add marker to denoty selection
+        AX.plot([-val]*2, [0, ylim[1]], color='grey', linestyle='dashed') # add marker to denoty selection
+    AX.set_ylim(ylim)
+#    AX.set_ylim(ymin=0, ymax=ylim)
 
     AX.tick_params(**hist_tick_params)
     AX.grid(True, which='both')
@@ -211,6 +213,7 @@ data = utils.load(
     num_grid=args.num_grid,
     max_edgelength=args.max_edgelength,
     verbose=args.verbose,
+    Verbose=args.Verbose,
 )
 
 #-------------------------------------------------
@@ -220,16 +223,18 @@ for field in args.field:
     if args.verbose:
         print('examining field: '+field)
 
-    if (data[field].shape[0] > 1) and args.Verbose:
-        print('WARNING: only examining index 0 of field')
+    if (data[field].shape[0] > 1) and args.verbose:
+        print('<<< WARNING >>> examining the absolute value of multi-dimensional field')
+        datum = np.sum(data[field]**2, axis=0)**0.5 # quadrature sum of vector components
+    else:
+        datum = data[field][0]
 
     # basic instantiation
-    ha = haar.HaarArray(data[field][0])
+    ha = haar.HaarArray(datum)
 
     if args.Verbose:
         print(ha.array)
 
-    if args.verbose:
         print('    ndim', ha.ndim)
         print('    shape', ha.shape)
 

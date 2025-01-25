@@ -84,13 +84,7 @@ summary = {
 while num <= args.grid_range[1]:
 
     # generate fake data
-    data = utils.load(
-        ['dummy'],
-        num_grid=num,
-        num_dim=args.num_dim,
-    )
-
-    ha = haar.HaarArray(data['dummy'][0])
+    ha = haar.HaarArray(utils.load(['dummy'], num_grid=num, num_dim=args.num_dim)['dummy'][0])
 
     #---
 
@@ -201,7 +195,7 @@ run *= summary['HaarArray.idecompose'][-1][0] / run[-1] # scale this so the line
 axr.plot(np.log(num), run, color='b', alpha=0.25, label='expected scaling')
 
 # memory should scale with the total number of grid points
-mem = num**3
+mem = num**args.num_dim
 mem *= summary['HaarArray.idecompose'][-1][2] / mem[-1] # scale this to make the plot nice
 
 axm.plot(np.log(num), mem, color='b', alpha=0.25)
@@ -243,9 +237,13 @@ axm.set_xticklabels(['$2^{%d}$'%(np.log(_)/np.log(2)) for _ in summary['grid siz
 axm.set_xlabel('edge length')
 axm.set_ylabel('memory [kB]')
 
+axm.set_ylim(ymin=max(axm.get_ylim()[0], 1e-3)) # don't plot stupidly small memory requirements
+
 axr.set_xticks(axm.get_xticks())
 plt.setp(axr.get_xticklabels(), visible=False)
 axr.set_ylabel('runtime [ms]')
+
+axr.set_ylim(ymin=max(axr.get_ylim()[0], 1e-3)) # don't plot vanishingly small runtimes
 
 axr.set_title('%d-dimensional grid' % args.num_dim)
 

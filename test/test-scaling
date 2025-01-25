@@ -247,6 +247,8 @@ axr.set_xticks(axm.get_xticks())
 plt.setp(axr.get_xticklabels(), visible=False)
 axr.set_ylabel('runtime [ms]')
 
+axr.set_title('%d-dimensional grid' % args.num_dim)
+
 # save
 figname = os.path.join(args.output_dir, 'test-scaling%s.png' % args.tag)
 if args.verbose:

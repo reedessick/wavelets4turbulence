@@ -34,12 +34,37 @@ echo \
 
 #---
 
-# set up a loop to iterate through different data sizes
+# examine scaling with grid size for different numbers of dimensions
 
 echo \
 /usr/bin/time -v \
 ./test-scaling \
     2 512 \
+    --num-dim 1 \
     --num-trials 100 \
-    --verbose \
+    --output-dir scaling \
+    --tag num-dim_1 \
+    --Verbose \
+|| exit 1
+
+echo \
+/usr/bin/time -v \
+./test-scaling \
+    2 4096 \
+    --num-dim 2 \
+    --num-trials 100 \
+    --output-dir scaling \
+    --tag num-dim_2 \
+    --Verbose \
+|| exit 1
+
+echo \
+/usr/bin/time -v \
+./test-scaling \
+    2 512 \
+    --num-dim 3 \
+    --num-trials 100 \
+    --output-dir scaling \
+    --tag num-dim_3 \
+    --Verbose \
 || exit 1

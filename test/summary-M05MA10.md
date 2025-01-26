@@ -41,14 +41,17 @@ The following seem like good ideas
     - also compute the following for vectors (and treat them as additional vectors)
       * curl? <-- look for evidence of vorticity?
       * div?
+  * look at whether the same points are identified (separately with either large approx or detail coefficients) across multiple scales
   * look at "normal" spectrograms (k vs x) for 1D lines through the grid
     - consider ever possible line? (expensive...)
     - just pick one (or a few) as representative?
+  * look at spectrograms at a fixed position
+    - at each scale, plot the wavelet coefficients for all pixels within the original pixel?
+    - expect them to be scattered, but perhaps there is something we can say about the characteristics of their distribution? a predictable scaling of their variance with the scale?
   * look at whether points identified in one field correspond to points identified in other fields
     - show that density gradients source vorticity?
     - does the matter live in the same place as the magnetic field?
     - is the densest matter moving the fastest?
-  * look at whether the same points are identified (with large detail coefficients) across multiple scales
 
 These might be useful updates to the software
 

@@ -28,7 +28,12 @@ I don't personally get much out of the scatter plots at the moment besides the f
 |    1/  8 |  64 |<img src="M05MA10/test-3d-scatter-064-064-064-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-3d-scatter-064-064-064-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-3d-scatter-064-064-064-vel_Turb_hdf5_plt_cnt_0050.png">|
 |    1/  4 | 128 |<img src="M05MA10/test-3d-scatter-128-128-128-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-3d-scatter-128-128-128-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-3d-scatter-128-128-128-vel_Turb_hdf5_plt_cnt_0050.png">|
 
-Here are the same diagrams but for just midplane (`z=0.5`)
+Here are the same diagrams but for just midplane (`z=0.5`).
+Generally, there is similar behavior in the histograms of detail coefficients (fat tails).
+Additionally, it appears (by eye) that may of the spatial locations identified as having very large detail coefficients at small scales (high wavenumbers) are also identified as having large detail coefficients at intermediate scales.
+We should dig deeper to see if we can back this claim up more rigorously, but it seems that those positions only stop being identified when the histogram of the detail coefficients starts to be well-approximated with a simple Gaussian.
+That is, the intermittency may be associated with very sharp features (below a certain scale) at a few consistent locations.
+It may be interesting to examine the spectra of the positions selected in this way with randomly selected positions.
 
 |wavenumber|scale|density|magnitude of magnetic field|magnitude of velocity|
 |----------|-----|-------|---------------------------|---------------------|

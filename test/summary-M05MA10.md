@@ -28,6 +28,19 @@ I don't personally get much out of the scatter plots at the moment besides the f
 |    1/  8 |  64 |<img src="M05MA10/test-3d-scatter-064-064-064-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-3d-scatter-064-064-064-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-3d-scatter-064-064-064-vel_Turb_hdf5_plt_cnt_0050.png">|
 |    1/  4 | 128 |<img src="M05MA10/test-3d-scatter-128-128-128-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-3d-scatter-128-128-128-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-3d-scatter-128-128-128-vel_Turb_hdf5_plt_cnt_0050.png">|
 
+Here are the same diagrams but for just midplane (`z=0.5`)
+
+|wavenumber|scale|density|magnitude of magnetic field|magnitude of velocity|
+|----------|-----|-------|---------------------------|---------------------|
+|    1/512 |   1 |<img src="M05MA10/test-2d-scatter-001-001-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-2d-scatter-001-001-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-2d-scatter-001-001-vel_Turb_hdf5_plt_cnt_0050.png">|
+|    1/256 |   2 |<img src="M05MA10/test-2d-scatter-002-002-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-2d-scatter-002-002-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-2d-scatter-002-002-vel_Turb_hdf5_plt_cnt_0050.png">|
+|    1/128 |   4 |<img src="M05MA10/test-2d-scatter-004-004-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-2d-scatter-004-004-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-2d-scatter-004-004-vel_Turb_hdf5_plt_cnt_0050.png">|
+|    1/ 64 |   8 |<img src="M05MA10/test-2d-scatter-008-008-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-2d-scatter-008-008-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-2d-scatter-008-008-vel_Turb_hdf5_plt_cnt_0050.png">|
+|    1/ 32 |  16 |<img src="M05MA10/test-2d-scatter-016-016-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-2d-scatter-016-016-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-2d-scatter-016-016-vel_Turb_hdf5_plt_cnt_0050.png">|
+|    1/ 16 |  32 |<img src="M05MA10/test-2d-scatter-032-032-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-2d-scatter-032-032-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-2d-scatter-032-032-vel_Turb_hdf5_plt_cnt_0050.png">|
+|    1/  8 |  64 |<img src="M05MA10/test-2d-scatter-064-064-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-2d-scatter-064-064-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-2d-scatter-064-064-vel_Turb_hdf5_plt_cnt_0050.png">|
+|    1/  4 | 128 |<img src="M05MA10/test-2d-scatter-128-128-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-2d-scatter-128-128-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-2d-scatter-128-128-vel_Turb_hdf5_plt_cnt_0050.png">|
+
 ---
 
 **TO DO**

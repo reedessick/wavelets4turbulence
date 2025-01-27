@@ -59,11 +59,12 @@ The following seem like good ideas
     - also compute the following for vectors (and treat them as additional vectors)
       * curl? <-- look for evidence of vorticity?
       * div?
-  * look at whether the same points are identified (separately with either large approx or detail coefficients) across multiple scales
-    - compare the spectra at locations that are consistently identified with the spectra at randomly selected positions
+  * diagnose whether the apparent "return to a normal distribution" is meaningful (with a KS test?) or whether it is just due to the lack of pixels at large scales (so we can't probe the tails of the distribution as well)
   * look at "normal" spectrograms (k vs x) for 1D lines through the grid
     - consider ever possible line? (expensive...)
     - just pick one (or a few) as representative?
+  * look at whether the same points are identified (separately with either large approx or detail coefficients) across multiple scales
+    - compare the spectra at locations that are consistently identified with the spectra at randomly selected positions
   * look at spectrograms at a fixed position
     - at each scale, plot the wavelet coefficients for all pixels within the original pixel?
     - expect them to be scattered, but perhaps there is something we can say about the characteristics of their distribution? a predictable scaling of their variance with the scale?

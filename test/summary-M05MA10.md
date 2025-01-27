@@ -60,6 +60,7 @@ The following seem like good ideas
       * curl? <-- look for evidence of vorticity?
       * div?
   * diagnose whether the apparent "return to a normal distribution" is meaningful (with a KS test?) or whether it is just due to the lack of pixels at large scales (so we can't probe the tails of the distribution as well)
+    - compare to a Cauchy distribution? Is that a better fit for long tails? If so, does that mean something physically?
   * look at "normal" spectrograms (k vs x) for 1D lines through the grid
     - consider ever possible line? (expensive...)
     - just pick one (or a few) as representative?

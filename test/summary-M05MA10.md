@@ -60,6 +60,7 @@ The following seem like good ideas
       * curl? <-- look for evidence of vorticity?
       * div?
   * look at whether the same points are identified (separately with either large approx or detail coefficients) across multiple scales
+    - compare the spectra at locations that are consistently identified with the spectra at randomly selected positions
   * look at "normal" spectrograms (k vs x) for 1D lines through the grid
     - consider ever possible line? (expensive...)
     - just pick one (or a few) as representative?

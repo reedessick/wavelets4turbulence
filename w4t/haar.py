@@ -222,6 +222,14 @@ class HaarArray(object):
 
     #--------------------
 
+    def denoise(self, thr=None):
+        """perform basic "wavelet denoising" by taking the full wavelet decomposition and zeroing all detail coefficients with \
+with absolute values less than "thr". If thr=None, automatically select this based on a recursive approach.
+        """
+        raise NotImplementedError
+
+    #--------------------
+
     def coefficients(self, levels):
         """extract and return the coefficients corresponding to decomposition at levels
         """

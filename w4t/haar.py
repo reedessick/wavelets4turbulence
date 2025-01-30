@@ -220,15 +220,97 @@ class HaarArray(object):
             for axis in range(self.ndim):
                 self.idecompose(axis=axis)
 
+    #---
+
+    def set_levels(self, levels):
+        """haar and/or ihaar until we reach the target decomposition specified by levels
+        """
+        assert len(levels) == self.ndim, 'bad shape for levels'
+        for axis in range(self.ndim):
+            if self.levels[axis] > levels[axis]: # need to ihaar
+                while self.levels[axis] > levels[axis]:
+                    self.ihaar(axis=axis)
+
+            elif self.levels[axis] < levels[axis]: # need to haar
+                while self.levels[axis] < levels[axis]:
+                    self.haar(axis=axis)
+
+            else: # levels already match
+                pass
+
     #--------------------
 
     def denoise(self, thr=None):
         """perform basic "wavelet denoising" by taking the full wavelet decomposition and zeroing all detail coefficients with \
-with absolute values less than "thr". If thr=None, automatically select this based on a recursive approach.
+with absolute values less than "thr". If thr=None, automatically selects an appropriate threshold.
 
         WARNING: this function modifies data in-place. Data will be lost for the coefficients that are set to zero.
         """
-        raise NotImplementedError
+        levels = copy.copy(self.levels) # make a copy so we can remember the level of decomposition
+
+        if thr is None:
+            thr = self._automatic_denoise_thr() # note, this will change the decomposition level
+        else:
+            self.decompose() # completely decompose
+
+        self.array[np.abs(self.array) < thr] = 0.0 # apply threshold
+
+        # work back to the level of decomposition we were at initially
+        self.set_levels(levels)
+
+    #---
+
+    def _automatic_denoise_thr(self, max_iter=1000):
+        """compute the appropriate denoising threshold based on Farge & Schneider (2015) arXiv:1508.05650v1
+        """
+        # grab all the detail coefficients at each level of decomposition
+
+        self.idecompose()
+
+        details = []
+        while self.active[axis] > 1: # WARNING! implicitly assumes all axes have equal length
+            details.append(self.detail.flatten()) # grab the details
+            self.haar() # decompose
+        details.append(self.haar)
+
+        details = np.concatenate(tuple(details))
+
+        #---
+
+        N = np.prod(self.shape) # the number of points in the grid
+        logN = np.log(N)
+
+        #---
+
+        # initialize loop
+        Nnoise = N # initial guess for how many coeffs are noise
+        thr = self._var2thr(np.var(details), logN) # threshold for declaring a coeff noise
+        sel = np.abs(details) < thr # the identified coeffs
+        Nsel = np.sum(sel) # number of identified coeffs
+
+        # iterate until we converge on a number of selected pixels
+        i = 0
+        while (Nnoise != Nsel):
+            if i >= max_iter: # increment counter to break infinite loop
+                raise RuntimeError('number of identified coefficients did not converge within %d iterations' % max_iter)
+            i += 1
+
+            # update estiamtes
+            Nnoise = Nsel
+            thr = self._var2thr(np.var(details[sel]), logN)
+            sel = np.abs(details) < thr
+            Nsel = np.sum(sel)
+
+        #---
+
+        # return thr
+        return thr
+
+    @staticmethod
+    def _var2thr(var, logN):
+        """optimal denoising threshold given a estimate of the wavelet variance (Eq 30 of arXiv:1508.05650v1)
+        """
+        return (2 * var * logN)**0.5
 
     #--------------------
 

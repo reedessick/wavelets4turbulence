@@ -266,12 +266,10 @@ with absolute values less than "thr". If thr=None, automatically selects an appr
         # grab all the detail coefficients at each level of decomposition
 
         self.idecompose()
-
         details = []
-        while self.active[axis] > 1: # WARNING! implicitly assumes all axes have equal length
-            details.append(self.detail.flatten()) # grab the details
+        while self.active[0] > 1: # WARNING! implicitly assumes all axes have equal length
             self.haar() # decompose
-        details.append(self.haar)
+            details.append(self.detail.flatten()) # grab the details
 
         details = np.concatenate(tuple(details))
 

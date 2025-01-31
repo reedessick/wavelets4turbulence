@@ -378,9 +378,6 @@ for field in args.field:
             fig = plt.figure(figsize=FIGSIZE)
 
             if len(a):    
-#                ax = fig.add_subplot(2, 2, 1, projection='3d')
-#                AX1 = fig.add_subplot(4, 2, 5)
-#                AX2 = fig.add_subplot(4, 2, 7)
                 ax = fig.add_subplot(3, 2, 1, projection='3d')
                 AX1 = fig.add_subplot(3, 2, 3)
                 AX2 = fig.add_subplot(3, 2, 5)
@@ -390,9 +387,9 @@ for field in args.field:
                 ax.set_title('approx')
 
             if len(d):
-                ax = fig.add_subplot(2, 2, 2, projection='3d')
-                AX1 = fig.add_subplot(4, 2, 6)
-                AX2 = fig.add_subplot(4, 2, 8)
+                ax = fig.add_subplot(3, 2, 2, projection='3d')
+                AX1 = fig.add_subplot(3, 2, 4)
+                AX2 = fig.add_subplot(3, 2, 6)
 
                 scatter3d(fig, ax, AX1, AX2, xs, ys, zs, d, quantile=args.scatter_quantile, right=True, gaussian=True)
 
@@ -441,18 +438,18 @@ for field in args.field:
             fig = plt.figure(figsize=FIGSIZE)
 
             if np.prod(a.shape):
-                ax = fig.add_subplot(2, 2, 1)
-                AX1 = fig.add_subplot(4, 2, 5)
-                AX2 = fig.add_subplot(4, 2, 7)
+                ax = fig.add_subplot(3, 2, 1)
+                AX1 = fig.add_subplot(3, 2, 3)
+                AX2 = fig.add_subplot(3, 2, 5)
 
                 scatter2d(fig, ax, AX1, AX2, xs, ys, a, quantile=args.scatter_quantile, cmap=APPROX_CMAP, gaussian=True)
 
                 ax.set_title('approx')
 
             if np.prod(d.shape):
-                ax = fig.add_subplot(2, 2, 2)
-                AX1 = fig.add_subplot(4, 2, 6)
-                AX2 = fig.add_subplot(4, 2, 8)
+                ax = fig.add_subplot(3, 2, 2)
+                AX1 = fig.add_subplot(3, 2, 4)
+                AX2 = fig.add_subplot(3, 2, 6)
 
                 scatter2d(fig, ax, AX1, AX2, xs, ys, d, quantile=args.scatter_quantile, cmap=DETAIL_CMAP, right=True, gaussian=True)
 

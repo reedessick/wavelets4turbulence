@@ -147,27 +147,26 @@ utils.seed(args.seed, verbose=args.verbose)
 
 #-------------------------------------------------
 
-data = utils.load(
-    args.field,
-    path=args.path,
-    num_grid=args.num_grid,
-    max_edgelength=args.max_edgelength,
-    verbose=args.verbose,
-    Verbose=args.Verbose,
-)
-
-#-------------------------------------------------
-
 for field in args.field:
 
     if args.verbose:
         print('examining field: '+field)
 
-    if (data[field].shape[0] > 1) and args.Verbose:
+    data = utils.load(
+        [field],
+        path=args.path,
+        num_grid=args.num_grid,
+        max_edgelength=args.max_edgelength,
+        verbose=args.verbose,
+        Verbose=args.Verbose,
+    )[field]
+
+    if (data.shape[0] > 1) and args.Verbose:
         print('WARNING: only examining index 0 of field')
 
     # basic instantiation
-    ha = haar.HaarArray(data[field][0])
+    ha = haar.HaarArray(data[0])
+    del data
 
     if args.Verbose:
         print(ha.array)

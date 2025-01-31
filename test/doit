@@ -32,6 +32,21 @@ echo \
      --verbose \
 || exit 1
 
+#echo \
+/usr/bin/time -v \
+./plot \
+     --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
+     --denoise \
+     --output-dir M05MA10 \
+     --tag Turb_hdf5_plt_cnt_0050-denoise \
+     --field dens \
+     --field mag \
+     --field vel \
+     --max-edgelength 512 \
+     --scatter-quantile 0.99 \
+     --verbose \
+|| exit 1
+
 #---
 
 # examine scaling with grid size for different numbers of dimensions

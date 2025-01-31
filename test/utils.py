@@ -71,7 +71,8 @@ def load(fields, path=None, num_grid=DEFAULT_NUM_GRID, num_dim=DEFAULT_NUM_DIM, 
     #---
 
     if verbose:
-        print('    '+field, data[field].shape) # expect [num_dim, num_x, num_y, num_z]
+        for field in fields:
+            print('    '+field, data[field].shape) # expect [num_dim, num_x, num_y, num_z]
 
     #---
 

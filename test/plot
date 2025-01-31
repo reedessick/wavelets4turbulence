@@ -248,6 +248,11 @@ parser.add_argument('--seed', default=None, type=int)
 
 #---
 
+parser.add_argument('--denoise', default=False, action='store_true',
+    help='de-noise the wavelet decomposition before plotting')
+
+#---
+
 parser.add_argument('-f', '--field', required=True, default=[], type=str, action='append',
     help='load and manipulate this field. Can be repeated. eg, --field vel --field mag --field dens')
 
@@ -299,14 +304,32 @@ for field in args.field:
     if args.verbose:
         print('examining field: '+field)
 
-    if (data[field].shape[0] > 1) and args.verbose:
+    data = utils.load(
+        [field],
+        path=args.path,
+        num_grid=args.num_grid,
+        max_edgelength=args.max_edgelength,
+        verbose=args.verbose,
+        Verbose=args.Verbose,
+    )[field]
+
+    if (data.shape[0] > 1) and args.verbose:
         print('\n<<< WARNING >>> examining the absolute value of multi-dimensional field\n')
-        datum = np.sum(data[field]**2, axis=0)**0.5 # quadrature sum of vector components
+        data = np.sum(data**2, axis=0)**0.5 # quadrature sum of vector components
     else:
-        datum = data[field][0]
+        data = data[0]
 
     # basic instantiation
-    ha = haar.HaarArray(datum)
+    ha = haar.HaarArray(data)
+    del data
+
+    if args.denoise:
+        if args.verbose:
+            print('    denoising data')
+        thr = ha.denoise() # denoise
+        ha.idecompose() # got back to the starting point
+        if args.verbose:
+            print('        retaining only detail coeffs larger than thr=%.6f' % thr)
 
     if args.Verbose:
         print(ha.array)
@@ -490,3 +513,6 @@ for field in args.field:
 
         # decompose
         ha2d.haar()
+
+    del ha
+    del ha2d

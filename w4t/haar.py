@@ -258,6 +258,9 @@ with absolute values less than "thr". If thr=None, automatically selects an appr
         # work back to the level of decomposition we were at initially
         self.set_levels(levels)
 
+        # return the threshold used
+        return thr
+
     #---
 
     def _automatic_denoise_thr(self, max_iter=1000):

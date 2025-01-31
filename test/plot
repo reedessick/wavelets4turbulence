@@ -364,7 +364,7 @@ for field in args.field:
                 AX1 = fig.add_subplot(4, 2, 5)
                 AX2 = fig.add_subplot(4, 2, 7)
 
-                scatter3d(fig, ax, AX1, AX2, xs, ys, zs, a, quantile=args.scatter_quantile)
+                scatter3d(fig, ax, AX1, AX2, xs, ys, zs, a, quantile=args.scatter_quantile, gaussian=True)
 
                 ax.set_title('approx')
 
@@ -424,7 +424,7 @@ for field in args.field:
                 AX1 = fig.add_subplot(4, 2, 5)
                 AX2 = fig.add_subplot(4, 2, 7)
 
-                scatter2d(fig, ax, AX1, AX2, xs, ys, a, quantile=args.scatter_quantile, cmap=APPROX_CMAP)
+                scatter2d(fig, ax, AX1, AX2, xs, ys, a, quantile=args.scatter_quantile, cmap=APPROX_CMAP, gaussian=True)
 
                 ax.set_title('approx')
 

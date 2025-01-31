@@ -325,11 +325,11 @@ for field in args.field:
 
     if args.denoise:
         if args.verbose:
-            print('    denoising data')
+            print('denoising data')
         thr = ha.denoise() # denoise
         ha.idecompose() # got back to the starting point
         if args.verbose:
-            print('        retaining only detail coeffs larger than thr=%.6f' % thr)
+            print('    retaining only detail coeffs larger than thr=%.6f' % thr)
 
     if args.Verbose:
         print(ha.array)

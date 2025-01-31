@@ -24,6 +24,11 @@ import utils # local!
 
 #-------------------------------------------------
 
+#FIGSIZE = (5,10)
+FIGSIZE = None # let this be the default
+
+#---
+
 DEFAULT_SCATTER_QUANTILE = 0.9
 
 #---
@@ -59,7 +64,7 @@ subplots_adjust = dict(
     left=0.10,
     right=0.90,
     top=0.90,
-    bottom=0.10,
+    bottom=0.05,
     hspace=0.05,
     wspace=0.05,
 )
@@ -85,16 +90,19 @@ def sel_by_quantile(data, quantile=None):
 
 #------------------------
 
+MIN_BINS = 10
+MAX_BINS = 500
+
 def _hist(AX1, AX2, data, vals=[], right=False, gaussian=False):
     """a helper function to make cumulative and differential histograms
     """
     # cumulative
-    AX1.hist(data.flatten(), bins=min(1000, np.prod(data.shape)), histtype='step', density=True, cumulative=-1)
+    AX1.hist(data.flatten(), bins=min(MAX_BINS, np.prod(data.shape)), histtype='step', density=True, cumulative=-1, alpha=0.5, linewidth=1.0)
     AX1.set_ylim(ymin=0, ymax=1)
 
     # differential
-    nbins = min(100, max(10, int(0.5*np.prod(data.shape)**0.5)))
-    AX2.hist(data.flatten(), bins=nbins, histtype='step', density=True, log=True)
+    nbins = min(MAX_BINS, max(MIN_BINS, int(0.5*np.prod(data.shape)**0.5)))
+    AX2.hist(data.flatten(), bins=nbins, histtype='step', density=True, log=True, alpha=0.5, linewidth=1.0)
 
     # decorate
     xlim1 = AX1.get_xlim()
@@ -117,22 +125,28 @@ def _hist(AX1, AX2, data, vals=[], right=False, gaussian=False):
         x = np.linspace(*xlim, 101)
 
         # add to cumulative historgram
+        y = norm.sf(x, loc=m, scale=s)
         AX1.fill_between(
             x,
             np.ones_like(x)*ylim1[0],
-            norm.sf(x, loc=m, scale=s),
-            color='grey',
+            y,
+            edgecolor='none',
+            facecolor='grey',
             alpha=0.25,
         )
+        AX1.plot(x, y, color='k', alpha=0.25, linestyle='dashed', linewidth=1.0)
 
         # add to differential histogram
+        y = norm.pdf(x, loc=m, scale=s)
         AX2.fill_between(
             x,
             np.ones_like(x)*ylim2[0],
-            norm.pdf(x, loc=m, scale=s),
-            color='grey',
+            y,
+            edgecolor='none',
+            facecolor='grey',
             alpha=0.25,
         )
+        AX2.plot(x, y, color='k', alpha=0.25, linestyle='dashed', linewidth=1.0)
 
     AX1.text(xlim[1] , ylim1[1], '%d points' % np.prod(data.shape), ha='right', va='top')
 
@@ -161,6 +175,7 @@ def scatter2d(fig, ax, AX1, AX2, xs, ys, data, quantile=DEFAULT_SCATTER_QUANTILE
             alpha=0.25,
             vmin=-1,
             vmax=+1,
+            s=1.0, # small dots
             marker='.',
             cmap=cmap,
         ),
@@ -205,6 +220,7 @@ def scatter3d(fig, ax, AX1, AX2, xs, ys, zs, data, quantile=DEFAULT_SCATTER_QUAN
             alpha=0.25,
             vmin=-1,
             vmax=+1,
+            s=1.0, # small dots
             marker='.',
             cmap=cmap,
         ),
@@ -273,6 +289,8 @@ parser.add_argument('-V', '--Verbose', default=False, action='store_true')
 
 parser.add_argument('-o', '--output-dir', default='.', type=str)
 parser.add_argument('-t', '--tag', default='', type=str)
+
+parser.add_argument('--dpi', default=500, type=int)
 
 #---
 
@@ -357,12 +375,15 @@ for field in args.field:
 
             # make 3D scatter plot
 
-            fig = plt.figure()
+            fig = plt.figure(figsize=FIGSIZE)
 
             if len(a):    
-                ax = fig.add_subplot(2, 2, 1, projection='3d')
-                AX1 = fig.add_subplot(4, 2, 5)
-                AX2 = fig.add_subplot(4, 2, 7)
+#                ax = fig.add_subplot(2, 2, 1, projection='3d')
+#                AX1 = fig.add_subplot(4, 2, 5)
+#                AX2 = fig.add_subplot(4, 2, 7)
+                ax = fig.add_subplot(3, 2, 1, projection='3d')
+                AX1 = fig.add_subplot(3, 2, 3)
+                AX2 = fig.add_subplot(3, 2, 5)
 
                 scatter3d(fig, ax, AX1, AX2, xs, ys, zs, a, quantile=args.scatter_quantile, gaussian=True)
 
@@ -391,7 +412,7 @@ for field in args.field:
 
             if args.verbose:
                 print('    saving: '+figname)
-            fig.savefig(figname)
+            fig.savefig(figname, dpi=args.dpi)
             plt.close(fig)
 
             #---
@@ -417,7 +438,7 @@ for field in args.field:
 
             #---
 
-            fig = plt.figure()
+            fig = plt.figure(figsize=FIGSIZE)
 
             if np.prod(a.shape):
                 ax = fig.add_subplot(2, 2, 1)
@@ -451,7 +472,7 @@ for field in args.field:
 
             if args.verbose:
                 print('    saving: '+figname)
-            fig.savefig(figname)
+            fig.savefig(figname, dpi=args.dpi)
             plt.close(fig)
 
             #---

@@ -256,6 +256,9 @@ parser.add_argument('--denoise', default=False, action='store_true',
 parser.add_argument('-f', '--field', required=True, default=[], type=str, action='append',
     help='load and manipulate this field. Can be repeated. eg, --field vel --field mag --field dens')
 
+parser.add_argument('--components', default=False, action='store_true',
+    help='if supplied, analyze the components instead of the magnitude of a vector')
+
 parser.add_argument('--max-edgelength', default=None, type=int,
     help='if specified, limit the size of each dimension to be at most this many samples. Although not required, \
 it is a good idea to make this a power of 2 (for the Haar transform to work well)')
@@ -288,17 +291,6 @@ utils.seed(args.seed, verbose=args.verbose)
 
 #-------------------------------------------------
 
-data = utils.load(
-    args.field,
-    path=args.path,
-    num_grid=args.num_grid,
-    max_edgelength=args.max_edgelength,
-    verbose=args.verbose,
-    Verbose=args.Verbose,
-)
-
-#-------------------------------------------------
-
 for field in args.field:
 
     if args.verbose:
@@ -313,206 +305,161 @@ for field in args.field:
         Verbose=args.Verbose,
     )[field]
 
-    if (data.shape[0] > 1) and args.verbose:
-        print('\n<<< WARNING >>> examining the absolute value of multi-dimensional field\n')
-        data = np.sum(data**2, axis=0)**0.5 # quadrature sum of vector components
-    else:
-        data = data[0]
-
-    # basic instantiation
-    ha = haar.HaarArray(data)
-    del data
-
-    if args.denoise:
+    if (len(data) > 1) and (not args.components):
         if args.verbose:
-            print('denoising data')
-        thr = ha.denoise() # denoise
-        ha.idecompose() # got back to the starting point
+            print('\n<<< WARNING >>> examining the absolute value of multi-dimensional field\n')
+        data = [np.sum(data**2, axis=0)**0.5] # quadrature sum of vector components
+
+    for ind in range(len(data)): # iterate over separate components
+
+        if (len(data) > 1) and args.verbose:
+            print('examining %s[%d]' % (field, ind))
+
+        # basic instantiation
+        ha = haar.HaarArray(data[ind])
+
+        if args.denoise:
+            if args.verbose:
+                print('denoising data')
+            thr = ha.denoise() # denoise
+            ha.idecompose() # got back to the starting point
+            if args.verbose:
+                print('    retaining only detail coeffs larger than thr=%.6f' % thr)
+
+        if args.Verbose:
+            print(ha.array)
+
+            print('    ndim', ha.ndim)
+            print('    shape', ha.shape)
+
+            print('    active', ha.active)
+            print('    levels', ha.levels)
+            print('    scales', ha.scales)
+            print('    wavenumbers', ha.wavenumbers)
+
+        #--------------------
+
+        # make some plots
+
         if args.verbose:
-            print('    retaining only detail coeffs larger than thr=%.6f' % thr)
+            print('plotting 3D distributions')
 
-    if args.Verbose:
-        print(ha.array)
+        ha.idecompose()
 
-        print('    ndim', ha.ndim)
-        print('    shape', ha.shape)
+        while ha.active[0] > 1: # keep decomposing
 
-        print('    active', ha.active)
-        print('    levels', ha.levels)
-        print('    scales', ha.scales)
-        print('    wavenumbers', ha.wavenumbers)
+            a = ha.approx # grab coefficients
+            d = ha.detail
 
-    #--------------------
-
-    # make some plots
-
-    if args.verbose:
-        print('plotting 3D distributions')
-
-    ha.idecompose()
-
-    while ha.active[0] > 1: # keep decomposing
-
-        a = ha.approx # grab coefficients
-        d = ha.detail
-
-        xs, ys, zs = meshgrid(ha.active[0], ndim=3)
+            xs, ys, zs = meshgrid(ha.active[0], ndim=3)
     
-        #---
+            #---
 
-        # make 3D scatter plot
+            # make 3D scatter plot
 
-        fig = plt.figure()
+            fig = plt.figure()
 
-        if len(a):    
-            ax = fig.add_subplot(2, 2, 1, projection='3d')
-            AX1 = fig.add_subplot(4, 2, 5)
-            AX2 = fig.add_subplot(4, 2, 7)
+            if len(a):    
+                ax = fig.add_subplot(2, 2, 1, projection='3d')
+                AX1 = fig.add_subplot(4, 2, 5)
+                AX2 = fig.add_subplot(4, 2, 7)
 
-            scatter3d(fig, ax, AX1, AX2, xs, ys, zs, a, quantile=args.scatter_quantile)
+                scatter3d(fig, ax, AX1, AX2, xs, ys, zs, a, quantile=args.scatter_quantile)
 
-            ax.set_title('approx')
+                ax.set_title('approx')
 
-        if len(d):
-            ax = fig.add_subplot(2, 2, 2, projection='3d')
-            AX1 = fig.add_subplot(4, 2, 6)
-            AX2 = fig.add_subplot(4, 2, 8)
+            if len(d):
+                ax = fig.add_subplot(2, 2, 2, projection='3d')
+                AX1 = fig.add_subplot(4, 2, 6)
+                AX2 = fig.add_subplot(4, 2, 8)
 
-            scatter3d(fig, ax, AX1, AX2, xs, ys, zs, d, quantile=args.scatter_quantile, right=True, gaussian=True)
+                scatter3d(fig, ax, AX1, AX2, xs, ys, zs, d, quantile=args.scatter_quantile, right=True, gaussian=True)
 
-            ax.set_title('detail')
+                ax.set_title('detail')
 
-        #---
+            #---
 
-        scales = '-'.join('%03d'%_ for _ in ha.scales)
-        fig.suptitle('scales : '+scales)
+            scales = '-'.join('%03d'%_ for _ in ha.scales)
+            fig.suptitle('scales : '+scales)
 
-        #---
+            #---
 
-        figname = os.path.join(args.output_dir, 'test-3d-scatter-%s-%s%s.png' % (scales, field, args.tag))
+            if len(data) > 1:
+                figname = os.path.join(args.output_dir, 'test-3d-scatter-%s-%s-%d%s.png' % (scales, field, ind, args.tag))
+            else:
+                figname = os.path.join(args.output_dir, 'test-3d-scatter-%s-%s%s.png' % (scales, field, args.tag))
+
+            if args.verbose:
+                print('    saving: '+figname)
+            fig.savefig(figname)
+            plt.close(fig)
+
+            #---
+
+            ha.haar() # decompose
+
+        #--------------------
+
         if args.verbose:
-            print('    saving: '+figname)
-        fig.savefig(figname)
-        plt.close(fig)
+            print('plotting 2D distributions along the midplane')
 
-        #---
+        ha.idecompose()
 
-        ha.haar() # decompose
+        # make an object that only knows about the mid-plane
+        ha2d = haar.HaarArray(ha.array[:,:,ha.shape[2]//2])
 
-    #--------------------
+        while ha2d.active[0] > 1:
 
-    if args.verbose:
-        print('plotting 2D distributions along the midplane')
+            a = ha2d.approx # grab coefficients
+            d = ha2d.detail
 
-    ha.idecompose()
+            xs, ys = meshgrid(ha2d.active[0], ndim=2)
 
-    # make an object that only knows about the mid-plane
-    ha2d = haar.HaarArray(ha.array[:,:,ha.shape[2]//2])
+            #---
 
-    while ha2d.active[0] > 1:
+            fig = plt.figure()
 
-        a = ha2d.approx # grab coefficients
-        d = ha2d.detail
+            if np.prod(a.shape):
+                ax = fig.add_subplot(2, 2, 1)
+                AX1 = fig.add_subplot(4, 2, 5)
+                AX2 = fig.add_subplot(4, 2, 7)
 
-        xs, ys = meshgrid(ha2d.active[0], ndim=2)
+                scatter2d(fig, ax, AX1, AX2, xs, ys, a, quantile=args.scatter_quantile, cmap=APPROX_CMAP)
 
-        #---
+                ax.set_title('approx')
 
-        fig = plt.figure()
+            if np.prod(d.shape):
+                ax = fig.add_subplot(2, 2, 2)
+                AX1 = fig.add_subplot(4, 2, 6)
+                AX2 = fig.add_subplot(4, 2, 8)
 
-        if np.prod(a.shape):
-            ax = fig.add_subplot(2, 2, 1)
-            AX1 = fig.add_subplot(4, 2, 5)
-            AX2 = fig.add_subplot(4, 2, 7)
+                scatter2d(fig, ax, AX1, AX2, xs, ys, d, quantile=args.scatter_quantile, cmap=DETAIL_CMAP, right=True, gaussian=True)
 
-            scatter2d(fig, ax, AX1, AX2, xs, ys, a, quantile=args.scatter_quantile, cmap=APPROX_CMAP)
+                ax.set_title('detail')
 
-            ax.set_title('approx')
+            #---
 
-        if np.prod(d.shape):
-            ax = fig.add_subplot(2, 2, 2)
-            AX1 = fig.add_subplot(4, 2, 6)
-            AX2 = fig.add_subplot(4, 2, 8)
+            scales = '-'.join('%03d'%_ for _ in ha2d.scales)
+            fig.suptitle('scales : '+scales)
 
-            scatter2d(fig, ax, AX1, AX2, xs, ys, d, quantile=args.scatter_quantile, cmap=DETAIL_CMAP, right=True, gaussian=True)
+            #---
 
-            ax.set_title('detail')
+            if len(data) > 1:
+                figname = os.path.join(args.output_dir, 'test-2d-scatter-%s-%s-%d%s.png' % (scales, field, ind, args.tag))
+            else:
+                figname = os.path.join(args.output_dir, 'test-2d-scatter-%s-%s%s.png' % (scales, field, args.tag))
 
-        #---
+            if args.verbose:
+                print('    saving: '+figname)
+            fig.savefig(figname)
+            plt.close(fig)
 
-        scales = '-'.join('%03d'%_ for _ in ha2d.scales)
-        fig.suptitle('scales : '+scales)
+            #---
 
-        #---
+            # decompose
+            ha2d.haar()
 
-        figname = os.path.join(args.output_dir, 'test-2d-scatter-%s-%s%s.png' % (scales, field, args.tag))
-        if args.verbose:
-            print('    saving: '+figname)
-        fig.savefig(figname)
-        plt.close(fig)
+        del ha
+        del ha2d
 
-        #---
-
-        # decompose
-        ha2d.haar()
-
-    #--------------------
-
-    if args.verbose:
-        print('plotting 2D distributions after averaging along the z-axis')
-
-    ha.idecompose()
-
-    # make an object that is already averaged over the entire z-direction
-    ha.decompose(axis=2)
-    ha2d = haar.HaarArray(ha.approx[:,:,0])
-
-    while ha2d.active[0] > 1:
-
-        a = ha2d.approx # grab coefficients
-        d = ha2d.detail
-
-        xs, ys = meshgrid(ha2d.active[0], ndim=2)
-
-        #---
-
-        fig = plt.figure()
-
-        if np.prod(a.shape):
-            ax = fig.add_subplot(2, 2, 1)
-            AX1 = fig.add_subplot(4, 2, 5)
-            AX2 = fig.add_subplot(4, 2, 7)
-
-            scatter2d(fig, ax, AX1, AX2, xs, ys, a, quantile=args.scatter_quantile, cmap=APPROX_CMAP)
-
-            ax.set_title('approx')
-
-        if np.prod(d.shape):
-            ax = fig.add_subplot(2, 2, 2)
-            AX1 = fig.add_subplot(4, 2, 6)
-            AX2 = fig.add_subplot(4, 2, 8)
-
-            scatter2d(fig, ax, AX1, AX2, xs, ys, d, quantile=args.scatter_quantile, cmap=DETAIL_CMAP, right=True, gaussian=True)
-
-            ax.set_title('detail')
-
-        #---
-
-        scales = '-'.join('%03d'%_ for _ in ha2d.scales)
-        fig.suptitle('scales : '+scales)
-
-        #---
-
-        figname = os.path.join(args.output_dir, 'test-2da-scatter-%s-%s%s.png' % (scales, field, args.tag))
-        if args.verbose:
-            print('    saving: '+figname)
-        fig.savefig(figname)
-        plt.close(fig)
-
-        #---
-
-        # decompose
-        ha2d.haar()
-
-    del ha
-    del ha2d
+    del data

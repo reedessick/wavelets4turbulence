@@ -27,6 +27,8 @@ import utils # local!
 #FIGSIZE = (5,10)
 FIGSIZE = None # let this be the default
 
+SCALOGRAM_FIGSIZE = (8, 3)
+ 
 #---
 
 DEFAULT_SCATTER_QUANTILE = 0.9
@@ -69,6 +71,15 @@ subplots_adjust = dict(
     wspace=0.05,
 )
 
+scalogram_subplots_adjust = dict(
+    left=0.03,
+    right=0.92,
+    top=0.95,
+    bottom=0.15,
+    hspace=0.05,
+    wspace=0.05,
+)
+
 #-------------------------------------------------
 
 def meshgrid(ind, ndim=2):
@@ -87,6 +98,98 @@ def sel_by_quantile(data, quantile=None):
         return (np.abs(flat) > val), val
     else:
         return np.ones_like(data.flatten(), dtype=bool), None
+
+#------------------------
+
+def scalogram(fig, ax, AX, xs, ha1d, cmap=DEFAULT_CMAP):
+    """make a scalogram and rough power spectrum
+    """
+    if ha1d.active[0] == 1: # ignore the lowest order
+        ha1d.ihaar()
+
+    X = []
+    Y = []
+    Z = []
+    scales = []
+
+    while ha1d.scales[0] > 1:
+        scales.append(ha1d.scales[0])
+
+        xs = np.arange(ha1d.active[0], dtype=float) / ha1d.active[0]
+        xs += 0.5*(xs[1]-xs[0])
+
+        v = np.var(ha1d.detail)
+
+        # add to arrays for scatter points
+        X.append(xs)
+        Y.append(ha1d.scales[0]*np.ones(ha1d.active[0]))
+        Z.append( np.array(ha1d.detail[:]) / v**0.5 ) # make a copy to avoid the fact that ha1d will edit this in-place
+                                                      # also scale this by the std dev at that scale for visualization purposes
+
+        # add to power spectrum
+        # FIXME? make this a violin plot or something to show the full distribution
+        AX.plot(v, ha1d.scales[0], marker='o', markeredgecolor='k', markerfacecolor='none')
+
+        # work back up the decomposition levels
+        ha1d.ihaar()
+
+    # plot the scalogram as a scatter
+    X = np.concatenate(tuple(X))
+    Y = np.concatenate(tuple(Y))
+    Z = np.concatenate(tuple(Z))
+    vlim = np.max(np.abs(Z))
+
+    # FIXME? change this to tiles
+
+    cb = fig.colorbar(
+        ax.scatter(
+            X.flatten(),
+            Y.flatten(),
+            c=Z.flatten(),
+#            alpha=0.25,
+            vmin=-vlim,
+            vmax=+vlim,
+            s=Y.flatten(), # increase dot size to match scale
+            marker='.',
+            cmap=cmap,
+        ),
+        cmap=cmap,
+        ax=ax,
+        location='left',
+        shrink=1.0,
+    )
+
+    cb.set_label('scaled detail coeff')
+
+    ax.set_yscale('log')
+    ax.set_yticks(scales)
+    plt.setp(ax.get_yticklabels(), visible=False)
+
+    ax.set_xlim(xmin=0, xmax=1)
+    ax.set_xlabel('x')
+
+    ax.tick_params(**scat_tick_params)
+
+    #---
+
+    AX.set_xscale('log')
+    AX.set_xlabel('var(detail coeffs)')
+
+    AX.set_yscale('log')
+    AX.set_yticks(ax.get_yticks())
+    AX.set_yticklabels(['%d'%_ for _ in ax.get_yticks()])
+    AX.set_ylim(ax.get_ylim())
+
+    AX.yaxis.tick_right()
+    AX.yaxis.set_label_position('right')
+
+    AX.set_ylabel('scale')
+
+    AX.tick_params(**hist_tick_params)
+
+    #---
+
+    plt.subplots_adjust(**scalogram_subplots_adjust)
 
 #------------------------
 
@@ -161,26 +264,34 @@ def _hist(AX1, AX2, data, vals=[], right=False, gaussian=False):
 
 #------------------------
 
-def scatter2d(fig, ax, AX1, AX2, xs, ys, data, quantile=DEFAULT_SCATTER_QUANTILE, cmap=DEFAULT_CMAP, right=False, gaussian=False):
+def scatter1d(fig, ax, AX1, AX2, xs, data, right=False, gaussian=False):
     """generate 2D scatter-plots with histograms underneath
     """
-    cs = data / np.max(np.abs(data))
-    sel, val = sel_by_quantile(data, quantile=quantile)
+    ax.plot(xs, data, marker='.', markersize=1, linestyle='none')
 
-#    mappable = ax.scatter(
-#        xs.flatten()[sel],
-#        ys.flatten()[sel],
-#        c=cs.flatten()[sel],
-#        alpha=0.25,
-#        vmin=-1,
-#        vmax=+1,
-#        s=1.0, # small dots
-#        marker='.',
-#        cmap=cmap,
-#    )
+    ax.set_xlim(xmin=0, xmax=1)
 
+    plt.setp(ax.get_xticklabels(), visible=False)
+    if right:
+        ax.yaxis.tick_right()
+
+    ax.tick_params(**scat_tick_params)
+
+    #---
+
+    _hist(AX1, AX2, data, right=right, gaussian=gaussian)
+
+    #---
+
+    plt.subplots_adjust(**subplots_adjust)
+
+#------------------------
+
+def scatter2d(fig, ax, AX1, AX2, xs, ys, data, cmap=DEFAULT_CMAP, right=False, gaussian=False):
+    """generate 2D scatter-plots with histograms underneath
+    """
     mappable = ax.imshow(
-        cs,
+        data,
         cmap=cmap,
 #        alpha=0.25,
 #        vmin=-1,
@@ -207,7 +318,7 @@ def scatter2d(fig, ax, AX1, AX2, xs, ys, data, quantile=DEFAULT_SCATTER_QUANTILE
 
     #---
 
-    _hist(AX1, AX2, data, vals=[-val, +val], right=right, gaussian=gaussian)
+    _hist(AX1, AX2, data, right=right, gaussian=gaussian)
 
     #---
 
@@ -437,6 +548,7 @@ for field in args.field:
 
         # make an object that only knows about the mid-plane
         ha2d = haar.HaarArray(ha.array[:,:,ha.shape[2]//2])
+        del ha
 
         while ha2d.active[0] > 1:
 
@@ -454,7 +566,7 @@ for field in args.field:
                 AX1 = fig.add_subplot(3, 2, 3)
                 AX2 = fig.add_subplot(3, 2, 5)
 
-                scatter2d(fig, ax, AX1, AX2, xs, ys, a, quantile=args.scatter_quantile, cmap=APPROX_CMAP, gaussian=True)
+                scatter2d(fig, ax, AX1, AX2, xs, ys, a, cmap=APPROX_CMAP, gaussian=True)
 
                 ax.set_title('approx')
 
@@ -463,7 +575,7 @@ for field in args.field:
                 AX1 = fig.add_subplot(3, 2, 4)
                 AX2 = fig.add_subplot(3, 2, 6)
 
-                scatter2d(fig, ax, AX1, AX2, xs, ys, d, quantile=args.scatter_quantile, cmap=DETAIL_CMAP, right=True, gaussian=True)
+                scatter2d(fig, ax, AX1, AX2, xs, ys, d, cmap=DETAIL_CMAP, right=True, gaussian=True)
 
                 ax.set_title('detail')
 
@@ -489,7 +601,91 @@ for field in args.field:
             # decompose
             ha2d.haar()
 
-        del ha
+        #----------------
+
+        if args.verbose:
+            print('plotting 1D distribution along the x-axis')
+
+        ha2d.idecompose()
+
+        # make an object that only knows about the x-axis
+        ha1d = haar.HaarArray(ha2d.array[:,ha2d.shape[1]//2])
         del ha2d
+
+        # plot the equivalent of slices at different scales
+        while ha1d.active[0] > 1:
+
+            a = ha1d.approx # grab coefficients
+            d = ha1d.detail
+
+            xs = np.linspace(0, 1, ha1d.active[0])
+
+            #---
+
+            fig = plt.figure(figsize=FIGSIZE)
+
+            if np.prod(a.shape):
+                ax = fig.add_subplot(3, 2, 1)
+                AX1 = fig.add_subplot(3, 2, 3)
+                AX2 = fig.add_subplot(3, 2, 5)
+
+                scatter1d(fig, ax, AX1, AX2, xs, a, gaussian=True)
+
+                ax.set_title('approx')
+
+            if np.prod(d.shape):
+                ax = fig.add_subplot(3, 2, 2)
+                AX1 = fig.add_subplot(3, 2, 4)
+                AX2 = fig.add_subplot(3, 2, 6)
+
+                scatter1d(fig, ax, AX1, AX2, xs, d, right=True, gaussian=True)
+
+                ax.set_title('detail')
+
+            #---
+
+            scales = '-'.join('%03d'%_ for _ in ha1d.scales)
+            fig.suptitle('scales : '+scales)
+
+            #---
+
+            if len(data) > 1:
+                figname = os.path.join(args.output_dir, 'test-1d-scatter-%s-%s-%d%s.png' % (scales, field, ind, args.tag))
+            else:
+                figname = os.path.join(args.output_dir, 'test-1d-scatter-%s-%s%s.png' % (scales, field, args.tag))
+
+            if args.verbose:
+                print('    saving: '+figname)
+            fig.savefig(figname, dpi=args.dpi)
+            plt.close(fig)
+
+            #---
+
+            # decompose
+            ha1d.haar()
+
+        # plot a 1D scalogram
+        if args.verbose:
+            print('plotting scalogram along the x-axis')
+
+        fig = plt.figure(figsize=SCALOGRAM_FIGSIZE)
+
+        ax = fig.add_subplot(1, 2, 1)
+        AX = fig.add_subplot(1, 2, 2)
+
+        scalogram(fig, ax, AX, xs, ha1d)
+
+        if len(data) > 1:
+            figname = os.path.join(args.output_dir, 'test-1d-scalogram-%s-%d%s.png' % (field, ind, args.tag))
+        else:
+            figname = os.path.join(args.output_dir, 'test-1d-scalogram-%s%s.png' % (field, args.tag))
+
+        if args.verbose:
+            print('    saving: '+figname)
+        fig.savefig(figname, dpi=args.dpi)
+        plt.close(fig)
+
+        # clean up
+        del ha1d
 
     del data

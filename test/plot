@@ -167,18 +167,30 @@ def scatter2d(fig, ax, AX1, AX2, xs, ys, data, quantile=DEFAULT_SCATTER_QUANTILE
     cs = data / np.max(np.abs(data))
     sel, val = sel_by_quantile(data, quantile=quantile)
 
+#    mappable = ax.scatter(
+#        xs.flatten()[sel],
+#        ys.flatten()[sel],
+#        c=cs.flatten()[sel],
+#        alpha=0.25,
+#        vmin=-1,
+#        vmax=+1,
+#        s=1.0, # small dots
+#        marker='.',
+#        cmap=cmap,
+#    )
+
+    mappable = ax.imshow(
+        cs,
+        cmap=cmap,
+#        alpha=0.25,
+#        vmin=-1,
+#        vmax=+1,
+        origin='lower',
+        extent=(0, 1, 0, 1),
+    )   
+
     fig.colorbar(
-        ax.scatter(
-            xs.flatten()[sel],
-            ys.flatten()[sel],
-            c=cs.flatten()[sel],
-            alpha=0.25,
-            vmin=-1,
-            vmax=+1,
-            s=1.0, # small dots
-            marker='.',
-            cmap=cmap,
-        ),
+        mappable,
         cmap=cmap,
         ax=ax,
         location='right' if right else 'left',

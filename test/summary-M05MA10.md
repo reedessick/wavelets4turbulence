@@ -63,7 +63,7 @@ These can perhaps be more concisely summarized in (scaled) scalograms and associ
 
 |density|magnitude of magnetic field|magnitude of velocity|
 |-------|---------------------------|---------------------|
-|<img src="M05MA10/test-1d-scalogram-dens_Turb_hdf5_plt_cnt_0050.png">||<img src="M05MA10/test-1d-scalogram-mag_Turb_hdf5_plt_cnt_0050.png">||<img src="M05MA10/test-1d-scalogram-vel_Turb_hdf5_plt_cnt_0050.png">|
+|<img src="M05MA10/test-1d-scalogram-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-1d-scalogram-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-1d-scalogram-vel_Turb_hdf5_plt_cnt_0050.png">|
 
 ---
 

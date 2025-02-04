@@ -46,6 +46,25 @@ It may be interesting to examine the spectra of the positions selected in this w
 |    1/  8 |  64 |<img src="M05MA10/test-2d-scatter-064-064-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-2d-scatter-064-064-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-2d-scatter-064-064-vel_Turb_hdf5_plt_cnt_0050.png">|
 |    1/  4 | 128 |<img src="M05MA10/test-2d-scatter-128-128-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-2d-scatter-128-128-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-2d-scatter-128-128-vel_Turb_hdf5_plt_cnt_0050.png">|
 
+And here are some 1D distributions of a line taken from the mid-plane (along the x-axis).
+
+|wavenumber|scale|density|magnitude of magnetic field|magnitude of velocity|
+|----------|-----|-------|---------------------------|---------------------|
+|    1/512 |   1 |<img src="M05MA10/test-1d-scatter-001-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-1d-scatter-001-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-1d-scatter-001-vel_Turb_hdf5_plt_cnt_0050.png">|
+|    1/256 |   2 |<img src="M05MA10/test-1d-scatter-002-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-1d-scatter-002-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-1d-scatter-002-vel_Turb_hdf5_plt_cnt_0050.png">|
+|    1/128 |   4 |<img src="M05MA10/test-1d-scatter-004-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-1d-scatter-004-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-1d-scatter-004-vel_Turb_hdf5_plt_cnt_0050.png">|
+|    1/ 64 |   8 |<img src="M05MA10/test-1d-scatter-008-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-1d-scatter-008-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-1d-scatter-008-vel_Turb_hdf5_plt_cnt_0050.png">|
+|    1/ 32 |  16 |<img src="M05MA10/test-1d-scatter-016-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-1d-scatter-016-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-1d-scatter-016-vel_Turb_hdf5_plt_cnt_0050.png">|
+|    1/ 16 |  32 |<img src="M05MA10/test-1d-scatter-032-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-1d-scatter-032-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-1d-scatter-032-vel_Turb_hdf5_plt_cnt_0050.png">|
+|    1/  8 |  64 |<img src="M05MA10/test-1d-scatter-064-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-1d-scatter-064-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-1d-scatter-064-vel_Turb_hdf5_plt_cnt_0050.png">|
+|    1/  4 | 128 |<img src="M05MA10/test-1d-scatter-128-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-1d-scatter-128-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-1d-scatter-128-vel_Turb_hdf5_plt_cnt_0050.png">|
+
+These can perhaps be more concisely summarized in (scaled) scalograms and associated power spectra.
+
+|density|magnitude of magnetic field|magnitude of velocity|
+|-------|---------------------------|---------------------|
+|<img src="M05MA10/test-1d-scalogram-dens_Turb_hdf5_plt_cnt_0050.png">||<img src="M05MA10/test-1d-scalogram-mag_Turb_hdf5_plt_cnt_0050.png">||<img src="M05MA10/test-1d-scalogram-vel_Turb_hdf5_plt_cnt_0050.png">|
+
 ---
 
 **TO DO**

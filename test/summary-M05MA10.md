@@ -61,9 +61,11 @@ And here are some 1D distributions of a line taken from the mid-plane (along the
 
 These can perhaps be more concisely summarized in (scaled) scalograms and associated power spectra.
 
-|density|magnitude of magnetic field|magnitude of velocity|
-|-------|---------------------------|---------------------|
-|<img src="M05MA10/test-1d-scalogram-dens_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-1d-scalogram-mag_Turb_hdf5_plt_cnt_0050.png">|<img src="M05MA10/test-1d-scalogram-vel_Turb_hdf5_plt_cnt_0050.png">|
+|field|figure|
+|-----|------|
+|density|<img src="M05MA10/test-1d-scalogram-dens_Turb_hdf5_plt_cnt_0050.png">|
+|magnitude of magnetic field|<img src="M05MA10/test-1d-scalogram-mag_Turb_hdf5_plt_cnt_0050.png">|
+|magnitude of velocity|<img src="M05MA10/test-1d-scalogram-vel_Turb_hdf5_plt_cnt_0050.png">|
 
 ---
 

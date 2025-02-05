@@ -193,10 +193,10 @@ for field in args.field:
 
         # save
         if len(data) > 1:
-            fig.suptitle('%s[%d]' % (field, ind))
+            ax1.set_title('%s[%d]' % (field, ind))
             figname = os.path.join(args.output_dir, 'plot-spectrum-%s-%d%s.png' % (field, ind, args.tag))
         else:
-            fig.suptitle(field)
+            ax1.set_title(field)
             figname = os.path.join(args.output_dir, 'plot-spectrum-%s%s.png' % (field, args.tag))
 
         if args.verbose:

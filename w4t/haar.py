@@ -315,6 +315,22 @@ with absolute values less than "thr". If thr=None, automatically selects an appr
 
     #--------------------
 
+    def spectrum(self, index=[2]):
+        """compute and return the moments of the detail distributions at each scale in the decomposition
+    index should be an iterable corresponding to which moments you want to compute
+        """
+        self.idecompose() # start at the top
+        scales = []
+        moments = []
+        while self.active[0] > 1:
+            self.haar() # decompose
+            detail = self.detail
+            scales.append(self.scales)
+            moments.append([np.mean(detail**ind) for ind in index])
+        return scales, moments
+
+    #--------------------
+
     def coefficients(self, levels):
         """extract and return the coefficients corresponding to decomposition at levels
         """

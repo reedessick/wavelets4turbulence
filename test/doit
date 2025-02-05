@@ -20,6 +20,34 @@ echo \
 
 #echo \
 /usr/bin/time -v \
+./plot-spectrum \
+     --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
+     --output-dir M05MA10 \
+     --tag Turb_hdf5_plt_cnt_0050 \
+     --field dens \
+     --field mag \
+     --field vel \
+     --max-edgelength 512 \
+     --verbose \
+|| exit 1
+
+#echo \
+/usr/bin/time -v \
+./plot-spectrum \
+     --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
+     --output-dir M05MA10 \
+     --tag Turb_hdf5_plt_cnt_0050 \
+     --field mag \
+     --field vel \
+     --components \
+     --max-edgelength 512 \
+     --verbose \
+|| exit 1
+
+#---
+
+echo \
+/usr/bin/time -v \
 ./plot \
      --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
      --output-dir M05MA10 \
@@ -32,6 +60,7 @@ echo \
      --verbose \
 || exit 1
 
+echo \
 /usr/bin/time -v \
 ./plot \
      --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
@@ -47,7 +76,7 @@ echo \
 
 #---
 
-#echo \
+echo \
 /usr/bin/time -v \
 ./plot \
      --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
@@ -62,7 +91,7 @@ echo \
      --verbose \
 || exit 1
 
-#echo \
+echo \
 /usr/bin/time -v \
 ./plot \
      --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \

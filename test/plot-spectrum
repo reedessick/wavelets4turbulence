@@ -1,0 +1,211 @@
+#!/usr/bin/env python3
+
+"""a simple testing script to figure out syntax and which calculations are useful
+"""
+__author__ = "Reed Essick (reed.essick@gmail.com)"
+
+#-------------------------------------------------
+
+import os
+
+import numpy as np
+from scipy.stats import norm # normal distribution; used to diagnose intermittency
+
+import matplotlib
+matplotlib.use("Agg")
+from matplotlib import pyplot as plt
+plt.rcParams['text.usetex'] = True
+
+from argparse import ArgumentParser
+
+### non-standard libraries
+from w4t import haar
+import utils # local!
+
+#-------------------------------------------------
+
+parser = ArgumentParser()
+
+#---
+
+parser.add_argument('--path', type=str, default=None,
+    help='path to an HDF file containing simulation data')
+
+parser.add_argument('-n', '--num-grid', type=int, default=utils.DEFAULT_NUM_GRID,
+    help='the number of grid points used when constructing random data instead of reading from --path')
+
+parser.add_argument('--seed', default=None, type=int)
+
+#---
+
+parser.add_argument('--denoise', default=False, action='store_true',
+    help='de-noise the wavelet decomposition before plotting')
+
+#---
+
+parser.add_argument('-f', '--field', required=True, default=[], type=str, action='append',
+    help='load and manipulate this field. Can be repeated. eg, --field vel --field mag --field dens')
+
+parser.add_argument('--components', default=False, action='store_true',
+    help='if supplied, analyze the components instead of the magnitude of a vector')
+
+parser.add_argument('--max-edgelength', default=None, type=int,
+    help='if specified, limit the size of each dimension to be at most this many samples. Although not required, \
+it is a good idea to make this a power of 2 (for the Haar transform to work well)')
+
+#---
+
+parser.add_argument('-v', '--verbose', default=False, action='store_true')
+parser.add_argument('-V', '--Verbose', default=False, action='store_true')
+
+parser.add_argument('-o', '--output-dir', default='.', type=str)
+parser.add_argument('-t', '--tag', default='', type=str)
+
+parser.add_argument('--dpi', default=500, type=int)
+
+#---
+
+args = parser.parse_args()
+
+os.makedirs(args.output_dir, exist_ok=True)
+
+if args.tag:
+    args.tag = "_"+args.tag
+
+args.verbose |= args.Verbose
+
+#-------------------------------------------------
+
+utils.seed(args.seed, verbose=args.verbose)
+
+#-------------------------------------------------
+
+kwargs = dict(marker='o', markeredgecolor='k', markerfacecolor='none', linestyle='none')
+
+for field in args.field:
+
+    if args.verbose:
+        print('examining field: '+field)
+
+    data = utils.load(
+        [field],
+        path=args.path,
+        num_grid=args.num_grid,
+        max_edgelength=args.max_edgelength,
+        verbose=args.verbose,
+        Verbose=args.Verbose,
+    )[field]
+
+    if (len(data) > 1) and (not args.components):
+        if args.verbose:
+            print('\n<<< WARNING >>> examining the absolute value of multi-dimensional field\n')
+        data = [np.sum(data**2, axis=0)**0.5] # quadrature sum of vector components
+
+    for ind in range(len(data)): # iterate over separate components
+
+        if (len(data) > 1) and args.verbose:
+            print('examining %s[%d]' % (field, ind))
+
+        # basic instantiation
+        ha = haar.HaarArray(data[ind])
+
+        if args.denoise:
+            if args.verbose:
+                print('denoising data')
+            thr = ha.denoise() # denoise
+            ha.idecompose() # got back to the starting point
+            if args.verbose:
+                print('    retaining only detail coeffs larger than thr=%.6f' % thr)
+
+        if args.Verbose:
+            print(ha.array)
+
+            print('    ndim', ha.ndim)
+            print('    shape', ha.shape)
+
+            print('    active', ha.active)
+            print('    levels', ha.levels)
+            print('    scales', ha.scales)
+            print('    wavenumbers', ha.wavenumbers)
+
+        #--------------------
+
+        # compute spectra
+        if args.verbose:
+            print('computing moments')
+
+        scales, moments = ha.spectrum(index=[2,4])
+        scales = np.array(scales)
+        moments = np.array(moments)
+
+        # plot
+        fig = plt.figure(figsize=(4,8))
+
+        ax1 = plt.subplot(2,1,1)
+        ax2 = plt.subplot(2,1,2)
+
+        #---
+
+        ax1.plot(scales[:,0], moments[:,0], **kwargs)
+
+        ax1.set_xscale('log')
+        ax1.set_xlim(xmin=scales[-1,0]*1.1, xmax=scales[0,0]/1.1)
+        ax1.set_xticks(scales[:,0])
+        plt.setp(ax1.get_xticklabels(), visible=False)
+
+        ax1.set_yscale('log')
+        ax1.set_ylabel('$\left<d_{x,s}^2\\right>_x$')
+
+        #---
+
+        ax2.plot(scales[:,0], moments[:,1]/moments[:,0]**2, **kwargs)
+
+        ax2.set_xscale(ax1.get_xscale())
+        ax2.set_xlim(ax1.get_xlim())
+        ax2.set_xticks(ax1.get_xticks())
+        ax2.set_xticklabels(['%d'%_ for _ in ax1.get_xticks()])
+        ax2.set_xlabel('scale')
+
+        ax2.set_yscale('log')
+        ax2.set_ylabel('$\left<d_{x,s}^4\\right>_x / \left<d_{x,s}^2\\right>_x^2$')
+
+        #---
+
+        for ax in [ax1, ax2]:
+            ax.tick_params(
+                left=True,
+                right=True,
+                top=True,
+                bottom=True,
+                direction='in',
+                which='both',
+            )
+
+        plt.subplots_adjust(
+            left=0.15,
+            right=0.95,
+            bottom=0.05,
+            top=0.95,
+            hspace=0.03,
+        )
+
+        #---
+
+        # save
+        if len(data) > 1:
+            fig.suptitle('%s[%d]' % (field, ind))
+            figname = os.path.join(args.output_dir, 'plot-spectrum-%s-%d%s.png' % (field, ind, args.tag))
+        else:
+            fig.suptitle(field)
+            figname = os.path.join(args.output_dir, 'plot-spectrum-%s%s.png' % (field, args.tag))
+
+        if args.verbose:
+            print('    saving: '+figname)
+        fig.savefig(figname, dpi=args.dpi)
+        plt.close(fig)
+
+        #---
+
+        del ha
+
+    del data

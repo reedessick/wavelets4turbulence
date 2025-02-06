@@ -134,7 +134,9 @@ for field in args.field:
         if args.verbose:
             print('computing moments')
 
-        scales, mom, cov = ha.spectrum(index=[2,4])
+        scales, mom, cov = ha.spectrum(index=[2,3,4], use_abs=True)
+
+        #----------------
 
         # plot
         fig = plt.figure(figsize=(4,8))
@@ -150,7 +152,7 @@ for field in args.field:
         for snd, scale in enumerate(scales[:,0]): # plot error bars
             m = mom[snd,0]
             s = cov[snd,0,0]**0.5
-            ax1.plot([scale]*2, [max(ymin, m-s), m+s], color='k')
+            ax1.plot([scale]*2, [max(ymin, m-3*s), m+3*s], color='k')
 
         ax1.set_xscale('log')
         ax1.set_xlim(xmin=scales[-1,0]*1.1, xmax=scales[0,0]/1.1)
@@ -162,7 +164,16 @@ for field in args.field:
 
         #---
 
-        ax2.plot(scales[:,0], mom[:,1]/mom[:,0]**2, **kwargs)
+        ax2.plot(scales[:,0], mom[:,2]/mom[:,0]**2, **kwargs)
+
+        ymin = ax2.get_ylim()[0]
+        for snd, scale in enumerate(scales[:,0]): # plot error bars
+            m = mom[snd,2] / mom[snd,0]**2
+            s = (-2 * mom[snd,2] / mom[snd,0]**3)**2 * cov[snd,0,0] \
+                + (1. / mom[snd,0]**2)**2 * cov[snd,2,2] \
+                + (1./mom[snd,0]**2)*(-2*mom[snd,2]/mom[snd,0]**3) * cov[snd,0,2]
+            s = s**0.5
+            ax2.plot([scale]*2, [max(ymin, m-3*s), m+3*s], color='k')
 
         ax2.set_xscale(ax1.get_xscale())
         ax2.set_xlim(ax1.get_xlim())
@@ -208,7 +219,63 @@ for field in args.field:
         fig.savefig(figname, dpi=args.dpi)
         plt.close(fig)
 
-        #---
+        #----------------
+
+        # plot extended intermittency
+
+        fig = plt.figure()
+        ax = fig.gca()
+
+        # plot 2nd moment vs 3rd moment
+        ax.plot(mom[:,0], np.abs(mom[:,1]), **kwargs)
+
+        # plot error bars
+        for snd, scale in enumerate(scales[:,0]):
+            m = mom[snd,1]
+            s = cov[snd,1,1]**0.5
+            ax.plot([mom[snd,0]]*2, [m-s, m+s], color='k')
+
+            m = mom[snd,0]
+            s = cov[snd,0,0]**0.5
+            ax.plot([m-s, m+s], [mom[snd,1]]*2, color='k')
+
+        # decorate
+        ax.set_xscale('log')
+        ax.set_xlabel('$\left<d_{x,s}^2\\right>_x$')
+
+        ax.set_yscale('log')
+        ax.set_ylabel('$\left<|d_{x,s}|^3\\right>_x$')
+
+        ax.tick_params(
+            left=True,
+            right=True,
+            top=True,
+            bottom=True,
+            direction='in',
+            which='both',
+        )
+
+        plt.subplots_adjust(
+            left=0.10,
+            right=0.95,
+            bottom=0.10,
+            top=0.95,
+        )
+
+        # save
+        if len(data) > 1:
+            ax.set_title('%s[%d]' % (field, ind))
+            figname = os.path.join(args.output_dir, 'plot-spectrum-intermittency-%s-%d%s.png' % (field, ind, args.tag))
+        else:
+            ax.set_title(field)
+            figname = os.path.join(args.output_dir, 'plot-spectrum-intermittency-%s%s.png' % (field, args.tag))
+
+        if args.verbose:
+            print('    saving: '+figname)
+        fig.savefig(figname, dpi=args.dpi)
+        plt.close(fig)
+
+        #----------------
 
         del ha
 

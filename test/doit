@@ -20,7 +20,6 @@ echo \
 
 #echo \
 /usr/bin/time -v \
-python -i \
 ./plot-spectrum \
      --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
      --output-dir M05MA10 \
@@ -32,7 +31,7 @@ python -i \
      --verbose \
 || exit 1
 
-echo \
+#echo \
 /usr/bin/time -v \
 ./plot-spectrum \
      --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \

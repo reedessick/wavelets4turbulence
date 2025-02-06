@@ -7,6 +7,9 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 import numpy as np
 import copy
 
+### non-standard libraries
+from . import utils
+
 #-------------------------------------------------
 
 __SCALE__ = 1./2**0.5 # used to normalize sums
@@ -319,15 +322,21 @@ with absolute values less than "thr". If thr=None, automatically selects an appr
         """compute and return the moments of the detail distributions at each scale in the decomposition
     index should be an iterable corresponding to which moments you want to compute
         """
+        index = sorted(index)
+
         self.idecompose() # start at the top
+
         scales = []
         moments = []
+        covs = []
         while self.active[0] > 1:
             self.haar() # decompose
-            detail = self.detail
             scales.append(self.scales)
-            moments.append([np.mean(detail**ind) for ind in index])
-        return scales, moments
+            _, m, c = utils.moments(self.detail.flatten(), index)
+            moments.append(m)
+            covs.append(c)
+
+        return np.array(scales, dtype=float), np.array(moments, dtype=float), np.array(covs, dtype=float)
 
     #--------------------
 

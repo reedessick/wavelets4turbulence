@@ -134,9 +134,7 @@ for field in args.field:
         if args.verbose:
             print('computing moments')
 
-        scales, moments = ha.spectrum(index=[2,4])
-        scales = np.array(scales)
-        moments = np.array(moments)
+        scales, mom, cov = ha.spectrum(index=[2,4])
 
         # plot
         fig = plt.figure(figsize=(4,8))
@@ -146,7 +144,13 @@ for field in args.field:
 
         #---
 
-        ax1.plot(scales[:,0], moments[:,0], **kwargs)
+        ax1.plot(scales[:,0], mom[:,0], **kwargs)
+
+        ymin = ax1.get_ylim()[0]
+        for snd, scale in enumerate(scales[:,0]): # plot error bars
+            m = mom[snd,0]
+            s = cov[snd,0,0]**0.5
+            ax1.plot([scale]*2, [max(ymin, m-s), m+s], color='k')
 
         ax1.set_xscale('log')
         ax1.set_xlim(xmin=scales[-1,0]*1.1, xmax=scales[0,0]/1.1)
@@ -158,7 +162,7 @@ for field in args.field:
 
         #---
 
-        ax2.plot(scales[:,0], moments[:,1]/moments[:,0]**2, **kwargs)
+        ax2.plot(scales[:,0], mom[:,1]/mom[:,0]**2, **kwargs)
 
         ax2.set_xscale(ax1.get_xscale())
         ax2.set_xlim(ax1.get_xlim())

@@ -5,7 +5,7 @@
 
 #-------------------------------------------------
 
-echo \
+#echo \
 /usr/bin/time -v \
 ./test \
     --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
@@ -46,7 +46,7 @@ echo \
 
 #---
 
-echo \
+#echo \
 /usr/bin/time -v \
 ./plot \
      --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
@@ -60,7 +60,7 @@ echo \
      --verbose \
 || exit 1
 
-echo \
+#echo \
 /usr/bin/time -v \
 ./plot \
      --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
@@ -76,7 +76,7 @@ echo \
 
 #---
 
-echo \
+#echo \
 /usr/bin/time -v \
 ./plot \
      --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
@@ -91,7 +91,7 @@ echo \
      --verbose \
 || exit 1
 
-echo \
+#echo \
 /usr/bin/time -v \
 ./plot \
      --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
@@ -110,7 +110,7 @@ echo \
 
 # examine scaling with grid size for different numbers of dimensions
 
-echo \
+#echo \
 /usr/bin/time -v \
 ./test-scaling \
     2 268435456 \
@@ -121,7 +121,7 @@ echo \
     --Verbose \
 || exit 1
 
-echo \
+#echo \
 /usr/bin/time -v \
 ./test-scaling \
     2 4096 \
@@ -132,7 +132,7 @@ echo \
     --Verbose \
 || exit 1
 
-echo \
+#echo \
 /usr/bin/time -v \
 ./test-scaling \
     2 512 \

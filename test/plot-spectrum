@@ -79,7 +79,7 @@ utils.seed(args.seed, verbose=args.verbose)
 
 #-------------------------------------------------
 
-kwargs = dict(marker='o', markeredgecolor='k', markerfacecolor='none', linestyle='none')
+kwargs = dict(marker='o', markerfacecolor='none', linestyle='none', alpha=0.75)
 
 for field in args.field:
 
@@ -133,11 +133,77 @@ for field in args.field:
         if args.verbose:
             print('computing moments')
 
-        scales, mom, cov = ha.spectrum(index=[2,3,4], use_abs=True)
+        index = [2,3,4,5,6,7,8] # NOTE be careful changing this; there are magic numbers below
+        scales, mom, cov = ha.spectrum(index=index, use_abs=True)
 
         #----------------
 
-        # plot
+        # plot all the moments
+        if args.verbose:
+            print('plotting all moments')
+
+        fig = plt.figure()
+        ax = fig.gca()
+
+        for mnd in range(len(index)):
+            color = ax.plot(scales[:,0], mom[:,mnd], label='$p=%d$'%index[mnd], **kwargs)[0].get_color()
+            for snd, scale in enumerate(scales[:,0]): # plot error bars
+                s = cov[snd,mnd,mnd]
+                if s > 0:
+                    m = mom[snd,mnd]
+                    s = s**0.5
+                    ax.plot([scale]*2, [m-3*s, m+3*s], color=color)
+                elif args.Verbose:
+                    print('WARNING! unphysical variance detected for index=%d'%index[mnd])
+
+        # decorate
+        ax.legend(loc='best')
+
+        ax.set_xscale('log')
+        ax.set_xlim(xmin=scales[-1,0]*1.1, xmax=scales[0,0]/1.1)
+        ax.set_xticks(scales[:,0])
+        ax.set_xticklabels(['%d'%_ for _ in ax.get_xticks()])
+        ax.set_xlabel('scale')
+
+        ax.set_yscale('log')
+        ax.set_ylabel('$\left<|d_{x,s}|^p\\right>_x$')
+
+        ax.tick_params(
+            left=True,
+            right=True,
+            top=True,
+            bottom=True,
+            direction='in',
+            which='both',
+        )
+
+        plt.subplots_adjust(
+            left=0.10,
+            right=0.95,
+            bottom=0.10,
+            top=0.95,
+        )
+
+        # save
+        if len(data) > 1:
+            ax.set_title('%s[%d]' % (field, ind))
+            figname = os.path.join(args.output_dir, 'plot-spectrum-%s-%d%s.png' % (field, ind, args.tag))
+        else:
+            ax.set_title(field)
+            figname = os.path.join(args.output_dir, 'plot-spectrum-%s%s.png' % (field, args.tag))
+
+        if args.verbose:
+            print('    saving: '+figname)
+        fig.savefig(figname, dpi=args.dpi)
+        plt.close(fig)
+
+
+        #----------------
+
+        # plot a few special moments
+        if args.verbose:
+            print('plotting power spectrum and kurtosis')
+
         fig = plt.figure(figsize=(4,8))
 
         ax1 = plt.subplot(2,1,1)
@@ -145,13 +211,13 @@ for field in args.field:
 
         #---
 
-        ax1.plot(scales[:,0], mom[:,0], **kwargs)
+        color = ax1.plot(scales[:,0], mom[:,0], **kwargs)[0].get_color()
 
         ymin = ax1.get_ylim()[0]
         for snd, scale in enumerate(scales[:,0]): # plot error bars
             m = mom[snd,0]
             s = cov[snd,0,0]**0.5
-            ax1.plot([scale]*2, [max(ymin, m-3*s), m+3*s], color='k')
+            ax1.plot([scale]*2, [max(ymin, m-3*s), m+3*s], color=color)
 
         ax1.set_xscale('log')
         ax1.set_xlim(xmin=scales[-1,0]*1.1, xmax=scales[0,0]/1.1)
@@ -163,7 +229,7 @@ for field in args.field:
 
         #---
 
-        ax2.plot(scales[:,0], mom[:,2]/mom[:,0]**2, **kwargs)
+        color = ax2.plot(scales[:,0], mom[:,2]/mom[:,0]**2, **kwargs)[0].get_color()
 
         ymin = ax2.get_ylim()[0]
         for snd, scale in enumerate(scales[:,0]): # plot error bars
@@ -172,7 +238,7 @@ for field in args.field:
                 + (1. / mom[snd,0]**2)**2 * cov[snd,2,2] \
                 + (1./mom[snd,0]**2)*(-2*mom[snd,2]/mom[snd,0]**3) * cov[snd,0,2]
             s = s**0.5
-            ax2.plot([scale]*2, [max(ymin, m-3*s), m+3*s], color='k')
+            ax2.plot([scale]*2, [max(ymin, m-3*s), m+3*s], color=color)
 
         ax2.set_xscale(ax1.get_xscale())
         ax2.set_xlim(ax1.get_xlim())
@@ -208,10 +274,10 @@ for field in args.field:
         # save
         if len(data) > 1:
             ax1.set_title('%s[%d]' % (field, ind))
-            figname = os.path.join(args.output_dir, 'plot-spectrum-%s-%d%s.png' % (field, ind, args.tag))
+            figname = os.path.join(args.output_dir, 'plot-spectrum-scaled-%s-%d%s.png' % (field, ind, args.tag))
         else:
             ax1.set_title(field)
-            figname = os.path.join(args.output_dir, 'plot-spectrum-%s%s.png' % (field, args.tag))
+            figname = os.path.join(args.output_dir, 'plot-spectrum-scaled-%s%s.png' % (field, args.tag))
 
         if args.verbose:
             print('    saving: '+figname)
@@ -221,22 +287,24 @@ for field in args.field:
         #----------------
 
         # plot extended intermittency
+        if args.verbose:
+            print('plotting extended intermittency')
 
         fig = plt.figure()
         ax = fig.gca()
 
         # plot 2nd moment vs 3rd moment
-        ax.plot(mom[:,0], np.abs(mom[:,1]), **kwargs)
+        color = ax.plot(mom[:,0], np.abs(mom[:,1]), **kwargs)[0].get_color()
 
         # plot error bars
         for snd, scale in enumerate(scales[:,0]):
             m = mom[snd,1]
             s = cov[snd,1,1]**0.5
-            ax.plot([mom[snd,0]]*2, [m-s, m+s], color='k')
+            ax.plot([mom[snd,0]]*2, [m-s, m+s], color=color)
 
             m = mom[snd,0]
             s = cov[snd,0,0]**0.5
-            ax.plot([m-s, m+s], [mom[snd,1]]*2, color='k')
+            ax.plot([m-s, m+s], [mom[snd,1]]*2, color=color)
 
         # decorate
         ax.set_xscale('log')

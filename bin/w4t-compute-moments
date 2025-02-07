@@ -78,7 +78,6 @@ with h5py.File(args.outpath, 'w') as obj:
         data = utils.load(
             [field],
             path=args.inpath,
-            num_grid=args.num_grid,
             max_edgelength=args.max_edgelength,
             verbose=args.verbose,
             Verbose=args.Verbose,

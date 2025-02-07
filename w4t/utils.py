@@ -45,7 +45,7 @@ def load(fields, path=None, num_grid=DEFAULT_NUM_GRID, num_dim=DEFAULT_NUM_DIM, 
 
         # read the fields
         for field in fields:
-            turb.read(field, verbose=Verbose)
+            turb.read(field)
             data[field] = getattr(turb, field) # replacement for this syntax: turb.vel
 
         del turb # get rid of this object to save memory

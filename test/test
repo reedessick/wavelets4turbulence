@@ -11,8 +11,7 @@ import numpy as np
 from argparse import ArgumentParser
 
 ### non-standard libraries
-from w4t import haar
-import utils # this is local!
+from w4t import haar, utils
 
 #-------------------------------------------------
 

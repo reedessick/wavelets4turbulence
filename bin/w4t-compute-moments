@@ -58,7 +58,7 @@ parser.add_argument('-V', '--Verbose', default=False, action='store_true')
 
 args = parser.parse_args()
 
-os.makedirs(os.path.dirname(args.outpath), exist_ok=True)
+os.makedirs(os.path.dirname(os.path.abspath(args.outpath)), exist_ok=True)
 
 args.verbose |= args.Verbose
 
@@ -82,7 +82,6 @@ with h5py.File(args.outpath, 'w') as obj:
             verbose=args.verbose,
             Verbose=args.Verbose,
         )[field]
-
 
         if (len(data) > 1): # this is a vector, so compute a few different versions of it
             data = [

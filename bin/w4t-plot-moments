@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+
+"""a simple script to plot moments in various ways
+"""
+__author__ = "Reed Essick (reed.essick@gmail.com)"
+
+#-------------------------------------------------
+
+import os
+
+import numpy as np
+import h5py
+
+import matplotlib
+matplotlib.use("Agg")
+from matplotlib import pyplot as plt
+plt.rcParams['text.usetex'] = True
+
+from argparse import ArgumentParser
+
+#-------------------------------------------------
+
+tick_params = dict(
+    left=True,
+    right=True,
+    top=True,
+    bottom=True,
+    direction='in',
+    which='both',
+)
+
+subplots_adjust = dict(
+    left=0.15,
+    right=0.95,
+    bottom=0.05,
+    top=0.95,
+    hspace=0.03,
+)
+
+#-------------------------------------------------
+
+parser = ArgumentParser()
+
+#---
+
+parser.add_argument('inpath', type=str,
+        help='path to an HDF file containing moments')
+
+#---
+
+parser.add_argument('-v', '--verbose', default=False, action='store_true')
+parser.add_argument('-V', '--Verbose', default=False, action='store_true')
+
+#---
+
+parser.add_argument('--figtype', default=[], type=str, action='append')
+parser.add_argument('--dpi', default=200, type=int)
+
+parser.add_argument('-o', '--output-dir', default=None, action='store_true')
+parser.add_argument('-t', '--tag', default='', type=str)
+
+#---
+
+args = parser.parse_args()
+
+if args.output_dir is None:
+    args.output_dir = os.path.dirname(os.path.abspath(args.inpath))
+os.makedirs(args.output_dir, exist_ok=True)
+
+if args.tag:
+    args.tag = "_"+args.tag
+
+if not args.figtype:
+    args.figtype.append('png')
+
+args.verbose |= args.Verbose
+
+#-------------------------------------------------
+
+if args.verbose:
+    print('loading moments from: '+args.inpath)
+
+data = dict()
+with h5py.File(args.inpath, 'r') as obj:
+    for field in obj.keys():
+        if args.Verbose:
+            print('    loading: '+field)
+        data[field] = dict((key, obj[field][key][:]) for key in obj[field].keys())
+
+#-------------------------------------------------
+
+# plot "raw" spectra
+
+if args.verbose:
+    print('plotting raw spectra')
+
+for field in data.keys():
+    if args.Verbose:
+        print('    processing: '+field)
+
+    #---
+
+    fig = plt.figure()
+    ax = fig.gca()
+
+    #---
+
+    for ind, index in enumerate(data[field]['index']):
+        color = ax.plot(data[field]['scales'][:,0], data[field]['moments'][:,ind], alpha=0.75, marker='o', linestyle='none')[0].get_color()
+        for snd, scale in enumerate(data[field]['scales'][:,0]):
+            m = data[field]['moments'][snd,ind]
+            s = data[field]['covariance'][snd,ind,ind]**0.5
+            ax.plot([scale]*2, [m-s, m+s], color=color, alpha=0.75)
+
+    #---
+
+    ax.set_xlabel('scale')
+    ax.set_xscale('log')
+    ax.set_xlim(xmin=scales[-1,0]*1.1, xmax=scales[0,0]/1.1)
+    ax.set_xticks(scales[:,0])
+    ax.set_xticklabels(['%d'%_ for _ in ax1.get_xticks()])
+
+    ax.set_yscale('log')
+    ax.set_ylabel('$\left<\left|d_{x,s}\\right|^p\\right>_x$')
+
+    ax.tick_params(**tick_params)
+
+    plt.subplots_adjust(**subplots_adjust)
+
+    #---
+
+    for figtype in args.figtype:
+        figname = os.path.join(args.output_dir, os.path.basename(args.inpath)[:-4]+'-spectrum.'+figtype)
+        if args.verbose:
+            print('    saving: '+figname)
+        fig.savefig(figname)
+    plt.close(fig)
+
+#------------------------
+
+raise NotImplementedError('''
+plot "normalized" spectra vs scale (divide by std at each scale)
+plot higher moments against 2nd moment (instead of as a function of scale)
+''')

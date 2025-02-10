@@ -35,10 +35,9 @@ do
             --verbose \
         || exit 1
 
-	echo \
+#	echo \
         w4t-plot-moments \
 	    $OUTPATH \
-	    --output-dir $SIM \
 	    --verbose \
 	|| exit 1
 

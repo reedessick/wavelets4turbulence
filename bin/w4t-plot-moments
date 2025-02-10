@@ -98,7 +98,7 @@ for field in data.keys():
     #---
 
     scales = data[field]['scales']
-    indexes = data[field]['index']
+    indexes = data[field]['index'].astype(int)
     mom = data[field]['moments']
     cov = data[field]['covariance']
 

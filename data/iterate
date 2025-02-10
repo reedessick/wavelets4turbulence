@@ -5,8 +5,8 @@
 
 #-------------------------------------------------
 
-SIMS=$(ls M*MA* -d) # iterate over all boxes
-#SIMS="M05MA10" # for testing purposes
+#SIMS=$(ls M*MA* -d) # iterate over all boxes
+SIMS="M05MA10" # for testing purposes
 
 #-------------------------------------------------
 
@@ -33,7 +33,14 @@ do
             --field vel \
             --max-edgelength 512 \
             --verbose \
-       || exit 1
+        || exit 1
+
+	echo \
+        w4t-plot-moments \
+	    $OUTPATH \
+	    --output-dir $SIM \
+	    --verbose \
+	|| exit 1
 
     done
 

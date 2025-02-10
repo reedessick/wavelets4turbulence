@@ -36,7 +36,7 @@ do
 
 	OUTPATH="$SIM/moments-$(echo $INPATH | awk -F '/' '{print $2}').hdf"
 
-#	echo \
+	echo \
 	w4t-compute-moments \
 	    $INPATH \
 	    $OUTPATH \
@@ -48,7 +48,7 @@ do
             --verbose \
         || exit 1
 
-#	echo \
+	echo \
         w4t-plot-moments \
 	    $OUTPATH \
 	    --verbose \
@@ -62,14 +62,14 @@ do
 
     OUTPATH="$SIM/moments-Turb_hdf5_plt_cnt_average.hdf"
 
-#    echo \
+    echo \
     w4t-average-moments \
         $(ls $SIM/moments-Turb_hdf5_plt_cnt_????.hdf) \
         --outpath $OUTPATH \
 	--Verbose \
     || exit 1
 
-#    echo \
+    echo \
     w4t-plot-moments \
         $OUTPATH \
         --verbose \

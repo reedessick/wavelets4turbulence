@@ -43,7 +43,7 @@ parser = ArgumentParser()
 
 #---
 
-parser.add_argument('inpaths', type=str, nargs='+'
+parser.add_argument('inpaths', type=str, nargs='+',
     help='path to an HDF files containing moments')
 
 parser.add_argument('--outpath', type=str, required=True,
@@ -58,20 +58,78 @@ parser.add_argument('-V', '--Verbose', default=False, action='store_true')
 
 args = parser.parse_args()
 
+num_inpaths = len(args.inpaths)
+assert num_inpaths > 1, 'must supply at least 2 inpaths'
+
 os.makedirs(os.path.abspath(os.path.dirname(args.outpath)), exist_ok=True)
 
 args.verbose |= args.Verbose
 
 #-------------------------------------------------
 
-raise NotImplementedError
+# load data from first file
 
 if args.verbose:
-    print('loading moments from: '+args.inpath)
+    print('loading moments from: '+args.inpaths[0])
 
 data = dict()
-with h5py.File(args.inpath, 'r') as obj:
+with h5py.File(args.inpaths[0], 'r') as obj:
     for field in obj.keys():
         if args.Verbose:
             print('    loading: '+field)
         data[field] = dict((key, obj[field][key][:]) for key in obj[field].keys())
+
+#------------------------
+
+# load data from the rest of the files, requiring them to match the format of the first one
+
+for path in args.inpaths[1:]:
+    if args.verbose:
+        print('loading moments from: '+path)
+
+    with h5py.File(path, 'r') as obj:
+
+        # basic sanity checking
+        fields = list(obj.keys())
+        assert len(fields) == len(data.keys()), 'mismatch in keys'
+        assert all(field in data for field in fields), 'mismatch in keys'
+
+        # iterate over fields, checking format and adding data
+        for field in fields:
+            if args.Verbose:
+                print('    loading: '+field)
+
+            # check for consistent structure within the data
+            assert np.all(obj[field]['scales'][:] == data[field]['scales'])
+            assert np.all(obj[field]['index'][:] == data[field]['index'])
+
+            # add data
+            data[field]['moments'] += obj[field]['moments'][:]
+            data[field]['covariance'] += obj[field]['covariance'][:]
+
+#------------------------
+
+# normalize the averages
+if args.verbose:
+    print('normalizing')
+
+for field in data.keys():
+    data[field]['moments'] = data[field]['moments'] / num_inpaths
+    data[field]['covariance'] = data[field]['covariance'] / num_inpaths**2
+
+#------------------------
+
+# write the combined data to disk
+if args.verbose:
+    print('writing averaged moments to: '+args.outpath)
+
+with h5py.File(args.outpath, 'w') as obj:
+    for field in data.keys():
+        # write data into HDF
+        grp = obj.create_group(field)
+
+        grp.create_dataset('scales', data=data[field]['scales'])
+        grp.create_dataset('index', data=data[field]['index'])
+
+        grp.create_dataset('moments', data=data[field]['moments'])
+        grp.create_dataset('covariance', data=data[field]['covariance'])

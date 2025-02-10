@@ -27,10 +27,10 @@ parser = ArgumentParser()
 #---
 
 parser.add_argument('inpath', type=str,
-        help='path to an HDF file containing simulation data')
+    help='path to an HDF file containing simulation data')
 
 parser.add_argument('outpath', type=str,
-        help='path into which moments will be written')
+    help='path into which moments will be written')
 
 #---
 

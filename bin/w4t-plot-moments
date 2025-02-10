@@ -44,7 +44,7 @@ parser = ArgumentParser()
 #---
 
 parser.add_argument('inpath', type=str,
-        help='path to an HDF file containing moments')
+    help='path to an HDF file containing moments')
 
 #---
 

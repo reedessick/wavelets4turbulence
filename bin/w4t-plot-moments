@@ -20,7 +20,7 @@ from argparse import ArgumentParser
 
 #-------------------------------------------------
 
-tick_params = dict(
+TICK_PARAMS = dict(
     left=True,
     right=True,
     top=True,
@@ -29,11 +29,11 @@ tick_params = dict(
     which='both',
 )
 
-subplots_adjust = dict(
-    left=0.15,
+SUBPLOTS_ADJUST = dict(
+    left=0.12,
     right=0.95,
-    bottom=0.05,
-    top=0.95,
+    bottom=0.10,
+    top=0.92,
     hspace=0.03,
 )
 
@@ -89,56 +89,222 @@ with h5py.File(args.inpath, 'r') as obj:
 
 #-------------------------------------------------
 
-# plot "raw" spectra
-
-if args.verbose:
-    print('plotting raw spectra')
+# plot
 
 for field in data.keys():
-    if args.Verbose:
+    if args.verbose:
         print('    processing: '+field)
 
     #---
+
+    scales = data[field]['scales']
+    indexes = data[field]['index']
+    mom = data[field]['moments']
+    cov = data[field]['covariance']
+
+    #--------------------
+
+    if args.Verbose:
+        print('    plotting "raw" moments')
 
     fig = plt.figure()
     ax = fig.gca()
 
     #---
 
-    for ind, index in enumerate(data[field]['index']):
-        color = ax.plot(data[field]['scales'][:,0], data[field]['moments'][:,ind], alpha=0.75, marker='o', linestyle='none')[0].get_color()
-        for snd, scale in enumerate(data[field]['scales'][:,0]):
-            m = data[field]['moments'][snd,ind]
-            s = data[field]['covariance'][snd,ind,ind]**0.5
-            ax.plot([scale]*2, [m-s, m+s], color=color, alpha=0.75)
+    for ind, index in enumerate(indexes):
+        color = ax.plot(
+            scales[:,0],
+            mom[:,ind],
+            alpha=0.75,
+            marker='o',
+            markerfacecolor='none',
+            linestyle='none',
+            label='$p=%d$'%index,
+        )[0].get_color()
+
+        for snd, scale in enumerate(scales[:,0]):
+            m = mom[snd,ind]
+            s = cov[snd,ind,ind]
+            if s > 0: # only plot sensible error estimates
+                s = s**0.5
+                ax.plot([scale]*2, [m-s, m+s], color=color, alpha=0.75)
+            elif args.Verbose:
+                print('        WARNING! skipping error estimate for index=%d at scale=%d with var=%.3e' % (index, scale, s))
 
     #---
 
     ax.set_xlabel('scale')
     ax.set_xscale('log')
     ax.set_xlim(xmin=scales[-1,0]*1.1, xmax=scales[0,0]/1.1)
+    ax.set_xticks([], minor=True)
     ax.set_xticks(scales[:,0])
-    ax.set_xticklabels(['%d'%_ for _ in ax1.get_xticks()])
+    ax.set_xticklabels(['%d'%_ for _ in ax.get_xticks()])
 
     ax.set_yscale('log')
     ax.set_ylabel('$\left<\left|d_{x,s}\\right|^p\\right>_x$')
 
-    ax.tick_params(**tick_params)
-
-    plt.subplots_adjust(**subplots_adjust)
+    ax.set_title(field)
 
     #---
 
+    ax.legend(loc='upper right')
+    ax.grid(True, which='both')
+
+    ax.tick_params(**TICK_PARAMS)
+    plt.subplots_adjust(**SUBPLOTS_ADJUST)
+
+    #---
+
+    figtmp = os.path.join(
+            args.output_dir,
+            '%s_moments%s' % (os.path.basename(args.inpath)[:-4], args.tag),
+    ) + '.%s'
     for figtype in args.figtype:
-        figname = os.path.join(args.output_dir, os.path.basename(args.inpath)[:-4]+'-spectrum.'+figtype)
+        figname = figtmp % figtype
         if args.verbose:
             print('    saving: '+figname)
         fig.savefig(figname)
     plt.close(fig)
 
-#------------------------
+    #--------------------
 
-raise NotImplementedError('''
-plot "normalized" spectra vs scale (divide by std at each scale)
-plot higher moments against 2nd moment (instead of as a function of scale)
-''')
+    if 2 in indexes: # you can plot scaled moments
+        ind2 = list(indexes).index(2)
+        std = mom[:,ind2]**0.5
+
+        if args.Verbose:
+            print('    plotting "scaled" moments')
+
+        fig = plt.figure()
+        ax = fig.gca()
+
+        #---
+
+        for ind, index in enumerate(indexes):
+            color = ax.plot(
+                scales[:,0],
+                mom[:,ind] / std**index,
+                alpha=0.75,
+                marker='o',
+                markerfacecolor='none',
+                linestyle='none',
+                label='$p=%d$'%index,
+            )[0].get_color()
+
+            for snd, scale in enumerate(scales[:,0]):
+                m = mom[snd,ind] / std[snd]**index
+                s = (-(index/2)*mom[snd,ind]/std[snd]**(index+2))**2 * cov[snd,ind2,ind2] \
+                    + (1./std[snd]**index)**2 * cov[snd,ind,ind] \
+                    + (1./std[snd]**index)*(-(index/2)*mom[snd,ind]/std[snd]**(index+2)) * cov[snd,ind2,ind]
+                if s > 0: # only plot sensible error estimates
+                    s = s**0.5
+                    ax.plot([scale]*2, [m-s, m+s], color=color, alpha=0.75)
+                elif args.Verbose:
+                    print('        WARNING! skipping error estimate for index=%d at scale=%d with var=%.3e' % (index, scale, s))
+
+        #---
+
+        ax.set_xlabel('scale')
+        ax.set_xscale('log')
+        ax.set_xlim(xmin=scales[-1,0]*1.1, xmax=scales[0,0]/1.1)
+        ax.set_xticks([], minor=True)
+        ax.set_xticks(scales[:,0])
+        ax.set_xticklabels(['%d'%_ for _ in ax.get_xticks()])
+
+        ax.set_yscale('log')
+        ax.set_ylabel('$\left<\left|d_{x,s}\\right|^p\\right>_x \left/ \left<d_{x,s}^2\\right>_x^{p/2} \\right.$')
+
+        ax.set_title(field)
+
+        #---
+
+        ax.grid(True, which='both')
+        ax.legend(loc='upper left')
+
+        ax.tick_params(**TICK_PARAMS)
+        plt.subplots_adjust(**SUBPLOTS_ADJUST)
+
+        #---
+
+        figtmp = os.path.join(
+                args.output_dir,
+                '%s_scaled-moments%s' % (os.path.basename(args.inpath)[:-4], args.tag),
+        ) + '.%s'
+        for figtype in args.figtype:
+            figname = figtmp % figtype
+            if args.verbose:
+                print('    saving: '+figname)
+            fig.savefig(figname)
+        plt.close(fig)
+
+        #----------------
+
+        if args.Verbose:
+            print('    plotting higher moments as a function of second moment')
+
+        fig = plt.figure()
+        ax = fig.gca()
+
+        #---
+
+        for ind, index in enumerate(indexes):
+            color = ax.plot(
+                mom[:,ind2],
+                mom[:,ind],
+                alpha=0.75,
+                marker='o',
+                markerfacecolor='none',
+                linestyle='none',
+                label='$p=%d$'%index,
+            )[0].get_color()
+
+            for snd, scale in enumerate(scales[:,0]):
+                # plot errors for x-axis
+                m = mom[snd,ind2]
+                s = cov[snd,ind2,ind2]
+                if s > 0: # only plot sensible error estimates
+                    s = s**0.5
+                    ax.plot([m-s, m+s], [mom[snd,ind]]*2, color=color, alpha=0.75)
+                elif args.Verbose:
+                    print('        WARNING! skipping error estimate for index=2 at scale=%d with var=%.3e' % (scale, s))
+
+                # plot errors for y-axis
+                m = mom[snd,ind]
+                s = cov[snd,ind,ind]
+                if s > 0: # only plot sensible error estimates
+                    s = s**0.5
+                    ax.plot([mom[snd,ind2]]*2, [m-s, m+s], color=color, alpha=0.75)
+                elif args.Verbose:
+                    print('        WARNING! skipping error estimate for index=2 at scale=%d with var=%.3e' % (scale, s))
+
+        #---
+
+        ax.set_xscale('log')
+        ax.set_xlabel('$\left<d_{x,s}^2\\right>_x$')
+
+        ax.set_yscale('log')
+        ax.set_ylabel('$\left<\left|d_{x,s}\\right|^p\\right>_x$')
+
+        ax.set_title(field)
+
+        #---
+
+        ax.grid(True, which='both')
+        ax.legend(loc='best')
+
+        ax.tick_params(**TICK_PARAMS)
+        plt.subplots_adjust(**SUBPLOTS_ADJUST)
+
+        #---
+
+        figtmp = os.path.join(
+                args.output_dir,
+                '%s_extended-intermittency%s' % (os.path.basename(args.inpath)[:-4], args.tag),
+        ) + '.%s'
+        for figtype in args.figtype:
+            figname = figtmp % figtype
+            if args.verbose:
+                print('    saving: '+figname)
+            fig.savefig(figname)
+        plt.close(fig)

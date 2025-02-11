@@ -13,13 +13,54 @@
 
 SIMS=""
 
-SIMS="$SIMS M05MA01"
-SIMS="$SIMS M05MA05"
-SIMS="$SIMS M05MA10"
+#SIMS="$SIMS M05MA01"
+#SIMS="$SIMS M05MA05"
+#SIMS="$SIMS M05MA10"
 
-SIMS="$SIMS M10MA01"
-SIMS="$SIMS M10MA05"
-SIMS="$SIMS M10MA10"
+#SIMS="$SIMS M10MA01"
+#SIMS="$SIMS M10MA05"
+#SIMS="$SIMS M10MA10"
+
+SIMS="$SIMS M2MA01"
+SIMS="$SIMS M2MA05"
+SIMS="$SIMS M2MA10"
+
+SIMS="$SIMS M4MA01"
+SIMS="$SIMS M4MA05"
+SIMS="$SIMS M4MA10"
+
+SIMS="$SIMS M6MA01"
+SIMS="$SIMS M6MA05"
+
+#---
+
+# just do this for the rest of them too
+
+#SIMS="$SIMS M05MA1"
+#SIMS="$SIMS M05MA2"
+#SIMS="$SIMS M05MA4"
+#SIMS="$SIMS M05MA6"
+#SIMS="$SIMS M05MA8"
+
+#SIMS="$SIMS M10MA1"
+#SIMS="$SIMS M10MA2"
+#SIMS="$SIMS M10MA4"
+#SIMS="$SIMS M10MA6"
+#SIMS="$SIMS M10MA8"
+
+#SIMS="$SIMS M2MA1"
+#SIMS="$SIMS M2MA2"
+#SIMS="$SIMS M2MA4"
+#SIMS="$SIMS M2MA6"
+#SIMS="$SIMS M2MA8"
+
+#SIMS="$SIMS M4MA1"
+#SIMS="$SIMS M4MA2"
+#SIMS="$SIMS M4MA4"
+#SIMS="$SIMS M4MA6"
+#SIMS="$SIMS M4MA8"
+
+#SIMS="$SIMS M6MA1"
 
 #-------------------------------------------------
 
@@ -36,7 +77,7 @@ do
 
 	OUTPATH="$SIM/moments-$(echo $INPATH | awk -F '/' '{print $2}').hdf"
 
-	echo \
+#	echo \
 	w4t-compute-moments \
 	    $INPATH \
 	    $OUTPATH \
@@ -48,7 +89,7 @@ do
             --verbose \
         || exit 1
 
-	echo \
+#	echo \
         w4t-plot-moments \
 	    $OUTPATH \
 	    --verbose \
@@ -62,14 +103,14 @@ do
 
     OUTPATH="$SIM/moments-Turb_hdf5_plt_cnt_average.hdf"
 
-    echo \
+#    echo \
     w4t-average-moments \
         $(ls $SIM/moments-Turb_hdf5_plt_cnt_????.hdf) \
         --outpath $OUTPATH \
 	--Verbose \
     || exit 1
 
-    echo \
+#    echo \
     w4t-plot-moments \
         $OUTPATH \
         --verbose \

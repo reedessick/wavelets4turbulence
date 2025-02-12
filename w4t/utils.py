@@ -51,9 +51,13 @@ def load(fields, path=None, num_grid=DEFAULT_NUM_GRID, num_dim=DEFAULT_NUM_DIM, 
         for field in fields:
             if field == 'vort':
                 turb.read('vel')
+                if Verbose:
+                    print('computing vort as curl(vel)')
                 data['vort'] = dvf.vector_curl(turb.vel)
             elif field == 'curr':
                 turb.read('mag')
+                if Verbose:
+                    print('computing curr as curl(mag)')
                 data['curr'] = dvf.vector_curl(turb.mag)
             else:
                 turb.read(field)

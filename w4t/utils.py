@@ -10,6 +10,7 @@ from scipy.special import comb # comb(n, k) = "n choose k" = n! / ((n-k)! k!)
 ### non-standard libraries
 try:
     from PLASMAtools.read_funcs.read import Fields
+    from PLASMAtools.aux_funcs import derived_var_funcs as dv
 except ImportError:
     Fields = None
 
@@ -44,9 +45,19 @@ def load(fields, path=None, num_grid=DEFAULT_NUM_GRID, num_dim=DEFAULT_NUM_DIM, 
         turb = Fields(path, reformat=True)
 
         # read the fields
+        if ('vort' in fields) or ('curr' in fields):
+            dvf = dv.DerivedVars()
+
         for field in fields:
-            turb.read(field)
-            data[field] = getattr(turb, field) # replacement for this syntax: turb.vel
+            if field == 'vort':
+                turb.read('vel')
+                data['vort'] = dvf.vector_curl(turb.vel)
+            elif field == 'curr':
+                turb.read('mag')
+                data['curr'] = dvf.vector_curl(turb.mag)
+            else:
+                turb.read(field)
+                data[field] = getattr(turb, field) # replacement for this syntax: turb.vel
 
         del turb # get rid of this object to save memory
 
@@ -308,7 +319,15 @@ def moments(samples, index):
     for i in range(num_index):
         for j in range(i+1):
             # note, this may repeat some sums, but that shouldn't be much extra overhead
-            c[i,j] = c[j,i] = (np.sum(samples**(index[i]+index[j]))/num_samples - m[i]*m[j]) / num_samples
+            # compute second moments carefully to try to avoid overflows
+
+            ### compute the second moment
+            log_samples = (index[i]+index[j]) * np.log(samples[samples>0]) # only include non-zero samples
+            max_samples = np.max(log_samples)
+            m2 = np.exp(np.log(np.sum(np.exp(log_samples-max_samples))) + max_samples - np.log(num_samples))
+
+            # now assemble the variances
+            c[i,j] = c[j,i] = (m2 - m[i]*m[j]) / num_samples
 
     # return
     return index, m, c

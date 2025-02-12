@@ -13,13 +13,15 @@
 
 SIMS=""
 
-#SIMS="$SIMS M05MA01"
-#SIMS="$SIMS M05MA05"
-#SIMS="$SIMS M05MA10"
+SIMS="$SIMS M05MA01"
+SIMS="$SIMS M05MA05"
+SIMS="$SIMS M05MA10"
 
-#SIMS="$SIMS M10MA01"
-#SIMS="$SIMS M10MA05"
-#SIMS="$SIMS M10MA10"
+SIMS="$SIMS M10MA01"
+SIMS="$SIMS M10MA05"
+SIMS="$SIMS M10MA10"
+
+#---
 
 SIMS="$SIMS M2MA01"
 SIMS="$SIMS M2MA05"
@@ -85,14 +87,16 @@ do
             --field dens \
             --field mag \
             --field vel \
+	    --field vort \
+	    --field curr \
             --max-edgelength 512 \
-            --verbose \
+            --Verbose \
         || exit 1
 
 #	echo \
         w4t-plot-moments \
 	    $OUTPATH \
-	    --verbose \
+	    --Verbose \
 	|| exit 1
 
     done
@@ -113,7 +117,7 @@ do
 #    echo \
     w4t-plot-moments \
         $OUTPATH \
-        --verbose \
+        --Verbose \
     || exit 1
 
 done

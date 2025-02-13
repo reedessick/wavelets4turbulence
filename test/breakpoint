@@ -12,7 +12,7 @@ w4t-compute-moments \
     --max-edgelength 512 \
     --polyfit 1 \
     --polyfit-scales 2 15 \
-    --polyfit-scales 9 256 \
+    --polyfit-scales 9 200 \
     -f vel -f vort -f dens -f mag -f curr \
     --Verbose \
 || exit 1

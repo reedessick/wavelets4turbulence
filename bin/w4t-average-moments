@@ -131,7 +131,8 @@ for field in data.keys():
             - np.outer(data[field]['moments'][snd], data[field]['moments'][snd])
 
     # add in the sum of individual covariances
-    data[field]['covariance'] = (data[field]['point_estimate_covariance'] + data[field]['covariance'] / num_inpaths) / num_inpaths
+    data[field]['average_covariance'] = data[field]['covariance'] / num_inpaths
+    data[field]['covariance'] = (data[field]['point_estimate_covariance'] + data[field]['average_covariance']) / num_inpaths
 
 #------------------------
 

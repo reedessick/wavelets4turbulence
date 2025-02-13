@@ -128,7 +128,7 @@ with h5py.File(args.outpath, 'w') as obj:
 
             if args.polyfit is not None:
                 if args.Verbose:
-                    print('    fitting moments as a power-law in scale')
+                    print('    fitting moments vs. scale')
 
                 poly = [[] for _ in args.moments]
                 polybins = [[] for _ in args.moments]

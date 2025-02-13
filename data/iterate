@@ -96,6 +96,7 @@ do
 	echo \
         w4t-plot-moments \
 	    $OUTPATH \
+	    --num-std 3 \
 	    --Verbose \
 	|| exit 1
 
@@ -108,8 +109,7 @@ do
     OUTPATH="$SIM/moments-Turb_hdf5_plt_cnt_average.hdf"
 
 #    echo \
-	python -i \
-	$(which w4t-average-moments) \
+    python -i $(which w4t-average-moments) \
         $(ls $SIM/moments-Turb_hdf5_plt_cnt_????.hdf) \
         --outpath $OUTPATH \
 	--Verbose \
@@ -118,6 +118,7 @@ do
 #    echo \
     w4t-plot-moments \
         $OUTPATH \
+	--num-std 3 \
         --Verbose \
     || exit 1
 

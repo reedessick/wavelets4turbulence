@@ -83,6 +83,11 @@ with h5py.File(args.inpaths[0], 'r') as obj:
 
 # load data from the rest of the files, requiring them to match the format of the first one
 
+# compute the (co)variance of the point estiamtes
+for field in data.keys():
+    data[field]['point_estimate_covariance'] = np.outer(data[field]['moments'], data[field]['moments'])
+
+# iterate over the rest of the paths
 for path in args.inpaths[1:]:
     if args.verbose:
         print('loading moments from: '+path)
@@ -105,6 +110,7 @@ for path in args.inpaths[1:]:
 
             # add data
             data[field]['moments'] += obj[field]['moments'][:]
+            data[field]['point_estimate_covariance'] += np.outer(obj[field]['moments'][:], obj[field]['moments'][:])
             data[field]['covariance'] += obj[field]['covariance'][:]
 
 #------------------------
@@ -114,8 +120,13 @@ if args.verbose:
     print('normalizing')
 
 for field in data.keys():
+    # these are simple averages over the inpaths
     data[field]['moments'] = data[field]['moments'] / num_inpaths
-    data[field]['covariance'] = data[field]['covariance'] / num_inpaths**2
+    data[field]['point_estimate_covariance'] = data[field]['point_estimate_covariance'] / num_inpaths \
+        - np.outer(data[field]['moments'], data[field]['moments'])
+
+    # add in the sum of individual covariances
+    data[field]['covariance'] = (data[field]['point_estimate_covariance'] + data[field]['covariance'] / num_inpaths) / num_inpaths
 
 #------------------------
 

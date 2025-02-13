@@ -105,6 +105,8 @@ for field in data.keys():
     if 'poly' in data[field]:
         poly = data[field]['poly']
         polybins = data[field]['polybins']
+    else:
+        poly = None
 
     #--------------------
 

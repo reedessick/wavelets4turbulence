@@ -108,14 +108,14 @@ do
 
     OUTPATH="$SIM/moments-Turb_hdf5_plt_cnt_average.hdf"
 
-#    echo \
+    echo \
     w4t-average-moments \
         $(ls $SIM/moments-Turb_hdf5_plt_cnt_????.hdf) \
         --outpath $OUTPATH \
 	--Verbose \
     || exit 1
 
-#    echo \
+    echo \
     w4t-plot-moments \
         $OUTPATH \
 	--num-std 1 \

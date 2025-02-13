@@ -85,7 +85,10 @@ with h5py.File(args.inpaths[0], 'r') as obj:
 
 # compute the (co)variance of the point estiamtes
 for field in data.keys():
-    data[field]['point_estimate_covariance'] = np.outer(data[field]['moments'], data[field]['moments'])
+    num_scales, num_moments = data[field]['moments'].shape
+    data[field]['point_estimate_covariance'] = np.zeros((num_scales, num_moments, num_moments), dtype=float)
+    for snd in range(num_scales):
+        data[field]['point_estimate_covariance'][snd] += np.outer(data[field]['moments'][snd], data[field]['moments'][snd])
 
 # iterate over the rest of the paths
 for path in args.inpaths[1:]:
@@ -110,8 +113,9 @@ for path in args.inpaths[1:]:
 
             # add data
             data[field]['moments'] += obj[field]['moments'][:]
-            data[field]['point_estimate_covariance'] += np.outer(obj[field]['moments'][:], obj[field]['moments'][:])
             data[field]['covariance'] += obj[field]['covariance'][:]
+            for snd in range(len(data[field]['moments'])):
+                data[field]['point_estimate_covariance'][snd] += np.outer(obj[field]['moments'][snd,:], obj[field]['moments'][snd,:])
 
 #------------------------
 

@@ -1,0 +1,126 @@
+#!/usr/bin/env python3
+
+# a quick script to make some html pages
+# Reed Essick (reed.essick@gmail.com)
+
+#-------------------------------------------------
+
+import os
+import glob
+
+#------------------------
+
+directories = [
+    "M05MA01",
+    "M05MA05",
+    "M05MA10",
+    "M10MA01",
+    "M10MA05",
+    "M10MA10",
+]
+
+fields = [
+    "dens",
+    "mag_mag",
+    "mag_x",
+    "mag_y",
+    "mag_z",
+    "curr_mag",
+    "curr_x",
+    "curr_y",
+    "curr_z",
+    "vel_mag",
+    "vel_x",
+    "vel_y",
+    "vel_z",
+    "vort_mag",
+    "vort_x",
+    "vort_y",
+    "vort_z",
+]
+
+figtypes = [
+    "moments",
+    "scaled-moments",
+    "extended-intermittency",
+]
+
+#-------------------------------------------------
+
+# write a single top-level summary
+
+overview_path = 'summary.html'
+with open(overview_path, 'w') as overview:
+    for field in fields:
+#        print('processing: '+field)
+
+        overview.write('<h1>%s</h1>\n' % field)
+        overview.write('<table>\n')
+
+        for directory in directories:
+#            print('    processing: '+directory)
+
+            overview.write('<tr>')
+            overview.write('    <td>%s</td>\n' % directory)
+            for figtype in figtypes:
+                figname = os.path.join(directory, 'moments-Turb_hdf5_plt_cnt_average_%s_%s.png' % (field, figtype))
+                overview.write('    <td><img src="%s" width="500"></td>\n' % figname)
+            overview.write('</tr>\n')
+
+        overview.write('</table>\n<hr>\n')
+
+#-------------------------------------------------
+
+# write individual summaries for each directory separately
+
+for directory in directories:
+#    print('processing: '+directory)
+
+    snapshots = sorted(glob.glob(os.path.join(directory, 'moments-Turb_hdf5_plt_cnt_????.hdf')))
+    snapshots = [os.path.basename(_)[:-4] for _ in snapshots]
+
+    summary_path = os.path.join(directory, 'summary.html')
+    with open(summary_path, 'w') as summary:
+        summary.write('<h1>%s</h1>\n' % directory)
+        summary.write('<table>\n')
+
+        for field in fields:
+#            print('    processing: '+field)
+
+            # add a row for the averages over snapshots
+            summary.write('<tr>\n')
+            summary.write('    <td>%s</td>\n' % field)
+            for figtype in figtypes:
+                figname = 'moments-Turb_hdf5_plt_cnt_average_%s_%s.png' % (field, figtype)
+                summary.write('    <td><img src="%s" width="500"></td>\n' % figname)
+            summary.write('</tr>\n')
+
+            # write a separate summary to show the behavior between snapshots
+            field_summary_path = os.path.join(directory, 'summary-%s.html'%field)
+            with open(field_summary_path, 'w') as field_summary:
+                field_summary.write('<h1>%s %s</h1>\n' % (directory, field))
+                field_summary.write('<table>\n')
+
+                # add average at the top
+                field_summary.write('<tr>\n')
+                field_summary.write('    <td>average</td>\n')
+                for figtype in figtypes:
+                    figname = 'moments-Turb_hdf5_plt_cnt_average_%s_%s.png' % (field, figtype)
+                    field_summary.write('    <td><img src="%s" width="500"></td>\n' % figname)
+                field_summary.write('</tr>\n')
+
+                field_summary.write('</table>\n<hr>\n<table>\n')
+
+                for snapshot in snapshots:
+#                    print('        '+snapshot)
+
+                    field_summary.write('<tr>\n')
+                    field_summary.write('    <td>%s</td>\n' % snapshot.split('_')[-1])
+                    for figtype in figtypes:
+                        figname = snapshot + '_%s_%s.png' % (field, figtype)
+                        field_summary.write('    <td><img src="%s" width="500"></td>\n' % figname)
+                    field_summary.write('</tr>\n')
+
+                field_summary.write('</table>')
+
+        summary.write('</table>')

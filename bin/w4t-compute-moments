@@ -45,6 +45,12 @@ parser.add_argument('-m', '--moments', default=DEFAULT_MOMENTS, type=str, nargs=
 parser.add_argument('-f', '--field', required=True, default=[], type=str, action='append',
     help='load and manipulate this field. Can be repeated. eg, --field vel --field mag --field dens')
 
+parser.add_argument('--polyfit', default=None, type=int,
+    help='the order polynomial to fit in the log-log plane of detail coeff vs scale')
+
+parser.add_argument('--polyfit-scales', nargs=2, type=int, default=[], action='append',
+    help='only consider fits between these scales. Can be repeated to examing multiple fits (e.g., broken power laws)')
+
 parser.add_argument('--max-edgelength', default=None, type=int,
     help='if specified, limit the size of each dimension to be at most this many samples. Although not required, \
 it is a good idea to make this a power of 2 (for the Haar transform to work well)')
@@ -109,7 +115,7 @@ with h5py.File(args.outpath, 'w') as obj:
                 if args.Verbose:
                     print('    retaining only detail coeffs larger than thr=%.6f' % thr)
 
-            #--------------------
+            #------------
 
             # compute spectra
             if args.Verbose:
@@ -117,7 +123,41 @@ with h5py.File(args.outpath, 'w') as obj:
 
             scales, mom, cov = ha.spectrum(index=args.moments, use_abs=True)
 
-            #----------------
+            #------------
+            # fit moments with a power-law
+
+            if args.polyfit is not None:
+                if args.Verbose:
+                    print('    fitting moments as a power-law in scale')
+
+                poly = [[] for _ in args.moments]
+                polybins = [[] for _ in args.moments]
+
+                for ind, index in enumerate(args.moments):
+                    sel = cov[:,ind,ind] > 0 # restrict ourselves to indexes with reasonable values
+
+                    # iterate over bins for min, max scales
+                    if not args.polyfit_scales:
+                        bins = [(np.min(scales[sel,0]), np.max(scales[sel,0]))] # by default, use the full range
+                    else:
+                        bins = args.polyfit_scales
+
+                    for m, M in bins:
+                        ect = sel * (m <= scales[:,0]) * (scales[:,0] <= M)
+
+                        err = 1/mom[ect,ind] * cov[ect,ind,ind]**0.5
+
+                        p = np.polyfit(
+                            np.log(scales[ect,0]),
+                            np.log(mom[ect,ind]),
+                            args.polyfit, # fit this degree polynomial
+                            w=1./err, # weigh by inverse-variance
+                        )
+
+                        poly[ind].append(p)
+                        polybins[ind].append((m,M))
+
+            #------------
 
             # write data into HDF
             grp = obj.create_group(label)
@@ -127,7 +167,11 @@ with h5py.File(args.outpath, 'w') as obj:
 
             grp.create_dataset('moments', data=mom)
             grp.create_dataset('covariance', data=cov)
-            
+
+            if args.polyfit is not None:
+                grp.create_dataset('poly', data=poly)
+                grp.create_dataset('polybins', data=polybins)
+
             #----------------
 
             del ha

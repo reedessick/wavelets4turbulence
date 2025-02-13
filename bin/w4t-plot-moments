@@ -102,6 +102,10 @@ for field in data.keys():
     mom = data[field]['moments']
     cov = data[field]['covariance']
 
+    if 'poly' in data[field]:
+        poly = data[field]['poly']
+        polybins = data[field]['polybins']
+
     #--------------------
 
     if args.Verbose:
@@ -131,6 +135,20 @@ for field in data.keys():
                 ax.plot([scale]*2, [m-s, m+s], color=color, alpha=0.75)
             elif args.Verbose:
                 print('        WARNING! skipping error estimate for index=%d at scale=%d with var=%.3e' % (index, scale, s))
+
+        if poly is not None: ### add the fit
+            for bnd, (m, M) in enumerate(polybins[ind]):
+                x = np.linspace(np.log(m), np.log(M), 101)
+                y = 0.
+                for order, p in enumerate(poly[ind][bnd][::-1]):
+                    y += p * x**order
+            
+                ax.plot(
+                    np.exp(x),
+                    np.exp(y),
+                    color=color,
+                    alpha=0.25,
+                )
 
     #---
 

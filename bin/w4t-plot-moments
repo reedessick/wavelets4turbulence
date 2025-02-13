@@ -48,6 +48,11 @@ parser.add_argument('inpath', type=str,
 
 #---
 
+parser.add_argument('--num-std', default=1, type=float,
+    help='the number of standard deviations represented by error bars. DEFAULT=1')
+
+#---
+
 parser.add_argument('-v', '--verbose', default=False, action='store_true')
 parser.add_argument('-V', '--Verbose', default=False, action='store_true')
 
@@ -133,7 +138,7 @@ for field in data.keys():
             m = mom[snd,ind]
             s = cov[snd,ind,ind]
             if s > 0: # only plot sensible error estimates
-                s = s**0.5
+                s = s**0.5 * args.num_std
                 ax.plot([scale]*2, [m-s, m+s], color=color, alpha=0.75)
             elif args.Verbose:
                 print('        WARNING! skipping error estimate for index=%d at scale=%d with var=%.3e' % (index, scale, s))
@@ -218,7 +223,7 @@ for field in data.keys():
                     + (1./std[snd]**index)**2 * cov[snd,ind,ind] \
                     + (1./std[snd]**index)*(-(index/2)*mom[snd,ind]/std[snd]**(index+2)) * cov[snd,ind2,ind]
                 if s > 0: # only plot sensible error estimates
-                    s = s**0.5
+                    s = s**0.5 * args.num_std
                     ax.plot([scale]*2, [m-s, m+s], color=color, alpha=0.75)
                 elif args.Verbose:
                     print('        WARNING! skipping error estimate for index=%d at scale=%d with var=%.3e' % (index, scale, s))
@@ -284,7 +289,7 @@ for field in data.keys():
                 m = mom[snd,ind2]
                 s = cov[snd,ind2,ind2]
                 if s > 0: # only plot sensible error estimates
-                    s = s**0.5
+                    s = s**0.5 * args.num_std
                     ax.plot([m-s, m+s], [mom[snd,ind]]*2, color=color, alpha=0.75)
                 elif args.Verbose:
                     print('        WARNING! skipping error estimate for index=2 at scale=%d with var=%.3e' % (scale, s))
@@ -293,7 +298,7 @@ for field in data.keys():
                 m = mom[snd,ind]
                 s = cov[snd,ind,ind]
                 if s > 0: # only plot sensible error estimates
-                    s = s**0.5
+                    s = s**0.5 * args.num_std
                     ax.plot([mom[snd,ind2]]*2, [m-s, m+s], color=color, alpha=0.75)
                 elif args.Verbose:
                     print('        WARNING! skipping error estimate for index=2 at scale=%d with var=%.3e' % (scale, s))

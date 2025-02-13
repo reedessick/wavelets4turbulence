@@ -126,8 +126,9 @@ if args.verbose:
 for field in data.keys():
     # these are simple averages over the inpaths
     data[field]['moments'] = data[field]['moments'] / num_inpaths
-    data[field]['point_estimate_covariance'] = data[field]['point_estimate_covariance'] / num_inpaths \
-        - np.outer(data[field]['moments'], data[field]['moments'])
+    for snd in range(len(data[field]['moments'])):
+        data[field]['point_estimate_covariance'][snd] = data[field]['point_estimate_covariance'][snd] / num_inpaths \
+            - np.outer(data[field]['moments'][snd], data[field]['moments'][snd])
 
     # add in the sum of individual covariances
     data[field]['covariance'] = (data[field]['point_estimate_covariance'] + data[field]['covariance'] / num_inpaths) / num_inpaths

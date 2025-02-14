@@ -136,7 +136,7 @@ def scalogram(ha):
 
     ax1 = fig.add_axes([0.10, 0.10, 0.80, 0.70]) # scalogram
     ax3 = fig.add_axes([0.10, 0.81, 0.80, 0.14]) # raw data
-    ax2 = fig.add_axes([0.91, 0.10, 0.02, 0.70]) # colorbar
+    ax2 = fig.add_axes([0.91, 0.10, 0.01, 0.70]) # colorbar
 
     #---
 
@@ -159,9 +159,14 @@ def scalogram(ha):
         # add to arrays for scatter points
         X.append(xs)
         Y.append(ha.scales[0]*np.ones(ha.active[0]))
-        Z.append( np.array(ha.detail[:]) / np.std(ha.detail[:]) ) # make a copy to avoid the fact that ha1d will edit this in-place
-                                                                  # also scale this by the std dev at that scale for visualization purposes
 
+        detail = np.array(ha.detail[:]) # make a copy to avoid the fact that ha will edit this in-place
+        s = np.std(detail)
+        if s > 0:
+            detail /= s # only scale this if there is some variation
+        Z.append( detail )
+
+        # iterate
         ha.ihaar()
 
     # plot the scalogram as a scatter

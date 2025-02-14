@@ -251,10 +251,25 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
         """
         levels = copy.copy(self.levels) # make a copy so we can remember the level of decomposition
 
-        raise NotImplementedError('''perform denoising opperation
         self.decompose() # completely decompose
-        self.array[np.abs(self.array) < thr] = 0.0 # apply threshold
-''')
+        while self.scales[0] > 1: # work our way to smaller scales
+
+            # set up all possible combos of scales relevant here
+            slices = [tuple()]
+            for dim, num in enumerate(self.active):
+                slices = [_+(slice(0,num),) for _ in slices] + [_+(slice(num,2*num),) for _ in slices]
+            slices = slices[1:] # skip the corner that is only approximants
+
+            # iterate over slices, derive and apply thresholds for each set separately
+            for s in slices:
+                self.array[s] *= np.where( # multiple arrays by zero where it does not pass the threshold
+                    np.abs(self.array[s]) <= np.std(self.array[s])*num_std,
+                    0.0,
+                    1.0,
+                )
+
+            # ihaar to go up to the next scale
+            self.ihaar()
 
         # work back to the level of decomposition we were at initially
         self.set_levels(levels)

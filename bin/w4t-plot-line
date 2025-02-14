@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""a simple plotting script to examine wavelet decompositions on a plane (2D data)
+"""a simple plotting script to examine wavelet decompositions on a line (1D data)
 """
 __author__ = "Reed Essick (reed.essick@gmail.com)"
 
@@ -17,7 +17,7 @@ from argparse import ArgumentParser
 
 ### non-standard libraries
 from w4t import (haar, utils)
-from w4t.plot import plane as plt
+from w4t.plot import line as plt
 
 #-------------------------------------------------
 
@@ -32,9 +32,9 @@ parser.add_argument('-m', '--max-edgelength', default=None, type=int)
 
 #---
 
-parser.add_argument('-p', '--plane', nargs=2, default=[], type=int, action='append', required=True,
-    help='plot the plane defined by a constant value of this axis (in grid points). Can be repeated. \
-e.g.: to plot the plane at x=128, specify "--plane 0 128". To plot the plane at y=64, pass "--plane 1 64"')
+parser.add_argument('-l', '--line', nargs=4, default=[], type=int, action='append', required=True,
+    help='plot the line defined by a constant value of thes axes (in grid points). Can be repeated. \
+e.g.: to plot the at x=128 and y=64, specify "--line 0 128 1 64"')
 
 #---
 
@@ -97,26 +97,26 @@ for field in args.field:
                 print('examining '+label)
 
             # basic instantiation
-            for dim, ind in args.plane:
+            for dim1, ind1, dim2, ind2 in args.plane:
                 if args.Verbose:
-                    print('    plotting dim=%d ind=%d' % (dim, ind))
+                    print('    plotting dim=%d ind=%d and dim=%d ind=%d' % (dim1, ind1, dim2, ind2))
 
-                ha = haar.HaarArray(np.take(datum, ind, axis=dim)) # grabe the requested plane
+                ha = haar.HaarArray(np.take(np.take(datum, ind1, axis=dim1), ind2, axis=dim2) # grabe the requested plane
 
-                while ha.active[0] > 1: # continue to decompose
-                    title = label + '\nscale : '+('-'.join('%03d'%_ for _ in ha.scales))
+                while ha.active[0] > 1: # continue to decompose       
+                    title = label + '\nscale : '+ ('%03d' ha.scales[0])
 
-                    n0, n1 = ha.active
-                    aa = ha.array[:n0, :n1]
-                    ad = ha.array[:n0, n1:2*n1]
-                    da = ha.array[n0:2*n0, :n1]
-                    dd = ha.array[n0:2*n0, n1:2*n1]
+                    n = ha.active[0]
+                    a = ha.array[:n]
+                    d = ha.array[n:2*n]
 
                     #---
 
                     # plot images
 
-                    fig = plt.imshow(aa, ad, da, dd)
+                    raise NotImplementedError
+
+                    fig = plt.plot(a, d)
                     fig.suptitle(title, fontsize=10)
 
                     figtmp = os.path.join(
@@ -132,7 +132,7 @@ for field in args.field:
 
                     # plot histograms
 
-                    fig = plt.hist(aa, ad, da, dd, histtype='step', log=True, density=True)
+                    fig = plt.hist(a, d, histtype='step', log=True, density=True)
                     fig.suptitle(title, fontsize=10)
 
                     figtmp = os.path.join(

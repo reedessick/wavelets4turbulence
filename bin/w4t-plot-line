@@ -97,14 +97,21 @@ for field in args.field:
                 print('examining '+label)
 
             # basic instantiation
-            for dim1, ind1, dim2, ind2 in args.plane:
+            for dim1, ind1, dim2, ind2 in args.line:
                 if args.Verbose:
                     print('    plotting dim=%d ind=%d and dim=%d ind=%d' % (dim1, ind1, dim2, ind2))
 
-                ha = haar.HaarArray(np.take(np.take(datum, ind1, axis=dim1), ind2, axis=dim2) # grabe the requested plane
+                if dim2 < dim1: # switch the order
+                    dim1, dim2 = dim2, dim1
+                    ind1, ind2 = ind2, ind1
 
-                while ha.active[0] > 1: # continue to decompose       
-                    title = label + '\nscale : '+ ('%03d' ha.scales[0])
+                ha = haar.HaarArray(np.take(np.take(datum, ind1, axis=dim1), ind2, axis=dim2-1)) # grab the requested line
+
+                # make 1D line plots
+
+                while ha.active[0] > 1: # continue to decompose
+                    scale = '%03d' % ha.scales[0]
+                    title = label + '\nscale : '+ scale
 
                     n = ha.active[0]
                     a = ha.array[:n]
@@ -114,15 +121,13 @@ for field in args.field:
 
                     # plot images
 
-                    raise NotImplementedError
-
-                    fig = plt.plot(a, d)
+                    fig = plt.plot(a, d, linestyle='solid', linewidth=1, marker='o', markersize=1)
                     fig.suptitle(title, fontsize=10)
 
                     figtmp = os.path.join(
                         args.output_dir,
-                        '%s_%s_%s_%d-%06d_plot2D-imshow%s' % \
-                            (basename, label, scales, dim, ind, args.tag),
+                        '%s_%s_%s_%d-%06d_%d-%06d_line-plot%s' % \
+                            (basename, label, scale, dim1, ind1, dim2, ind2, args.tag),
                     ) + '.%s'
 
                     plt.save(fig, figtmp, args.figtype, dpi=args.dpi, verbose=args.verbose, indent=' '*8)
@@ -137,8 +142,8 @@ for field in args.field:
 
                     figtmp = os.path.join(
                         args.output_dir,
-                        '%s_%s_%s_%d-%06d_plot2D-hist%s' % \
-                            (basename, label, scales, dim, ind, args.tag),
+                        '%s_%s_%s_%d-%06d_%d-%06d_line-hist%s' % \
+                            (basename, label, scale, dim1, ind1, dim2, ind2, args.tag),
                     ) + '.%s'
 
                     plt.save(fig, figtmp, args.figtype, dpi=args.dpi, verbose=args.verbose, indent=' '*8)
@@ -146,8 +151,26 @@ for field in args.field:
 
                     #---
 
-                    del aa, ad, da, dd
+                    del a, d
 
                     ha.haar() # decompose
+
+                #---
+
+                # make scalogram
+
+                fig = plt.scalogram(ha)
+                fig.suptitle(label, fontsize=10)
+
+                figtmp = os.path.join(
+                    args.output_dir,
+                    '%s_%s_%d-%06d_%d-%06d_line-scalogram%s' % \
+                        (basename, label, dim1, ind1, dim2, ind2, args.tag),
+                ) + '.%s'
+
+                plt.save(fig, figtmp, args.figtype, dpi=args.dpi, verbose=args.verbose, indent=' '*8)
+                plt.close(fig)
+
+                #---
 
                 del ha

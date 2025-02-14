@@ -101,10 +101,11 @@ for field in args.field:
                 if args.Verbose:
                     print('    plotting dim=%d ind=%d' % (dim, ind))
 
-                ha = haar.HaarArray(np.take(datum, ind, axis=dim)) # grabe the requested plane
+                ha = haar.HaarArray(np.take(datum, ind, axis=dim)) # grab the requested plane
 
                 while ha.active[0] > 1: # continue to decompose
-                    title = label + '\nscale : '+('-'.join('%03d'%_ for _ in ha.scales))
+                    scales = '-'.join('%03d'%_ for _ in ha.scales)
+                    title = label + '\nscale : ' + scales
 
                     n0, n1 = ha.active
                     aa = ha.array[:n0, :n1]
@@ -121,7 +122,7 @@ for field in args.field:
 
                     figtmp = os.path.join(
                         args.output_dir,
-                        '%s_%s_%s_%d-%06d_plot2D-imshow%s' % \
+                        '%s_%s_%s_%d-%06d_plane-imshow%s' % \
                             (basename, label, scales, dim, ind, args.tag),
                     ) + '.%s'
 
@@ -137,7 +138,7 @@ for field in args.field:
 
                     figtmp = os.path.join(
                         args.output_dir,
-                        '%s_%s_%s_%d-%06d_plot2D-hist%s' % \
+                        '%s_%s_%s_%d-%06d_plane-hist%s' % \
                             (basename, label, scales, dim, ind, args.tag),
                     ) + '.%s'
 

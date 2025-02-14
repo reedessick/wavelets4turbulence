@@ -48,7 +48,7 @@ DETAIL_CMAP = 'PuOr'
 
 #-------------------------------------------------
 
-def imshow(aa, ad, da, dd, verbose=False):
+def imshow(aa, ad, da, dd):
     """plot 2D data from a Haar decomposed 2D array (assumed to be square)
     """
     fig = plt.figure(figsize=FIGSIZE)
@@ -112,7 +112,7 @@ def imshow(aa, ad, da, dd, verbose=False):
 
 #------------------------
 
-def hist(aa, ad, da, dd, verbose=False, grid=False, **kwargs):
+def hist(aa, ad, da, dd, grid=False, **kwargs):
     """plot histograms of coefficients from a Haar decomposed 2D array (assumed to be square)
     """
     fig = plt.figure(figsize=FIGSIZE)

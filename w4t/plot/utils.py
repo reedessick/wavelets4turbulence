@@ -16,9 +16,9 @@ plt.rcParams['text.usetex'] = True
 def close(fig, **kwargs):
     plt.close(fig, **kwargs)
 
-def save(fig, figtmp, figtypes, verbose=False, **kwargs):
+def save(fig, figtmp, figtypes, verbose=False, indent='    ', **kwargs):
     for figtype in figtypes:
         figname = figtmp % figtype
         if verbose:
-            print('saving: '+figname)
+            print('%ssaving: %s' % (indent, figname))
         fig.savefig(figname, **kwargs)

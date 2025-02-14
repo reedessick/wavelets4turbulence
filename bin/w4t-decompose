@@ -33,7 +33,7 @@ parser.add_argument('outpath', type=str,
 parser.add_argument('-f', '--field', required=True, default=[], type=str, action='append',
     help='load and manipulate this field. Can be repeated. eg, --field vel --field mag --field dens')
 
-parser.add_argument('--max-edgelength', default=None, type=int,
+parser.add_argument('-m', '--max-edgelength', default=None, type=int,
     help='if specified, limit the size of each dimension to be at most this many samples. Although not required, \
 it is a good idea to make this a power of 2 (for the Haar transform to work well)')
 

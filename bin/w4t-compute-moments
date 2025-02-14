@@ -51,7 +51,7 @@ parser.add_argument('--polyfit', default=None, type=int,
 parser.add_argument('--polyfit-scales', nargs=2, type=int, default=[], action='append',
     help='only consider fits between these scales. Can be repeated to examing multiple fits (e.g., broken power laws)')
 
-parser.add_argument('--max-edgelength', default=None, type=int,
+parser.add_argument('-m', '--max-edgelength', default=None, type=int,
     help='if specified, limit the size of each dimension to be at most this many samples. Although not required, \
 it is a good idea to make this a power of 2 (for the Haar transform to work well)')
 

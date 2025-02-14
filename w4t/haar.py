@@ -243,7 +243,7 @@ class HaarArray(object):
 
     #--------------------
 
-    def denoise(self, num_std):
+    def denoise(self, num_std, smooth=False):
         """perform basic "wavelet denoising" by taking the full wavelet decomposition and zeroing all detail coefficients with \
 with absolute values less than a threshold. This threshold is taken as num_std*std(detail) within each scale separately
 
@@ -262,11 +262,10 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
             # iterate over slices, derive and apply thresholds for each set separately
             for s in slices:
-                self.array[s] *= np.where( # multiple arrays by zero where it does not pass the threshold
-                    np.abs(self.array[s]) <= np.std(self.array[s])*num_std,
-                    0.0,
-                    1.0,
-                )
+                sel = np.abs(self.array[s]) <= np.std(self.array[s])*num_std # the small-amplitude detail coeffs
+                if smooth: # zero the high-amplitude detail coefficients
+                    sel = np.logical_not(sel)
+                self.array[s] *= np.where(sel, 0.0, 1.0)
 
             # ihaar to go up to the next scale
             self.ihaar()

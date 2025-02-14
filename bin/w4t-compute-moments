@@ -34,11 +34,6 @@ parser.add_argument('outpath', type=str,
 
 #---
 
-parser.add_argument('--denoise', default=False, action='store_true',
-    help='de-noise the wavelet decomposition before plotting')
-
-#---
-
 parser.add_argument('-m', '--moments', default=DEFAULT_MOMENTS, type=str, nargs='+',
     help='the moments to be computed. DEFAULT="%s"' % (', '.join('%d'%_ for _ in DEFAULT_MOMENTS)))
 
@@ -106,14 +101,6 @@ with h5py.File(args.outpath, 'w') as obj:
 
             # basic instantiation
             ha = haar.HaarArray(datum)
-
-            if args.denoise:
-                if args.Verbose:
-                    print('    denoising data')
-                thr = ha.denoise() # denoise
-                ha.idecompose() # got back to the starting point
-                if args.Verbose:
-                    print('    retaining only detail coeffs larger than thr=%.6f' % thr)
 
             #------------
 

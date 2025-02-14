@@ -31,6 +31,8 @@ parser.add_argument('outpath', type=str,
 #---
 
 parser.add_argument('--denoise', default=None, type=float)
+parser.add_argument('--smooth', default=False, action='store_true',
+    help='if supplied, retain the small detail coefficients rather than the big ones in the denoising algorithm')
 
 #---
 
@@ -96,7 +98,7 @@ with h5py.File(args.outpath, 'w') as obj:
             if args.denoise is not None:
                 if args.Verbose:
                     print('    denoising with thr=%.3f'%args.denoise)
-                ha.denoise(args.denoise)
+                ha.denoise(args.denoise, smooth=args.smooth)
 
             #--------------------
 

@@ -6,6 +6,7 @@
 ###   The "fitting bins" overlap, but do not actually include the "next nearest" moment.
 ###   This should help visualize the scale at which the power laws actually break?
 
+echo \
 w4t-compute-moments \
     ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
     M05MA10-test-moments.hdf \
@@ -17,6 +18,7 @@ w4t-compute-moments \
     --Verbose \
 || exit 1
 
+#echo \
 w4t-plot-moments \
     M05MA10-test-moments.hdf \
     --Verbose \

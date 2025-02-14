@@ -11,31 +11,7 @@ import os
 import numpy as np
 import h5py
 
-import matplotlib
-matplotlib.use("Agg")
-from matplotlib import pyplot as plt
-plt.rcParams['text.usetex'] = True
-
 from argparse import ArgumentParser
-
-#-------------------------------------------------
-
-TICK_PARAMS = dict(
-    left=True,
-    right=True,
-    top=True,
-    bottom=True,
-    direction='in',
-    which='both',
-)
-
-SUBPLOTS_ADJUST = dict(
-    left=0.12,
-    right=0.95,
-    bottom=0.10,
-    top=0.92,
-    hspace=0.03,
-)
 
 #-------------------------------------------------
 

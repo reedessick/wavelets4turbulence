@@ -32,6 +32,10 @@ parser.add_argument('-m', '--max-edgelength', default=None, type=int)
 
 #---
 
+parser.add_argument('--denoise', default=None, type=float)
+
+#---
+
 parser.add_argument('-p', '--plane', nargs=2, default=[], type=int, action='append', required=True,
     help='plot the plane defined by a constant value of this axis (in grid points). Can be repeated. \
 e.g.: to plot the plane at x=128, specify "--plane 0 128". To plot the plane at y=64, pass "--plane 1 64"')
@@ -102,6 +106,11 @@ for field in args.field:
                     print('    plotting dim=%d ind=%d' % (dim, ind))
 
                 ha = haar.HaarArray(np.take(datum, ind, axis=dim)) # grab the requested plane
+
+                if args.denoise is not None:
+                    if args.Verbose:
+                        print('    denoising with thr=%.3f' % args.denoise)
+                    ha.denoise(args.denoise)
 
                 while ha.active[0] > 1: # continue to decompose
                     scales = '-'.join('%03d'%_ for _ in ha.scales)

@@ -30,6 +30,10 @@ parser.add_argument('outpath', type=str,
 
 #---
 
+parser.add_argument('--denoise', default=None, type=float)
+
+#---
+
 parser.add_argument('-f', '--field', required=True, default=[], type=str, action='append',
     help='load and manipulate this field. Can be repeated. eg, --field vel --field mag --field dens')
 
@@ -88,6 +92,11 @@ with h5py.File(args.outpath, 'w') as obj:
 
             # basic instantiation
             ha = haar.HaarArray(datum)
+
+            if args.denoise is not None:
+                if args.Verbose:
+                    print('    denoising with thr=%.3f'%args.denoise)
+                ha.denoise(args.denoise)
 
             #--------------------
 

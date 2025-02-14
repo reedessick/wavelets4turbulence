@@ -32,6 +32,10 @@ parser.add_argument('-m', '--max-edgelength', default=None, type=int)
 
 #---
 
+parser.add_argument('--denoise', default=None, type=float)
+
+#---
+
 parser.add_argument('-l', '--line', nargs=4, default=[], type=int, action='append', required=True,
     help='plot the line defined by a constant value of thes axes (in grid points). Can be repeated. \
 e.g.: to plot the at x=128 and y=64, specify "--line 0 128 1 64"')
@@ -106,6 +110,11 @@ for field in args.field:
                     ind1, ind2 = ind2, ind1
 
                 ha = haar.HaarArray(np.take(np.take(datum, ind1, axis=dim1), ind2, axis=dim2-1)) # grab the requested line
+
+                if args.denoise is not None:
+                    if args.Verbose:
+                        print('    denoising with thr=%.3f' % args.denoise)
+                    ha.denoise(args.denoise)
 
                 # make 1D line plots
 

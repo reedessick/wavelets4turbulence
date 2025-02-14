@@ -198,7 +198,7 @@ def scalogram(ha):
 
     #---
 
-    # FIXME add colorbar to ax2
+    # add colorbar to ax2
 
     gradient = np.linspace(-1, 1, 256)*vlim
     gradient = np.transpose(np.vstack((gradient, gradient)))

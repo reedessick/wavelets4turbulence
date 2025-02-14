@@ -32,6 +32,10 @@ SUBPLOTS_ADJUST = dict(
     wspace=0.03,
 )
 
+#---
+
+SCALOGRAM_CMAP = 'RdBu'
+
 #-------------------------------------------------
 
 def plot(a, d, **kwargs):
@@ -128,96 +132,100 @@ def hist(a, d, grid=False, **kwargs):
 def scalogram(ha):
     """plot a scalogram of 1D Haar decomposition
     """
-    ha.idecompose()
+    fig = plt.figure()
 
-    raise NotImplementedError('''
-def scalogram(fig, ax, AX, xs, ha1d, cmap=DEFAULT_CMAP):
-    """make a scalogram and rough power spectrum
-    """
-    if ha1d.active[0] == 1: # ignore the lowest order
-        ha1d.ihaar()
+    ax1 = fig.add_axes([0.10, 0.10, 0.80, 0.70]) # scalogram
+    ax3 = fig.add_axes([0.10, 0.81, 0.80, 0.14]) # raw data
+    ax2 = fig.add_axes([0.91, 0.10, 0.02, 0.70]) # colorbar
+
+    #---
+
+    ha.decompose()
+
+    if ha.active[0] == 1: # ignore the lowest order
+        ha.ihaar()
 
     X = []
     Y = []
     Z = []
     scales = []
 
-    while ha1d.scales[0] > 1:
-        scales.append(ha1d.scales[0])
+    while ha.scales[0] > 1:
+        scales.append(ha.scales[0])
 
-        xs = np.arange(ha1d.active[0], dtype=float) / ha1d.active[0]
+        xs = np.arange(ha.active[0], dtype=float) / ha.active[0]
         xs += 0.5*(xs[1]-xs[0])
-
-        v = np.var(ha1d.detail)
 
         # add to arrays for scatter points
         X.append(xs)
-        Y.append(ha1d.scales[0]*np.ones(ha1d.active[0]))
-        Z.append( np.array(ha1d.detail[:]) / v**0.5 ) # make a copy to avoid the fact that ha1d will edit this in-place
-                                                      # also scale this by the std dev at that scale for visualization purposes
+        Y.append(ha.scales[0]*np.ones(ha.active[0]))
+        Z.append( np.array(ha.detail[:]) / np.std(ha.detail[:]) ) # make a copy to avoid the fact that ha1d will edit this in-place
+                                                                  # also scale this by the std dev at that scale for visualization purposes
 
-        # add to power spectrum
-        # FIXME? make this a violin plot or something to show the full distribution
-        AX.plot(v, ha1d.scales[0], marker='o', markeredgecolor='k', markerfacecolor='none')
-
-        # work back up the decomposition levels
-        ha1d.ihaar()
+        ha.ihaar()
 
     # plot the scalogram as a scatter
-    X = np.concatenate(tuple(X))
-    Y = np.concatenate(tuple(Y))
-    Z = np.concatenate(tuple(Z))
-    vlim = np.max(np.abs(Z))
+    vlim = np.max([np.max(np.abs(z)) for z in Z])
 
-    # FIXME? change this to tiles
+    cmap = plt.get_cmap(SCALOGRAM_CMAP)
 
-    cb = fig.colorbar(
-        ax.scatter(
-            X.flatten(),
-            Y.flatten(),
-            c=Z.flatten(),
-#            alpha=0.25,
-            vmin=-vlim,
-            vmax=+vlim,
-            s=Y.flatten(), # increase dot size to match scale
-            marker='.',
-            cmap=cmap,
-        ),
-        cmap=cmap,
-        ax=ax,
-        location='left',
-        shrink=1.0,
-    )
+    for x, y, z in zip(X, Y, Z): # plot tiles
+        ymin = y/2**0.5
+        ymax = y*2**0.5
 
-    cb.set_label('scaled detail coeff')
+        dx = (x[1]-x[0])/2
+        xmin = x-dx
+        xmax = x+dx
 
-    ax.set_yscale('log')
-    ax.set_yticks(scales)
-    plt.setp(ax.get_yticklabels(), visible=False)
+        for xmin, xmax, ymin, ymax, z in zip(xmin, xmax, ymin, ymax, z):
+            color = cmap((z+vlim)/(2*vlim))
+            ax1.fill_between([xmin, xmax], [ymin]*2, [ymax]*2, color=color)
 
-    ax.set_xlim(xmin=0, xmax=1)
-    ax.set_xlabel('x')
+    # decorate spectogram
 
-    ax.tick_params(**scat_tick_params)
+    ax1.set_yscale('log')
+    ax1.set_ylim(ymin=np.min(scales)/2**0.5, ymax=np.max(scales)*2**0.5)
+
+    ax1.set_yticks(scales, minor=False)
+    ax1.set_yticks([], minor=True)
+    ax1.set_yticklabels(['%d'%_ for _ in scales])
+
+    ax1.set_ylabel('scale')
+
+    ax1.set_xlim(xmin=0, xmax=1)
+
+    ax1.tick_params(**TICK_PARAMS)
 
     #---
 
-    AX.set_xscale('log')
-    AX.set_xlabel('var(detail coeffs)')
+    # FIXME add colorbar to ax2
 
-    AX.set_yscale('log')
-    AX.set_yticks(ax.get_yticks())
-    AX.set_yticklabels(['%d'%_ for _ in ax.get_yticks()])
-    AX.set_ylim(ax.get_ylim())
+    gradient = np.linspace(-1, 1, 256)*vlim
+    gradient = np.transpose(np.vstack((gradient, gradient)))
 
-    AX.yaxis.tick_right()
-    AX.yaxis.set_label_position('right')
+    ax2.imshow(gradient, aspect='auto', cmap=cmap, origin='lower', extent=(0,1,-vlim,+vlim))
 
-    AX.set_ylabel('scale')
+    ax2.set_xticks([])
 
-    AX.tick_params(**hist_tick_params)
+    ax2.set_ylim(ymin=-vlim, ymax=+vlim)
+
+    ax2.set_ylabel('scaled detail')
+    ax2.yaxis.tick_right()
+    ax2.yaxis.set_label_position('right')
+
+    ax2.tick_params(**TICK_PARAMS)
 
     #---
 
-    plt.subplots_adjust(**scalogram_subplots_adjust)
-    ''')
+    # plot raw data
+
+    ax3.plot(np.arange(len(ha.array))/len(ha.array), ha.array, )
+
+    ax3.set_xlim(ax1.get_xlim())
+    plt.setp(ax3.get_xticklabels(), visible=False)
+
+    ax3.tick_params(**TICK_PARAMS)
+
+    #---
+
+    return fig

@@ -67,8 +67,17 @@ def imshow(aa, ad, da, dd):
 
         ax = plt.subplot(2,2,ind+1)
 
+        if ind > 0: # make scales symmetric for details
+            vlim = np.max(np.abs(data))
+            vmin = -vlim
+            vmax = +vlim
+        else:
+            vmin = vmax = None
+
         ax.imshow(
             data,
+            vmin=vmin,
+            vmax=vmax,
             cmap=cmap,
             origin='lower',
             extent=(0, 1, 0, 1),

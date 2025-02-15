@@ -18,5 +18,10 @@ popd
 
 #------------------------
 
+# install PyWavelets
+pip install PyWavelets --prefix $OPTDIR
+
+#------------------------
+
 # install this module
 pip install . --prefix $OPTDIR

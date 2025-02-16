@@ -40,6 +40,8 @@ parser.add_argument('--denoise', default=None, type=float)
 parser.add_argument('--smooth', default=False, action='store_true',
     help='if supplied, retain the small detail coefficients rather than the big ones in the denoising algorithm')
 
+parser.add_argument('--max-scale', default=None, type=int)
+
 #---
 
 parser.add_argument('-l', '--line', nargs=4, default=[], type=int, action='append', required=True,
@@ -121,7 +123,7 @@ for field in args.field:
                 if args.denoise is not None:
                     if args.Verbose:
                         print('    denoising with thr=%.3f' % args.denoise)
-                    ha.denoise(args.denoise, smooth=args.smooth)
+                    ha.denoise(args.denoise, smooth=args.smooth, max_scale=args.max_scale)
 
                 # make 1D line plots
 

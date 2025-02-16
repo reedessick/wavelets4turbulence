@@ -194,7 +194,7 @@ class WaveletArray(object):
 
     #--------------------
 
-    def denoise(self, num_std, smooth=False):
+    def denoise(self, num_std, smooth=False, max_scale=None):
         """perform basic "wavelet denoising" by taking the full wavelet decomposition and zeroing all detail coefficients with \
 with absolute values less than a threshold. This threshold is taken as num_std*std(detail) within each scale separately
 
@@ -212,11 +212,19 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
             slices = slices[1:] # skip the corner that is only approximants
 
             # iterate over slices, derive and apply thresholds for each set separately
-            for s in slices:
-                sel = np.abs(self.array[s]) <= np.std(self.array[s])*num_std # the small-amplitude detail coeffs
-                if smooth: # zero the high-amplitude detail coefficients
-                    sel = np.logical_not(sel)
-                self.array[s] *= np.where(sel, 0.0, 1.0)
+            if (max_scale is not None) and (self.scales[0] > max_scale):
+                if not smooth:
+                    for s in slices:
+                        self.array[s] *= 0 # zero out details at very large scales
+                else:
+                    pass # leave the large-scale structure in tact
+
+            else:
+                for s in slices:
+                    sel = np.abs(self.array[s]) <= np.std(self.array[s])*num_std # the small-amplitude detail coeffs
+                    if smooth: # zero the high-amplitude detail coefficients
+                        sel = np.logical_not(sel)
+                    self.array[s] *= np.where(sel, 0.0, 1.0)
 
             # idwt to go up to the next scale
             self.idwt()

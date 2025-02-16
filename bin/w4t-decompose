@@ -14,7 +14,7 @@ import h5py
 from argparse import ArgumentParser
 
 ### non-standard libraries
-from w4t import haar, utils
+from w4t import pywt, utils
 
 #-------------------------------------------------
 
@@ -27,6 +27,10 @@ parser.add_argument('inpath', type=str,
 
 parser.add_argument('outpath', type=str,
     help='path into which moments will be written')
+
+#---
+
+parser.add_argument('-w', '--wavelet', type=str, required=True)
 
 #---
 
@@ -93,7 +97,7 @@ with h5py.File(args.outpath, 'w') as obj:
                 print('    examining '+label)
 
             # basic instantiation
-            ha = haar.HaarArray(datum)
+            ha = pywt.WaveletArray(datum, args.wavelet)
 
             if args.denoise is not None:
                 if args.Verbose:

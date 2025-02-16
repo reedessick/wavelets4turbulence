@@ -22,7 +22,7 @@ plt.rcParams['text.usetex'] = True
 from argparse import ArgumentParser
 
 ### non-standard libraries
-from w4t import haar, utils
+from w4t import haar, pywt, utils
 
 #-------------------------------------------------
 
@@ -36,6 +36,10 @@ parser.add_argument('--num-dim', default=utils.DEFAULT_NUM_DIM, type=int,
     help='the number of dimensions to use. Must be one of 1, 2, or 3. DEFAULT=%d' % utils.DEFAULT_NUM_DIM)
 
 parser.add_argument('--seed', default=None, type=int)
+
+#---
+
+parser.add_argument('-w', '--wavelet', default=None, type=str)
 
 #---
 
@@ -76,14 +80,19 @@ while num < args.grid_range[0]:
 
 summary = {
     'grid size' : [],
-    'HaarArray.decompose' : [],
-    'HaarArray.idecompose' : [],
+    'decompose' : [],
+    'idecompose' : [],
 }
 
 while num <= args.grid_range[1]:
 
     # generate fake data
-    ha = haar.HaarArray(utils.load(['dummy'], num_grid=num, num_dim=args.num_dim)['dummy'][0])
+    array = utils.load(['dummy'], num_grid=num, num_dim=args.num_dim)['dummy'][0]
+
+    if args.wavelet is None: # use custom implementation
+        ha = haar.HaarArray(array)
+    else: # use pywt
+        ha = pywt.WaveletArray(array, args.wavelet)
 
     #---
 
@@ -115,6 +124,8 @@ while num <= args.grid_range[1]:
             mem.append(peak)
             tracemalloc.stop()
 
+        assert np.all(np.isclose(array, ha.array)), 'original data not recovered!'
+
     del ha
 
     if args.Verbose:
@@ -127,8 +138,8 @@ while num <= args.grid_range[1]:
     summary['grid size'].append(num)
 
     for label, run, mem in [
-            ('HaarArray.decompose', decomp, decomp_mem),
-            ('HaarArray.idecompose', idecomp, idecomp_mem),
+            ('decompose', decomp, decomp_mem),
+            ('idecompose', idecomp, idecomp_mem),
         ]:
         mr = np.mean(run) * 1e3 # ms
         sr = np.std(run) * 1e3
@@ -163,8 +174,8 @@ axr = plt.subplot(2,1,1)
 axm = plt.subplot(2,1,2)
 
 for label, color in [
-        ('HaarArray.decompose', 'k'),
-        ('HaarArray.idecompose', 'r')
+        ('decompose', 'k'),
+        ('idecompose', 'r')
     ]:
     labeled = False
     for ind, num in enumerate(summary['grid size']):
@@ -189,13 +200,13 @@ num = np.logspace(*np.log10(args.grid_range), 101)
 
 # number of opperations should scale like this
 run = num**args.num_dim * 2*(1 - 0.5**(np.log(num)/np.log(2) - 1)) # this is complicated, but is basically num**3
-run *= summary['HaarArray.idecompose'][-1][0] / run[-1] # scale this so the line looks nice
+run *= summary['idecompose'][-1][0] / run[-1] # scale this so the line looks nice
 
 axr.plot(np.log(num), run, color='b', alpha=0.25, label='expected scaling')
 
 # memory should scale with the total number of grid points
 mem = num**args.num_dim
-mem *= summary['HaarArray.idecompose'][-1][2] / mem[-1] # scale this to make the plot nice
+mem *= summary['idecompose'][-1][2] / mem[-1] # scale this to make the plot nice
 
 axm.plot(np.log(num), mem, color='b', alpha=0.25)
 
@@ -247,7 +258,10 @@ axr.set_ylim(ymin=max(axr.get_ylim()[0], 1e-3)) # don't plot vanishingly small r
 axr.set_title('%d-dimensional grid' % args.num_dim)
 
 # save
-figname = os.path.join(args.output_dir, 'test-scaling%s.png' % args.tag)
+if args.wavelet is None:
+    figname = os.path.join(args.output_dir, 'test-scaling-custom-haar%s.png' % (args.tag))
+else:
+    figname = os.path.join(args.output_dir, 'test-scaling-%s%s.png' % (args.wavelet, args.tag))
 if args.verbose:
     print('    saving: '+figname)
 fig.savefig(figname)

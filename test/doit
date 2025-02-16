@@ -5,7 +5,7 @@
 
 #-------------------------------------------------
 
-#echo \
+echo \
 /usr/bin/time -v \
 ./test \
     --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
@@ -18,7 +18,7 @@
 
 #---
 
-#echo \
+echo \
 /usr/bin/time -v \
 ./plot-spectrum \
      --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
@@ -31,7 +31,7 @@
      --verbose \
 || exit 1
 
-#echo \
+echo \
 /usr/bin/time -v \
 ./plot-spectrum \
      --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
@@ -46,7 +46,7 @@
 
 #---
 
-#echo \
+echo \
 /usr/bin/time -v \
 ./plot \
      --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
@@ -60,7 +60,7 @@
      --verbose \
 || exit 1
 
-#echo \
+echo \
 /usr/bin/time -v \
 ./plot \
      --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
@@ -76,7 +76,7 @@
 
 #---
 
-#echo \
+echo \
 /usr/bin/time -v \
 ./plot \
      --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
@@ -91,7 +91,7 @@
      --verbose \
 || exit 1
 
-#echo \
+echo \
 /usr/bin/time -v \
 ./plot \
      --path ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
@@ -110,35 +110,43 @@
 
 # examine scaling with grid size for different numbers of dimensions
 
-#echo \
-/usr/bin/time -v \
-./test-scaling \
-    2 268435456 \
-    --num-dim 1 \
-    --num-trials 10 \
-    --output-dir scaling \
-    --tag num-dim_1 \
-    --Verbose \
-|| exit 1
+for wavelet in 'haar' 'db2'
+do
 
-#echo \
-/usr/bin/time -v \
-./test-scaling \
-    2 4096 \
-    --num-dim 2 \
-    --num-trials 10 \
-    --output-dir scaling \
-    --tag num-dim_2 \
-    --Verbose \
-|| exit 1
+#    echo \
+    /usr/bin/time -v \
+    ./test-scaling \
+        2 268435456 \
+        --wavelet $wavelet \
+        --num-dim 1 \
+        --num-trials 100 \
+        --output-dir scaling \
+        --tag num-dim_1 \
+        --Verbose \
+    || exit 1
 
-#echo \
-/usr/bin/time -v \
-./test-scaling \
-    2 512 \
-    --num-dim 3 \
-    --num-trials 10 \
-    --output-dir scaling \
-    --tag num-dim_3 \
-    --Verbose \
-|| exit 1
+#    echo \
+    /usr/bin/time -v \
+    ./test-scaling \
+        2 4096 \
+        --wavelet $wavelet \
+        --num-dim 2 \
+        --num-trials 100 \
+        --output-dir scaling \
+        --tag num-dim_2 \
+        --Verbose \
+    || exit 1
+
+#    echo \
+    /usr/bin/time -v \
+    ./test-scaling \
+        2 512 \
+        --wavelet $wavelet \
+        --num-dim 3 \
+        --num-trials 100 \
+        --output-dir scaling \
+        --tag num-dim_3 \
+        --Verbose \
+    || exit 1
+
+done

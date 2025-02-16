@@ -112,7 +112,7 @@ echo \
 
 num_trials=25
 
-for wavelet in 'haar' 'db1' 'db2' 'db3' 'db4' 'db8' 'db16' 'db32' 'sym2' 'sym3' 'sym4' 'sym8' 'sym16' 'gaus1' 'gaus2' 'gaus3' 'gaus4' 'gaus8'
+for wavelet in 'haar' 'db1' 'db2' 'db3' 'db4' 'db8' 'db16' 'db32' 'sym2' 'sym3' 'sym4' 'sym8' 'sym16'
 do
 
 #    echo \

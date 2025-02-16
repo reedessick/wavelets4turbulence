@@ -130,16 +130,25 @@ def hist(aa, ad, da, dd, grid=False, **kwargs):
 
     for ind, data in enumerate([aa, ad, da, dd]):
 
-        if np.prod(data.shape) == 0: # no data
+        num = np.prod(data.shape)
+        if num == 0: # no data
             continue
 
         ax = plt.subplot(2,2,ind+1)
 
-        ax.hist(
-            np.ravel(data),
-            bins=min(1000, max(10, int(np.prod(data.shape)**0.5))),
-            **kwargs,
-        )
+        data = np.ravel(data)
+
+        if ind == 0:
+            xmin = np.min(data)
+            xmax = np.max(data)
+        else:
+            xlim = np.max(np.abs(data))
+            xmin = -xlim
+            xmax = +xlim
+
+        bins = np.linspace(xmin, xmax, min(1000, max(10, int(num**0.5))))
+
+        ax.hist(data, bins=bins, **kwargs)
 
         if ind == 0:
             ax.xaxis.tick_top()
@@ -161,7 +170,7 @@ def hist(aa, ad, da, dd, grid=False, **kwargs):
         xmin, xmax = ax.get_xlim()
         ymin, ymax = ax.get_ylim()
 
-        ax.text(xmin + 0.01*(xmax-xmin), ymax / (ymax/ymin)**0.01, '%d samples' % np.prod(data.shape), ha='left', va='top')
+        ax.text(xmin + 0.01*(xmax-xmin), ymax / (ymax/ymin)**0.01, '%d samples' % num, ha='left', va='top')
 
     #---
 

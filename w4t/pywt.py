@@ -177,15 +177,15 @@ class WaveletArray(object):
     #---
 
     def set_levels(self, levels):
-        """haar and/or ihaar until we reach the target decomposition specified by levels
+        """dwt and/or idwt until we reach the target decomposition specified by levels
         """
         assert len(levels) == self.ndim, 'bad shape for levels'
         for axis in range(self.ndim):
-            if self.levels[axis] > levels[axis]: # need to ihaar
+            if self.levels[axis] > levels[axis]: # need to idwt
                 while self.levels[axis] > levels[axis]:
                     self.idwt(axis=axis)
 
-            elif self.levels[axis] < levels[axis]: # need to haar
+            elif self.levels[axis] < levels[axis]: # need to dwt
                 while self.levels[axis] < levels[axis]:
                     self.dwt(axis=axis)
 
@@ -218,7 +218,7 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
                     sel = np.logical_not(sel)
                 self.array[s] *= np.where(sel, 0.0, 1.0)
 
-            # ihaar to go up to the next scale
+            # idwt to go up to the next scale
             self.idwt()
 
         # work back to the level of decomposition we were at initially

@@ -89,16 +89,17 @@ def hist(a, d, grid=False, **kwargs):
 
     for ind, data in enumerate([a, d]):
 
-        if np.prod(data.shape) == 0: # no data
+        num = np.prod(data.shape)
+        if num == 0: # no data
             continue
 
         ax = plt.subplot(1,2,ind+1)
 
-        ax.hist(
-            np.ravel(data),
-            bins=min(1000, max(10, int(np.prod(data.shape)**0.5))),
-            **kwargs,
-        )
+        data = np.ravel(data)
+        xlim = np.max(np.abs(data))
+        bins = np.linspace(-xlim, +xlim, min(1000, max(10, int(num**0.5))))
+
+        ax.hist(data, bins=bins, **kwargs)
 
         if ind == 0:
             ax.set_xlabel('approximant')
@@ -117,7 +118,7 @@ def hist(a, d, grid=False, **kwargs):
         xmin, xmax = ax.get_xlim()
         ymin, ymax = ax.get_ylim()
 
-        ax.text(xmin + 0.01*(xmax-xmin), ymax / (ymax/ymin)**0.01, '%d samples' % np.prod(data.shape), ha='left', va='top')
+        ax.text(xmin + 0.01*(xmax-xmin), ymax / (ymax/ymin)**0.01, '%d samples' % num, ha='left', va='top')
 
     #---
 
@@ -143,7 +144,7 @@ def scalogram(ha):
     ha.decompose()
 
     if ha.active[0] == 1: # ignore the lowest order
-        ha.ihaar()
+        ha.idwt()
 
     X = []
     Y = []
@@ -167,7 +168,7 @@ def scalogram(ha):
         Z.append( detail )
 
         # iterate
-        ha.ihaar()
+        ha.idwt()
 
     # plot the scalogram as a scatter
     vlim = np.max([np.max(np.abs(z)) for z in Z])

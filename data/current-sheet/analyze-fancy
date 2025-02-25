@@ -113,7 +113,7 @@ if args.denoise is not None:
 
 #-------------------------------------------------
 
-while ha.scales[0] < 8: # FIXME don't use a magic number
+while ha.scales[0] < 16: # FIXME don't use a magic number
     ha.dwt(axis=0) # approx over the y-axis
 
 #-------------------------------------------------

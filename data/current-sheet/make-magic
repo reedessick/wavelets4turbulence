@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# a simple script to store command lines
+# Reed Essick (reed.essick@gmail.com)
+
+#-------------------------------------------------
+
+data="b_field-wavelet_turbulence-2025-02-22.npy"
+
+thr2d=2.0 # used for denoising
+
+#-------------------------------------------------
+
+ARGS="--figtype png --figtype pdf --dpi 500"
+
+#-------------------------------------------------
+
+for wavelet in "db1"
+do
+
+#    echo \
+#    python -i \
+    ./magic \
+        $data \
+        --wavelet $wavelet \
+        --Verbose \
+        --output-dir $wavelet \
+        --tag $wavelet \
+        $ARGS \
+    || exit 1
+
+done

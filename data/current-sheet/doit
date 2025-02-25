@@ -7,7 +7,7 @@
 
 data="b_field-wavelet_turbulence-2025-02-22.npy"
 
-thr2d=3.0 # used for denoising
+thr2d=2.0 # used for denoising
 thr1d=1.0 # used for denoising
 
 #-------------------------------------------------
@@ -24,7 +24,7 @@ do
 
     # regular decomposition
 
-    echo \
+#    echo \
     ./analyze-2d \
         $data \
         --wavelet $wavelet \
@@ -38,7 +38,7 @@ do
 
     # denoise
 
-    echo \
+#    echo \
     ./analyze-2d \
         $data \
         --wavelet $wavelet \
@@ -53,7 +53,7 @@ do
 
     # smooth
 
-    echo \
+#    echo \
     ./analyze-2d \
         $data \
         --wavelet $wavelet \
@@ -73,7 +73,7 @@ do
 
     # regular decomposition
 
-#    echo \
+    echo \
     ./analyze-fancy \
         $data \
         --wavelet $wavelet \
@@ -87,7 +87,7 @@ do
 
     # denoise
 
-#    echo \
+    echo \
     ./analyze-fancy \
         $data \
         --wavelet $wavelet \
@@ -102,7 +102,7 @@ do
 
     # smooth
 
-#    echo \
+    echo \
     ./analyze-fancy \
         $data \
         --wavelet $wavelet \

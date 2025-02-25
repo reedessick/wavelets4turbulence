@@ -28,6 +28,7 @@ parser = ArgumentParser()
 #---
 
 parser.add_argument('inpath', type=str)
+parser.add_argument('--abs', default=False, action='store_true')
 
 #---
 
@@ -94,8 +95,23 @@ _, nx, ny = mag.shape
 if args.verbose:
     print('computing curr = curl(mag)')
 
+#datum = mag[0]
+#label = 'mag_0'
+
+#datum = mag[1]
+#label = 'mag_1'
+
+#datum = (mag[0]**2 + mag[1]**2)**0.5
+#label = 'mag_mag'
+
 datum = dv.DerivedVars(num_of_dims=2, bcs="00").vector_curl(np.array([mag[0], mag[1], np.zeros((nx, ny))], dtype=float))
 label = 'curr_z'
+
+if args.abs:
+    if args.verbose:
+        print('taking abs(curr)')
+    datum = np.abs(datum)
+    label = 'abs_'+label
 
 #-------------------------------------------------
 

@@ -35,11 +35,18 @@ parser.add_argument('-w', '--wavelet', type=str, required=True)
 
 #---
 
-parser.add_argument('--denoise', default=None, type=float)
-parser.add_argument('--smooth', default=False, action='store_true',
+parser.add_argument('--denoise-2d', default=None, type=float)
+parser.add_argument('--smooth-2d', default=False, action='store_true',
     help='if supplied, retain the small detail coefficients rather than the big ones in the denoising algorithm')
 
-parser.add_argument('--max-scale', default=None, type=int)
+parser.add_argument('--max-scale-2d', default=None, type=int)
+
+#---
+
+parser.add_argument('--denoise-1d', default=None, type=float)
+parser.add_argument('--smooth-1d', default=False, action='store_true')
+
+parser.add_argument('--max-scale-1d', default=None, type=int)
 
 #---
 
@@ -100,10 +107,10 @@ if args.verbose:
 
 ha = pywt.WaveletArray(datum, args.wavelet)
 
-if args.denoise is not None:
+if args.denoise_2d is not None:
     if args.Verbose:
-        print('    denoising with thr=%.3f' % args.denoise)
-    ha.denoise(args.denoise, smooth=args.smooth, max_scale=args.max_scale)
+        print('    denoising 2D data with thr=%.3f' % args.denoise_2d)
+    ha.denoise(args.denoise_2d, smooth=args.smooth_2d, max_scale=args.max_scale_2d)
 
 #------------------------
 
@@ -116,6 +123,11 @@ while ha.active[0] > 1:
 # now examine the data along the current sheet as if it was a 1D vector
 
 ha1d = pywt.WaveletArray(ha.approx[0,:], wavelet=args.wavelet)
+
+if args.denoise_1d is not None:
+    if args.Verbose:
+        print('    denoising 1D data with thr=%.3f' % args.denoise_1d)
+    ha.denoise(args.denoise_1d, smooth=args.smooth_1d, max_scale=args.max_scale_1d)
 
 #------------------------
 

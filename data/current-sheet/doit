@@ -7,13 +7,13 @@
 
 data="b_field-wavelet_turbulence-2025-02-22.npy"
 
-thr2d=2.0 # used for denoising
+thr2d=3.0 # used for denoising
 thr1d=1.0 # used for denoising
 
 #-------------------------------------------------
 
 ARGS="--figtype png --figtype pdf --dpi 500"
-ARGS="$ARGS --zoom 0.28 0.45 0.45 0.55"
+ZOOM="--zoom 0.28 0.45 0.45 0.55"
 
 #-------------------------------------------------
 
@@ -24,7 +24,7 @@ do
 
     # regular decomposition
 
-#    echo \
+    echo \
     ./analyze-2d \
         $data \
         --wavelet $wavelet \
@@ -33,11 +33,12 @@ do
         --output-dir $wavelet \
         --tag $wavelet \
         $ARGS \
+        $ZOOM \
     || exit 1
 
     # denoise
 
-#    echo \
+    echo \
     ./analyze-2d \
         $data \
         --wavelet $wavelet \
@@ -47,11 +48,12 @@ do
         --output-dir $wavelet \
         --tag ${wavelet}_dn${thr2d} \
         $ARGS \
+        $ZOOM \
     || exit 1
 
     # smooth
 
-#    echo \
+    echo \
     ./analyze-2d \
         $data \
         --wavelet $wavelet \
@@ -62,6 +64,56 @@ do
         --output-dir $wavelet \
         --tag ${wavelet}_dn${thr2d}_smooth \
         $ARGS \
+        $ZOOM \
+    || exit 1
+
+    #--------------------
+
+    ### COMBO ANALYSIS
+
+    # regular decomposition
+
+#    echo \
+    ./analyze-fancy \
+        $data \
+        --wavelet $wavelet \
+        --log \
+        --Verbose \
+        --output-dir $wavelet \
+        --tag $wavelet \
+        $ARGS \
+        $ZOOM \
+    || exit 1
+
+    # denoise
+
+#    echo \
+    ./analyze-fancy \
+        $data \
+        --wavelet $wavelet \
+        --log \
+        --denoise $thr2d \
+        --Verbose \
+        --output-dir $wavelet \
+        --tag ${wavelet}_dn${thr2d} \
+        $ARGS \
+        $ZOOM \
+    || exit 1
+
+    # smooth
+
+#    echo \
+    ./analyze-fancy \
+        $data \
+        --wavelet $wavelet \
+        --log \
+        --denoise $thr2d \
+        --smooth \
+        --Verbose \
+        --output-dir $wavelet \
+        --tag ${wavelet}_dn${thr2d}_smooth \
+        $ARGS \
+        $ZOOM \
     || exit 1
 
     #--------------------
@@ -70,9 +122,10 @@ do
 
     # regular decomposition
 
-#    echo \
+    echo \
     ./analyze-1d \
         $data \
+        --abs \
         --wavelet $wavelet \
         --Verbose \
         --output-dir $wavelet \
@@ -80,9 +133,10 @@ do
         $ARGS \
     || exit 1
 
-#    echo \
+    echo \
     ./analyze-1d \
         $data \
+        --abs \
         --wavelet $wavelet \
         --denoise-1d $thr1d \
         --Verbose \
@@ -91,9 +145,10 @@ do
         $ARGS \
     || exit 1
 
-#    echo \
+    echo \
     ./analyze-1d \
         $data \
+        --abs \
         --wavelet $wavelet \
         --denoise-1d $thr1d \
         --smooth-1d \
@@ -107,9 +162,10 @@ do
 
     # denoise
 
-#    echo \
+    echo \
     ./analyze-1d \
         $data \
+        --abs \
         --wavelet $wavelet \
         --denoise-2d $thr2d \
         --Verbose \
@@ -118,9 +174,10 @@ do
         $ARGS \
     || exit 1
 
-#    echo \
+    echo \
     ./analyze-1d \
         $data \
+        --abs \
         --wavelet $wavelet \
         --denoise-2d $thr2d \
         --denoise-1d $thr1d \
@@ -130,9 +187,10 @@ do
         $ARGS \
     || exit 1
 
-#    echo \
+    echo \
     ./analyze-1d \
         $data \
+        --abs \
         --wavelet $wavelet \
         --denoise-2d $thr2d \
         --denoise-1d $thr1d \
@@ -147,9 +205,10 @@ do
 
     # smooth
 
-#    echo \
+    echo \
     ./analyze-1d \
         $data \
+        --abs \
         --wavelet $wavelet \
         --denoise-2d $thr2d \
         --smooth-2d \
@@ -159,9 +218,10 @@ do
         $ARGS \
     || exit 1
 
-#    echo \
+    echo \
     ./analyze-1d \
         $data \
+        --abs \
         --wavelet $wavelet \
         --denoise-2d $thr2d \
         --smooth-2d \
@@ -172,9 +232,10 @@ do
         $ARGS \
     || exit 1
 
-#    echo \
+    echo \
     ./analyze-1d \
         $data \
+        --abs \
         --wavelet $wavelet \
         --denoise-2d $thr2d \
         --smooth-2d \

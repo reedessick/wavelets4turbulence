@@ -17,7 +17,7 @@ from argparse import ArgumentParser
 
 ### non-standard libraries
 from w4t import pywt
-from w4t.plot import line as plt
+from w4t.plot import plane as plt
 
 from w4t.utils import dv # PLASMAtools.aux_funcs.derived_var_funcs
 
@@ -28,7 +28,6 @@ parser = ArgumentParser()
 #---
 
 parser.add_argument('inpath', type=str)
-parser.add_argument('--abs', default=False, action='store_true')
 
 #---
 
@@ -36,18 +35,17 @@ parser.add_argument('-w', '--wavelet', type=str, required=True)
 
 #---
 
-parser.add_argument('--denoise-2d', default=None, type=float)
-parser.add_argument('--smooth-2d', default=False, action='store_true',
+parser.add_argument('--denoise', default=None, type=float)
+parser.add_argument('--smooth', default=False, action='store_true',
     help='if supplied, retain the small detail coefficients rather than the big ones in the denoising algorithm')
 
-parser.add_argument('--max-scale-2d', default=None, type=int)
+parser.add_argument('--max-scale', default=None, type=int)
 
 #---
 
-parser.add_argument('--denoise-1d', default=None, type=float)
-parser.add_argument('--smooth-1d', default=False, action='store_true')
-
-parser.add_argument('--max-scale-1d', default=None, type=int)
+parser.add_argument('--log', default=False, action='store_true')
+parser.add_argument('--zoom', default=None, nargs=4, type=float,
+    help='--zoom xmin xmax ymin ymax')
 
 #---
 
@@ -99,14 +97,6 @@ if args.verbose:
 datum = dv.DerivedVars(num_of_dims=2, bcs="00").vector_curl(np.array([mag[0], mag[1], np.zeros((nx, ny))], dtype=float))
 label = 'curr_z'
 
-#---
-
-if args.abs:
-    if args.verbose:
-        print('taking absolute value of current')
-    datum = np.abs(datum)
-    label = 'abs_curr_z'
-
 #-------------------------------------------------
 
 # go thru the rest of the logic to decompose and plot
@@ -116,70 +106,70 @@ if args.verbose:
 
 ha = pywt.WaveletArray(datum, args.wavelet)
 
-if args.denoise_2d is not None:
+if args.denoise is not None:
     if args.Verbose:
-        print('    denoising 2D data with thr=%.3f' % args.denoise_2d)
-    ha.denoise(args.denoise_2d, smooth=args.smooth_2d, max_scale=args.max_scale_2d)
+        print('    denoising with thr=%.3f' % args.denoise)
+    ha.denoise(args.denoise, smooth=args.smooth, max_scale=args.max_scale)
 
-#------------------------
+#-------------------------------------------------
 
-# first, collapse the data in the y direction until it is 1D
-if args.verbose:
-    print('computing approximants in y-direction')
-while ha.active[0] > 1:
-    ha.dwt(axis=0)
+while ha.scales[0] < 8: # FIXME don't use a magic number
+    ha.dwt(axis=0) # approx over the y-axis
 
-# now examine the data along the current sheet as if it was a 1D vector
+#-------------------------------------------------
 
-ha1d = pywt.WaveletArray(ha.approx[0,:], wavelet=args.wavelet)
+while ha.active[1] > 1: # continue to decompose over x-axis
+    scales = '-'.join('%03d'%_ for _ in ha.scales)
+    title = label + '\nscale : ' + scales
 
-if args.denoise_1d is not None:
-    if args.Verbose:
-        print('    denoising 1D data with thr=%.3f' % args.denoise_1d)
-    ha1d.denoise(args.denoise_1d, smooth=args.smooth_1d, max_scale=args.max_scale_1d)
-
-#------------------------
-
-# make 1D line plots
-
-if args.verbose:
-    print('plotting the resulting decomposition in the x-direction')
-
-while ha1d.active[0] > 1: # continue to decompose
-    scale = '%03d' % ha1d.scales[0]
-    title = label + '\nscale : '+ scale
-
-    n = ha1d.active[0]
-    a = ha1d.array[:n]
-    d = ha1d.array[n:2*n]
+    n0, n1 = ha.active
+    aa = ha.array[:n0, :n1]
+    ad = ha.array[:n0, n1:2*n1]
+    da = ha.array[n0:2*n0, :n1]
+    dd = ha.array[n0:2*n0, n1:2*n1]
 
     #---
 
     # plot images
 
-    fig = plt.plot(a, d, linestyle='solid', linewidth=1, marker='o', markersize=1)
+    fig = plt.imshow(aa, ad, da, dd, log=args.log)
     fig.suptitle(title, fontsize=10)
 
     figtmp = os.path.join(
         args.output_dir,
-        '%s_%s_%s_line-plot%s' % \
-            (basename, label, scale, args.tag),
+        '%s_%s_%s_plane-imshow-fancy%s' % \
+            (basename, label, scales, args.tag),
     ) + '.%s'
 
     plt.save(fig, figtmp, args.figtype, dpi=args.dpi, verbose=args.verbose)
     plt.close(fig)
+
+    ### plot zoomed version
+    if args.zoom is not None:
+
+        fig = plt.imshow(aa, ad, da, dd, log=args.log, xmin=args.zoom[0], xmax=args.zoom[1], ymin=args.zoom[2], ymax=args.zoom[3])
+        fig.suptitle(title, fontsize=10)
+
+        figtmp = os.path.join(
+            args.output_dir,
+            '%s_%s_%s_plane-imshow-fancy-zoom%s' % \
+                (basename, label, scales, args.tag),
+        ) + '.%s'
+
+        plt.save(fig, figtmp, args.figtype, dpi=args.dpi, verbose=args.verbose)
+        plt.close(fig)
 
     #---
 
     # plot histograms
 
-    fig = plt.hist(a, d, histtype='step', log=True, density=True)
+    fig = plt.hist(aa, ad, da, dd, histtype='step', log=True, density=True)
     fig.suptitle(title, fontsize=10)
 
     figtmp = os.path.join(
         args.output_dir,
-        '%s_%s_%s_line-hist%s' % \
-            (basename, label, scale, args.tag),
+        '%s_%s_%s_plane-hist-fancy%s' % \
+            (basename, label, scales, args.tag),
     ) + '.%s'
 
     plt.save(fig, figtmp, args.figtype, dpi=args.dpi, verbose=args.verbose)
@@ -187,25 +177,6 @@ while ha1d.active[0] > 1: # continue to decompose
 
     #---
 
-    del a, d
+    del aa, ad, da, dd
 
-    ha1d.dwt() # decompose
-
-#---
-
-# make scalogram
-
-if args.verbose:
-    print('plotting scalogram')
-
-fig = plt.scalogram(ha1d)
-fig.suptitle(label, fontsize=10)
-
-figtmp = os.path.join(
-    args.output_dir,
-    '%s_%s_line-scalogram%s' % \
-        (basename, label, args.tag),
-) + '.%s'
-
-plt.save(fig, figtmp, args.figtype, dpi=args.dpi, verbose=args.verbose)
-plt.close(fig)
+    ha.dwt(axis=1)

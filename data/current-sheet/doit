@@ -6,7 +6,9 @@
 #-------------------------------------------------
 
 data="b_field-wavelet_turbulence-2025-02-22.npy"
-thr=2 # used for denoising
+
+thr2d=2.0 # used for denoising
+thr1d=1.0 # used for denoising
 
 #-------------------------------------------------
 
@@ -32,10 +34,10 @@ do
     ./analyze-2d \
         $data \
         --wavelet $wavelet \
-        --denoise $thr \
+        --denoise $thr2d \
         --Verbose \
         --output-dir $wavelet \
-        --tag ${wavelet}_dn${thr} \
+        --tag ${wavelet}_dn${thr2d} \
     || exit 1
 
     # smooth
@@ -44,11 +46,11 @@ do
     ./analyze-2d \
         $data \
         --wavelet $wavelet \
-        --denoise $thr \
+        --denoise $thr2d \
         --smooth \
         --Verbose \
         --output-dir $wavelet \
-        --tag ${wavelet}_dn${thr}_smooth \
+        --tag ${wavelet}_dn${thr2d}_smooth \
     || exit 1
 
     #--------------------
@@ -70,21 +72,21 @@ do
     ./analyze-1d \
         $data \
         --wavelet $wavelet \
-        --denoise-1d $thr \
+        --denoise-1d $thr1d \
         --Verbose \
         --output-dir $wavelet \
-        --tag ${wavelet}_dn1d${thr} \
+        --tag ${wavelet}_dn1d${thr1d} \
     || exit 1
 
 #    echo \
     ./analyze-1d \
         $data \
         --wavelet $wavelet \
-        --denoise-1d $thr \
+        --denoise-1d $thr1d \
         --smooth-1d \
         --Verbose \
         --output-dir $wavelet \
-        --tag ${wavelet}_dn1d${thr}_smooth \
+        --tag ${wavelet}_dn1d${thr1d}_smooth \
     || exit 1
 
     #---
@@ -95,33 +97,33 @@ do
     ./analyze-1d \
         $data \
         --wavelet $wavelet \
-        --denoise-2d $thr \
+        --denoise-2d $thr2d \
         --Verbose \
         --output-dir $wavelet \
-        --tag ${wavelet}_dn2d${thr} \
+        --tag ${wavelet}_dn2d${thr2d} \
     || exit 1
 
 #    echo \
     ./analyze-1d \
         $data \
         --wavelet $wavelet \
-        --denoise-2d $thr \
-        --denoise-1d $thr \
+        --denoise-2d $thr2d \
+        --denoise-1d $thr1d \
         --Verbose \
         --output-dir $wavelet \
-        --tag ${wavelet}_dn2d${thr}_dn1d${thr} \
+        --tag ${wavelet}_dn2d${thr2d}_dn1d${thr1d} \
     || exit 1
 
 #    echo \
     ./analyze-1d \
         $data \
         --wavelet $wavelet \
-        --denoise-2d $thr \
-        --denoise-1d $thr \
+        --denoise-2d $thr2d \
+        --denoise-1d $thr1d \
         --smooth-1d \
         --Verbose \
         --output-dir $wavelet \
-        --tag ${wavelet}_dn2d${thr}_dn1d${thr}_smooth \
+        --tag ${wavelet}_dn2d${thr2d}_dn1d${thr1d}_smooth \
     || exit 1
 
     #---
@@ -132,35 +134,36 @@ do
     ./analyze-1d \
         $data \
         --wavelet $wavelet \
-        --denoise-2d $thr \
+        --denoise-2d $thr2d \
         --smooth-2d \
         --Verbose \
         --output-dir $wavelet \
-        --tag ${wavelet}_dn2d${thr}_smooth \
+        --tag ${wavelet}_dn2d${thr2d}_smooth \
     || exit 1
 
 #    echo \
     ./analyze-1d \
         $data \
         --wavelet $wavelet \
-        --denoise-2d $thr \
+        --denoise-2d $thr2d \
         --smooth-2d \
+        --denoise-1d $thr1d \
         --Verbose \
         --output-dir $wavelet \
-        --tag ${wavelet}_dn2d${thr}_smooth_dn1d${thr} \
+        --tag ${wavelet}_dn2d${thr2d}_smooth_dn1d${thr1d} \
     || exit 1
 
 #    echo \
     ./analyze-1d \
         $data \
         --wavelet $wavelet \
-        --denoise-2d $thr \
+        --denoise-2d $thr2d \
         --smooth-2d \
-        --denoise-1d $thr \
+        --denoise-1d $thr1d \
         --smooth-1d \
         --Verbose \
         --output-dir $wavelet \
-        --tag ${wavelet}_dn2d${thr}_smooth_dn1d${thr}_smooth \
+        --tag ${wavelet}_dn2d${thr2d}_smooth_dn1d${thr1d}_smooth \
     || exit 1
 
 done

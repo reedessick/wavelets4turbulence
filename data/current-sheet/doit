@@ -1,0 +1,69 @@
+#!/bin/bash
+
+# a simple script to store command lines
+# Reed Essick (reed.essick@gmail.com)
+
+#-------------------------------------------------
+
+thr=2 # used for denoising
+
+for wavelet in "db1"
+do
+
+    # regular decomposition
+
+    echo \
+    ./analyze-2d \
+        b_field-wavelet_turbulence-2025-02-22.npy \
+        --wavelet $wavelet \
+        --Verbose \
+        --output-dir $wavelet \
+        --tag $wavelet \
+    || exit 1
+
+    # denoise
+
+    echo \
+    ./analyze-2d \
+        b_field-wavelet_turbulence-2025-02-22.npy \
+        --wavelet $wavelet \
+        --denoise $thr \
+        --Verbose \
+        --output-dir $wavelet \
+        --tag ${wavelet}_dn${thr} \
+    || exit 1
+
+    # smooth
+
+    echo \
+    ./analyze-2d \
+        b_field-wavelet_turbulence-2025-02-22.npy \
+        --wavelet $wavelet \
+        --denoise $thr \
+        --smooth \
+        --Verbose \
+        --output-dir $wavelet \
+        --tag ${wavelet}_dn${thr}_smooth \
+    || exit 1
+
+    #--------------------
+
+    # regular decomposition
+
+#    echo \
+    python -i \
+    ./analyze-1d \
+        b_field-wavelet_turbulence-2025-02-22.npy \
+        --wavelet $wavelet \
+        --Verbose \
+        --output-dir $wavelet \
+        --tag $wavelet \
+    || exit 1
+
+    # denoise
+    exit 1
+
+    # smooth
+    exit 1
+
+done

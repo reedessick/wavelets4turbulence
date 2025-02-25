@@ -177,6 +177,9 @@ for field in args.field:
 
                 # make scalogram
 
+                if args.Verbose:
+                    print('    plotting scalogram for dim=%d ind=%d and dim=%d ind=%d' % (dim1, ind1, dim2, ind2))
+
                 fig = plt.scalogram(ha)
                 fig.suptitle(label, fontsize=10)
 

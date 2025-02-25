@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+
+"""a simple script to plot current=curl(mag) data from a npy file
+"""
+__author__ = "Reed Essick (reed.essick@gmail.com)"
+
+#-------------------------------------------------
+
+import os
+
+import numpy as np
+import matplotlib
+matplotlib.use("Agg")
+from matplotlib import pyplot as plt
+
+from argparse import ArgumentParser
+
+### non-standard libraries
+from w4t import pywt
+from w4t.plot import line as plt
+
+from w4t.utils import dv # PLASMAtools.aux_funcs.derived_var_funcs
+
+#-------------------------------------------------
+
+parser = ArgumentParser()
+
+#---
+
+parser.add_argument('inpath', type=str)
+
+#---
+
+parser.add_argument('-w', '--wavelet', type=str, required=True)
+
+#---
+
+parser.add_argument('--denoise', default=None, type=float)
+parser.add_argument('--smooth', default=False, action='store_true',
+    help='if supplied, retain the small detail coefficients rather than the big ones in the denoising algorithm')
+
+parser.add_argument('--max-scale', default=None, type=int)
+
+#---
+
+parser.add_argument('-o', '--output-dir', default='.', type=str)
+parser.add_argument('-t', '--tag', default='', type=str)
+
+parser.add_argument('--figtype', default=[], type=str, action='append')
+parser.add_argument('--dpi', default=200, type=float)
+
+#---
+
+parser.add_argument('-v', '--verbose', default=False, action='store_true')
+parser.add_argument('-V', '--Verbose', default=False, action='store_true')
+
+#---
+
+args = parser.parse_args()
+
+os.makedirs(args.output_dir, exist_ok=True)
+
+if args.tag:
+    args.tag = "_"+args.tag
+
+if not args.figtype:
+    args.figtype.append('png')
+
+args.verbose |= args.Verbose
+
+#-------------------------------------------------
+
+basename = os.path.basename(args.inpath).split('.')[0] # used to construct output figure names
+
+#-------------------------------------------------
+
+# load magnetic field data
+
+if args.verbose:
+    print('loading magnetic field from: '+args.inpath)
+mag = np.load(args.inpath)
+_, nx, ny = mag.shape
+
+#------------------------
+
+# take the curl to get the current
+
+if args.verbose:
+    print('computing curr = curl(mag)')
+
+datum = dv.DerivedVars(num_of_dims=2, bcs="00").vector_curl(np.array([mag[0], mag[1], np.zeros((nx, ny))], dtype=float))
+label = 'curr_z'
+
+#-------------------------------------------------
+
+# go thru the rest of the logic to decompose and plot
+
+if args.verbose:
+    print('computing wavelet decomposition with wavelet=%s' % args.wavelet)
+
+ha = pywt.WaveletArray(datum, args.wavelet)
+
+if args.denoise is not None:
+    if args.Verbose:
+        print('    denoising with thr=%.3f' % args.denoise)
+    ha.denoise(args.denoise, smooth=args.smooth, max_scale=args.max_scale)
+
+#------------------------
+
+# first, collapse the data in the y direction until it is 1D
+if args.verbose:
+    print('computing approximants in y-direction')
+while ha.active[0] > 1:
+    ha.dwt(axis=0)
+
+# now examine the data along the current sheet as if it was a 1D vector
+
+ha1d = pywt.WaveletArray(ha.approx[0,:], wavelet=args.wavelet)
+
+#------------------------
+
+# make 1D line plots
+
+if args.verbose:
+    print('plotting the resulting decomposition in the x-direction')
+
+while ha1d.active[0] > 1: # continue to decompose
+    scale = '%03d' % ha1d.scales[0]
+    title = label + '\nscale : '+ scale
+
+    n = ha1d.active[0]
+    a = ha1d.array[:n]
+    d = ha1d.array[n:2*n]
+
+    #---
+
+    # plot images
+
+    fig = plt.plot(a, d, linestyle='solid', linewidth=1, marker='o', markersize=1)
+    fig.suptitle(title, fontsize=10)
+
+    figtmp = os.path.join(
+        args.output_dir,
+        '%s_%s_%s_line-plot%s' % \
+            (basename, label, scale, args.tag),
+    ) + '.%s'
+
+    plt.save(fig, figtmp, args.figtype, dpi=args.dpi, verbose=args.verbose)
+    plt.close(fig)
+
+    #---
+
+    # plot histograms
+
+    fig = plt.hist(a, d, histtype='step', log=True, density=True)
+    fig.suptitle(title, fontsize=10)
+
+    figtmp = os.path.join(
+        args.output_dir,
+        '%s_%s_%s_line-hist%s' % \
+            (basename, label, scale, args.tag),
+    ) + '.%s'
+
+    plt.save(fig, figtmp, args.figtype, dpi=args.dpi, verbose=args.verbose)
+    plt.close(fig)
+
+    #---
+
+    del a, d
+
+    ha1d.dwt() # decompose
+
+#---
+
+# make scalogram
+
+if args.verbose:
+    print('plotting scalogram')
+
+fig = plt.scalogram(ha1d)
+fig.suptitle(label, fontsize=10)
+
+figtmp = os.path.join(
+    args.output_dir,
+    '%s_%s_line-scalogram%s' % \
+        (basename, label, args.tag),
+) + '.%s'
+
+plt.save(fig, figtmp, args.figtype, dpi=args.dpi, verbose=args.verbose)
+plt.close(fig)

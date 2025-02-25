@@ -127,7 +127,7 @@ ha1d = pywt.WaveletArray(ha.approx[0,:], wavelet=args.wavelet)
 if args.denoise_1d is not None:
     if args.Verbose:
         print('    denoising 1D data with thr=%.3f' % args.denoise_1d)
-    ha.denoise(args.denoise_1d, smooth=args.smooth_1d, max_scale=args.max_scale_1d)
+    ha1d.denoise(args.denoise_1d, smooth=args.smooth_1d, max_scale=args.max_scale_1d)
 
 #------------------------
 

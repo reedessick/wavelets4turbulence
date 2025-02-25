@@ -13,9 +13,11 @@ thr=2 # used for denoising
 for wavelet in "db1"
 do
 
+    ### 2D ANALYSIS
+
     # regular decomposition
 
-    echo \
+#    echo \
     ./analyze-2d \
         $data \
         --wavelet $wavelet \
@@ -26,7 +28,7 @@ do
 
     # denoise
 
-    echo \
+#    echo \
     ./analyze-2d \
         $data \
         --wavelet $wavelet \
@@ -38,7 +40,7 @@ do
 
     # smooth
 
-    echo \
+#    echo \
     ./analyze-2d \
         $data \
         --wavelet $wavelet \
@@ -50,6 +52,8 @@ do
     || exit 1
 
     #--------------------
+
+    ### 1D ANALYSIS
 
     # regular decomposition
 
@@ -129,10 +133,10 @@ do
         $data \
         --wavelet $wavelet \
         --denoise-2d $thr \
-        --smooth \
+        --smooth-2d \
         --Verbose \
         --output-dir $wavelet \
-        --tag ${wavelet}_dn${thr}_smooth \
+        --tag ${wavelet}_dn2d${thr}_smooth \
     || exit 1
 
 #    echo \
@@ -157,12 +161,6 @@ do
         --Verbose \
         --output-dir $wavelet \
         --tag ${wavelet}_dn2d${thr}_smooth_dn1d${thr}_smooth \
-    || exit 1
-
-done
-        --Verbose \
-        --output-dir $wavelet \
-        --tag ${wavelet}_dn2d${thr}_smooth_dn1d${thr} \
     || exit 1
 
 done

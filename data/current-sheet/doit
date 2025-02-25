@@ -12,6 +12,11 @@ thr1d=1.0 # used for denoising
 
 #-------------------------------------------------
 
+ARGS="--figtype png --figtype pdf --dpi 500"
+ARGS="$ARGS --zoom 0.28 0.45 0.45 0.55"
+
+#-------------------------------------------------
+
 for wavelet in "db1"
 do
 
@@ -23,9 +28,11 @@ do
     ./analyze-2d \
         $data \
         --wavelet $wavelet \
+        --log \
         --Verbose \
         --output-dir $wavelet \
         --tag $wavelet \
+        $ARGS \
     || exit 1
 
     # denoise
@@ -34,10 +41,12 @@ do
     ./analyze-2d \
         $data \
         --wavelet $wavelet \
+        --log \
         --denoise $thr2d \
         --Verbose \
         --output-dir $wavelet \
         --tag ${wavelet}_dn${thr2d} \
+        $ARGS \
     || exit 1
 
     # smooth
@@ -46,11 +55,13 @@ do
     ./analyze-2d \
         $data \
         --wavelet $wavelet \
+        --log \
         --denoise $thr2d \
         --smooth \
         --Verbose \
         --output-dir $wavelet \
         --tag ${wavelet}_dn${thr2d}_smooth \
+        $ARGS \
     || exit 1
 
     #--------------------
@@ -66,6 +77,7 @@ do
         --Verbose \
         --output-dir $wavelet \
         --tag $wavelet \
+        $ARGS \
     || exit 1
 
 #    echo \
@@ -76,6 +88,7 @@ do
         --Verbose \
         --output-dir $wavelet \
         --tag ${wavelet}_dn1d${thr1d} \
+        $ARGS \
     || exit 1
 
 #    echo \
@@ -87,6 +100,7 @@ do
         --Verbose \
         --output-dir $wavelet \
         --tag ${wavelet}_dn1d${thr1d}_smooth \
+        $ARGS \
     || exit 1
 
     #---
@@ -101,6 +115,7 @@ do
         --Verbose \
         --output-dir $wavelet \
         --tag ${wavelet}_dn2d${thr2d} \
+        $ARGS \
     || exit 1
 
 #    echo \
@@ -112,6 +127,7 @@ do
         --Verbose \
         --output-dir $wavelet \
         --tag ${wavelet}_dn2d${thr2d}_dn1d${thr1d} \
+        $ARGS \
     || exit 1
 
 #    echo \
@@ -124,6 +140,7 @@ do
         --Verbose \
         --output-dir $wavelet \
         --tag ${wavelet}_dn2d${thr2d}_dn1d${thr1d}_smooth \
+        $ARGS \
     || exit 1
 
     #---
@@ -139,6 +156,7 @@ do
         --Verbose \
         --output-dir $wavelet \
         --tag ${wavelet}_dn2d${thr2d}_smooth \
+        $ARGS \
     || exit 1
 
 #    echo \
@@ -151,6 +169,7 @@ do
         --Verbose \
         --output-dir $wavelet \
         --tag ${wavelet}_dn2d${thr2d}_smooth_dn1d${thr1d} \
+        $ARGS \
     || exit 1
 
 #    echo \
@@ -164,6 +183,7 @@ do
         --Verbose \
         --output-dir $wavelet \
         --tag ${wavelet}_dn2d${thr2d}_smooth_dn1d${thr1d}_smooth \
+        $ARGS \
     || exit 1
 
 done

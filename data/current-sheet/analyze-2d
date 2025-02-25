@@ -43,6 +43,12 @@ parser.add_argument('--max-scale', default=None, type=int)
 
 #---
 
+parser.add_argument('--log', default=False, action='store_true')
+parser.add_argument('--zoom', default=None, nargs=4, type=float,
+    help='--zoom xmin xmax ymin ymax')
+
+#---
+
 parser.add_argument('-o', '--output-dir', default='.', type=str)
 parser.add_argument('-t', '--tag', default='', type=str)
 
@@ -119,7 +125,7 @@ while ha.active[0] > 1: # continue to decompose
 
     # plot images
 
-    fig = plt.imshow(aa, ad, da, dd)
+    fig = plt.imshow(aa, ad, da, dd, log=args.log)
     fig.suptitle(title, fontsize=10)
 
     figtmp = os.path.join(
@@ -130,6 +136,21 @@ while ha.active[0] > 1: # continue to decompose
 
     plt.save(fig, figtmp, args.figtype, dpi=args.dpi, verbose=args.verbose)
     plt.close(fig)
+
+    ### plot zoomed version
+    if args.zoom is not None:
+
+        fig = plt.imshow(aa, ad, da, dd, log=args.log, xmin=args.zoom[0], xmax=args.zoom[1], ymin=args.zoom[2], ymax=args.zoom[3])
+        fig.suptitle(title, fontsize=10)
+
+        figtmp = os.path.join(
+            args.output_dir,
+            '%s_%s_%s_plane-imshow-zoom%s' % \
+                (basename, label, scales, args.tag),
+        ) + '.%s'
+
+        plt.save(fig, figtmp, args.figtype, dpi=args.dpi, verbose=args.verbose)
+        plt.close(fig)
 
     #---
 

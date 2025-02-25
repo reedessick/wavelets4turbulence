@@ -50,6 +50,10 @@ e.g.: to plot the plane at x=128, specify "--plane 0 128". To plot the plane at 
 
 #---
 
+parser.add_argument('--log', default=False, action='store_true')
+
+#---
+
 parser.add_argument('-o', '--output-dir', default='.', type=str)
 parser.add_argument('-t', '--tag', default='', type=str)
 
@@ -134,7 +138,7 @@ for field in args.field:
 
                     # plot images
 
-                    fig = plt.imshow(aa, ad, da, dd)
+                    fig = plt.imshow(aa, ad, da, dd, log=args.log)
                     fig.suptitle(title, fontsize=10)
 
                     figtmp = os.path.join(

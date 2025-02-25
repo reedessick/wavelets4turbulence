@@ -46,9 +46,12 @@ SUBPLOTS_ADJUST = dict(
 APPROX_CMAP = 'RdGy'
 DETAIL_CMAP = 'PuOr'
 
+LOG_POS_CMAP = 'YlOrRd'
+LOG_NEG_CMAP = 'YlGnBu'
+
 #-------------------------------------------------
 
-def imshow(aa, ad, da, dd):
+def imshow(aa, ad, da, dd, log=False, xmin=None, xmax=None, ymin=None, ymax=None):
     """plot 2D data from a Haar decomposed 2D array (assumed to be square)
     """
     fig = plt.figure(figsize=FIGSIZE)
@@ -67,24 +70,58 @@ def imshow(aa, ad, da, dd):
 
         ax = plt.subplot(2,2,ind+1)
 
-        if ind > 0: # make scales symmetric for details
-            vlim = np.max(np.abs(data))
-            vmin = -vlim
-            vmax = +vlim
+        if log: # FIXME plot positive and negative values with different colors?
+
+            # limit the range to only a few orders of mag off the maximum
+            vmax = np.max(np.log10(np.abs(data)))
+            vmin = max(np.min(np.log10(np.abs(data))), vmax-3) 
+
+            # positive values
+            ax.imshow(
+                np.where(data > 0, np.log10(np.abs(data)), np.nan),
+                cmap=LOG_POS_CMAP,
+                vmin=vmin,
+                vmax=vmax,
+                origin='lower',
+                extent=(0, 1, 0, 1),
+            )
+
+            # negative values
+            ax.imshow(
+                np.where(data < 0, np.log10(np.abs(data)), np.nan),
+                cmap=LOG_NEG_CMAP,
+                vmin=vmin,
+                vmax=vmax,
+                origin='lower',
+                extent=(0, 1, 0, 1),
+            )
+
         else:
-            vmin = vmax = None
+            if ind > 0: # make scales symmetric for details
+                vlim = np.max(np.abs(data))
+                vmin = -vlim
+                vmax = +vlim
+            else:
+                vmin = vmax = None
 
-        ax.imshow(
-            data,
-            vmin=vmin,
-            vmax=vmax,
-            cmap=cmap,
-            origin='lower',
-            extent=(0, 1, 0, 1),
-        )
+            ax.imshow(
+                data,
+                vmin=vmin,
+                vmax=vmax,
+                cmap=cmap,
+                origin='lower',
+                extent=(0, 1, 0, 1),
+            )
 
-        ax.set_xlim(xmin=0, xmax=1)
-        ax.set_ylim(ymin=0, ymax=1)
+        if xmin is not None:
+            ax.set_xlim(xmin=xmin)
+        if xmax is not None:
+            ax.set_xlim(xmax=xmax)
+
+        if ymin is not None:
+            ax.set_ylim(ymin=ymin)
+        if ymax is not None:
+            ax.set_ylim(ymax=ymax)
 
         if ind == 0:
             ax.set_xlabel('approximant')

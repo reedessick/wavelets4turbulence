@@ -20,7 +20,7 @@ for wavelet in "db1"
 do
 
 #    echo \
-#    python -i \
+    python -i \
     ./magic \
         $data \
         --wavelet $wavelet \

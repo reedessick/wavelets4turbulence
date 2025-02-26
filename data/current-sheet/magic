@@ -30,23 +30,23 @@ def imshow(curr, mag, curr_denoise, aspect='auto'):
 
     #---
 
-    curr = np.log10(np.abs(curr))
-    curr_vmax = np.max(curr)
-    curr_vmin = max(np.min(curr), curr_vmax-3)
+    logcurr = np.log10(np.abs(curr))
+    logcurr_vmax = np.max(logcurr)
+    logcurr_vmin = max(np.min(logcurr), logcurr_vmax-3)
 
-    mag = np.log10(np.abs(mag))
-    mag_vmax = np.max(mag)
-    mag_vmin = max(np.min(mag), mag_vmax-3)
+    logmag = np.log10(np.abs(mag))
+    logmag_vmax = np.max(logmag)
+    logmag_vmin = max(np.min(logmag), logmag_vmax-3)
 
-    curr_denoise = np.log10(np.abs(curr_denoise))
+    logcurr_denoise = np.log10(np.abs(curr_denoise))
 
     #---
 
     for ind, (label, cmap, data, ect, vmin, vmax) in enumerate([
-            ('$\log|j|$', 'Greys', curr, np.ones_like(curr, dtype=bool), curr_vmin, curr_vmax),
-            ('$\log|B|$', 'YlGn_r', mag, np.ones_like(mag, dtype=bool), mag_vmin, mag_vmax),
-            (None, 'Greys', curr_denoise, np.ones_like(curr_denoise, dtype=bool), curr_vmin, curr_vmax),
-            (None, 'YlGn_r', mag, sel, mag_vmin, mag_vmax),
+            ('$\log|j|$', 'Greys', logcurr, np.ones_like(curr, dtype=bool), logcurr_vmin, logcurr_vmax),
+            ('$\log|B|$', 'YlGn_r', logmag, np.ones_like(mag, dtype=bool), logmag_vmin, logmag_vmax),
+            (None, 'Greys', logcurr_denoise, np.ones_like(curr_denoise, dtype=bool), logcurr_vmin, logcurr_vmax),
+            (None, 'YlGn_r', logmag, sel, logmag_vmin, logmag_vmax),
         ]):
 
         if np.prod(data.shape) == 0: continue
@@ -84,7 +84,7 @@ def imshow(curr, mag, curr_denoise, aspect='auto'):
     X, Y = np.meshgrid(x, y)
 
     # find local minima
-    data = mag
+    data = logmag
 
     mins = np.ones((nx, ny), dtype=bool)
     mins[0,:] = mins[-1,:] = mins[:,0] = mins[:,-1] = False # exclude edge points
@@ -96,11 +96,20 @@ def imshow(curr, mag, curr_denoise, aspect='auto'):
         mins[:,j+1] *= (data[:,j] > data[:,j+1])*(data[:,j+1] < data[:,j+2])
 
     # plot all minima
+    print(np.sum(mins))
     ax.plot(X[mins], Y[mins], marker='.', markersize=1, color='r', alpha=0.25, linestyle='none')
+
+    # plot minima below some threshold on abs(mag)
+    thr = -2 # FIXME don't hard-code this
+    mins *= data < thr
+    print(np.sum(mins))
+
+    ax.plot(X[mins], Y[mins], marker='.', markersize=1, color='b', alpha=0.25, linestyle='none')
 
     # plot just the minima within coherent structure
     mins *= sel
-    ax.plot(X[mins], Y[mins], marker='.', markersize=1, color='b', alpha=0.25, linestyle='none')
+    print(np.sum(mins))
+    ax.plot(X[mins], Y[mins], marker='.', markersize=1, color='k', alpha=0.25, linestyle='none')
 
     #---
 

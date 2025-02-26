@@ -11,7 +11,7 @@ thr2d=2.0 # used for denoising
 
 #-------------------------------------------------
 
-ARGS="--figtype png --figtype pdf --dpi 500"
+ARGS="--figtype png --dpi 500"
 
 #-------------------------------------------------
 
@@ -19,10 +19,11 @@ for wavelet in "db1"
 do
 
 #    echo \
-#    python -i \
+    python -i \
     ./magic \
         $data \
         --wavelet $wavelet \
+        --max-scale 64 \
         --Verbose \
         --output-dir $wavelet \
         --tag $wavelet \

@@ -26,7 +26,9 @@ from w4t.utils import dv # PLASMAtools.aux_funcs.derived_var_funcs
 def imshow(curr, mag, curr_denoise):
     fig = plt.plt.figure(figsize=plt.FIGSIZE)
 
-    sel = np.abs(curr_denoise) > 2 ### FIXME this is stupid and fragile. Do something smarter to identify regions within the structure
+    sel = np.abs(curr_denoise) > 0 ### FIXME this is stupid and fragile. Do something smarter to identify regions within the structure
+
+    print(np.min(np.abs(curr_denoise)))
 
     for ind, (label, cmap, data, ect) in enumerate([
             ('$\log|j|$', 'Greys', curr, np.ones_like(curr, dtype=bool)),
@@ -62,24 +64,43 @@ def imshow(curr, mag, curr_denoise):
         plt.plt.setp(ax.get_xticklabels(), visible=False)
         plt.plt.setp(ax.get_yticklabels(), visible=False)
 
+    #---
+
     # add local minima
-    # FIXME! this is not working yet
-    '''
+
     nx, ny = data.shape
     x = np.arange(nx) / nx
     y = np.arange(ny) / ny
-    X, Y = np.meshgrid(x, y, indexing='ij')
-    X = np.ravel(X)
-    Y = np.ravel(Y)
+    X, Y = np.meshgrid(x, y)
 
-    data = np.ravel(np.where(sel, np.abs(mag), np.inf))
+    # find local minima
+    data = np.abs(mag)
 
-    args = np.argsort(data)[::-1][:10] # smallest first
-    ax.plot(X[args], Y[args], marker='o', markersize=1, markeredgecolor='r', markerfacecolor='none', linestyle='none')
-    '''
+    sel = np.ones((nx, ny), dtype=bool)
+    sel[0,:] = sel[-1,:] = sel[:,0] = sel[:,-1] = False # exclude edge points
+
+    for i in range(nx-2): # look for local minima in the x-direction
+        sel[i+1,:] *= (data[i,:] < data[i+1,:])*(data[i+1,:] < data[i+2,:])
+
+    for j in range(ny-2): # look for local minima in the y-direction
+        sel[:,j+1] *= (data[:,j] < data[:,j+1])*(data[:,j+1] < data[:,j+2])
+
+    # retain only the very small values
+    sel *= data < np.min(data)*50
+
+    # retain only those points that are within the coherent structure
+    sel *= np.abs(curr_denoise) > 2
+
+    print(np.prod(sel.shape), np.sum(sel))
+
+    ax.plot(X[sel], Y[sel], marker='o', markeredgecolor='r', markerfacecolor='none', alpha=0.25, linestyle='none')
+
+    #---
 
     # finish decorating
     plt.plt.subplots_adjust(**plt.SUBPLOTS_ADJUST)
+
+    #---
 
     return fig
 

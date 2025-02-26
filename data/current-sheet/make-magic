@@ -7,7 +7,8 @@
 
 data="b_field-wavelet_turbulence-2025-02-22.npy"
 
-thr2d=2.0 # used for denoising
+thr2d=5.0 # used for denoising
+max_scale=64
 
 #-------------------------------------------------
 
@@ -19,11 +20,12 @@ for wavelet in "db1"
 do
 
 #    echo \
-    python -i \
+#    python -i \
     ./magic \
         $data \
         --wavelet $wavelet \
-        --max-scale 64 \
+        --denoise $thr2d \
+        --max-scale $max_scale \
         --Verbose \
         --output-dir $wavelet \
         --tag $wavelet \

@@ -23,32 +23,42 @@ from w4t.utils import dv # PLASMAtools.aux_funcs.derived_var_funcs
 
 #-------------------------------------------------
 
-def imshow(curr, mag, curr_denoise):
+def imshow(curr, mag, curr_denoise, aspect='auto'):
     fig = plt.plt.figure(figsize=plt.FIGSIZE)
 
-    sel = np.abs(curr_denoise) > 0 ### FIXME this is stupid and fragile. Do something smarter to identify regions within the structure
+    sel = np.abs(curr_denoise) > 0
 
-    print(np.min(np.abs(curr_denoise)))
+    #---
 
-    for ind, (label, cmap, data, ect) in enumerate([
-            ('$\log|j|$', 'Greys', curr, np.ones_like(curr, dtype=bool)),
-            ('$\log|B|$', 'YlGn_r', mag, np.ones_like(mag, dtype=bool)),
-            (None, 'Greys', curr_denoise, np.ones_like(curr_denoise, dtype=bool)),
-            (None, 'YlGn_r', mag, sel),
+    curr = np.log10(np.abs(curr))
+    curr_vmax = np.max(curr)
+    curr_vmin = max(np.min(curr), curr_vmax-3)
+
+    mag = np.log10(np.abs(mag))
+    mag_vmax = np.max(mag)
+    mag_vmin = max(np.min(mag), mag_vmax-3)
+
+    curr_denoise = np.log10(np.abs(curr_denoise))
+
+    #---
+
+    for ind, (label, cmap, data, ect, vmin, vmax) in enumerate([
+            ('$\log|j|$', 'Greys', curr, np.ones_like(curr, dtype=bool), curr_vmin, curr_vmax),
+            ('$\log|B|$', 'YlGn_r', mag, np.ones_like(mag, dtype=bool), mag_vmin, mag_vmax),
+            (None, 'Greys', curr_denoise, np.ones_like(curr_denoise, dtype=bool), curr_vmin, curr_vmax),
+            (None, 'YlGn_r', mag, sel, mag_vmin, mag_vmax),
         ]):
 
         if np.prod(data.shape) == 0: continue
 
         ax = plt.plt.subplot(2,2,ind+1)
 
-        vmax = np.max(np.log10(np.abs(data)))
-        vmin = max(np.min(np.log10(np.abs(data))), vmax-3)
-
         ax.imshow(
-            np.where(ect, np.log10(np.abs(data)), np.nan),
+            np.where(ect, data, np.nan),
             cmap=cmap,
             vmax=vmax,
             vmin=vmin,
+            aspect=aspect,
             origin='lower',
             extent=(0, 1, 0, 1),
         )
@@ -66,34 +76,31 @@ def imshow(curr, mag, curr_denoise):
 
     #---
 
-    # add local minima
+    # decorate mag
 
-    nx, ny = data.shape
-    x = np.arange(nx) / nx
-    y = np.arange(ny) / ny
+    nx, ny = mag.shape
+    x = (0.5+np.arange(nx)) / nx
+    y = (0.5+np.arange(ny)) / ny
     X, Y = np.meshgrid(x, y)
 
     # find local minima
-    data = np.abs(mag)
+    data = mag
 
-    sel = np.ones((nx, ny), dtype=bool)
-    sel[0,:] = sel[-1,:] = sel[:,0] = sel[:,-1] = False # exclude edge points
+    mins = np.ones((nx, ny), dtype=bool)
+    mins[0,:] = mins[-1,:] = mins[:,0] = mins[:,-1] = False # exclude edge points
 
     for i in range(nx-2): # look for local minima in the x-direction
-        sel[i+1,:] *= (data[i,:] < data[i+1,:])*(data[i+1,:] < data[i+2,:])
+        mins[i+1,:] *= (data[i,:] > data[i+1,:])*(data[i+1,:] < data[i+2,:])
 
     for j in range(ny-2): # look for local minima in the y-direction
-        sel[:,j+1] *= (data[:,j] < data[:,j+1])*(data[:,j+1] < data[:,j+2])
+        mins[:,j+1] *= (data[:,j] > data[:,j+1])*(data[:,j+1] < data[:,j+2])
 
-    # retain only the very small values
-    sel *= data < np.min(data)*50
+    # plot all minima
+    ax.plot(X[mins], Y[mins], marker='.', markersize=1, color='r', alpha=0.25, linestyle='none')
 
-    # retain only those points that are within the coherent structure
-    sel *= np.abs(curr_denoise) > 2
-
-    print(np.prod(sel.shape), np.sum(sel))
-
-    ax.plot(X[sel], Y[sel], marker='o', markeredgecolor='r', markerfacecolor='none', alpha=0.25, linestyle='none')
+    # plot just the minima within coherent structure
+    mins *= sel
+    ax.plot(X[mins], Y[mins], marker='.', markersize=1, color='b', alpha=0.25, linestyle='none')
 
     #---
 
@@ -176,15 +183,14 @@ curr_ha.denoise(args.denoise, max_scale=args.max_scale)
 #------------------------
 
 if args.verbose:
-    print('restricting mag field to identified coherent structure')
-
+    print('    smoothing magnetic field magnitude')
 mag = np.sum(mag**2, axis=0)**0.5 # take the magnitude of the magnetic field vector
 
 #-------------------------------------------------
 
 # let's make some plots
 
-fig = imshow(curr, mag, curr_ha.array)
+fig = imshow(curr, mag, curr_ha.array, aspect='auto')
 
 figtmp = os.path.join(
     args.output_dir,

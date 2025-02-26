@@ -202,45 +202,6 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
         """
         levels = copy.copy(self.levels) # make a copy so we can remember the level of decomposition
 
-        self.decompose() # completely decompose
-        while self.scales[0] > 1: # work our way to smaller scales
-
-            # set up all possible combos of scales relevant here
-            slices = [tuple()]
-            for dim, num in enumerate(self.active):
-                slices = [_+(slice(0,num),) for _ in slices] + [_+(slice(num,2*num),) for _ in slices]
-
-            # iterate over slices, derive and apply thresholds for each set separately
-            if (max_scale is not None) and (self.scales[0] > max_scale):
-
-                if not smooth:
-                    for s in slices: # iterate over all slices, including approx
-                        self.array[s] *= 0 # zero out and approx details at very large scales
-
-                else:
-                    pass # leave the large-scale structure in tact
-
-            else:
-                for s in slices[1:]: # only touch the detail coefficients
-                    sel = np.abs(self.array[s]) <= np.std(self.array[s])*num_std # the small-amplitude detail coeffs
-                    if smooth: # zero the high-amplitude detail coefficients
-                        sel = np.logical_not(sel)
-                    self.array[s] *= np.where(sel, 0.0, 1.0)
-
-            # idwt to go up to the next scale
-            self.idwt()
-
-        # work back to the level of decomposition we were at initially
-        self.set_levels(levels)
-
-    #---
-
-    def alt_denoise(self, num_std, smooth=False, max_scale=False):
-        if max_scale is None:
-            max_scale = self.shape[0] # this means we will continue to decompose over all scales
-
-        levels = copy.copy(self.levels)
-
         self.idecompose() # start from the top
         while self.scales[0] < max_scale: # continue to denoise
             self.dwt() # decompose again

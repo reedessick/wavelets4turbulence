@@ -96,19 +96,16 @@ def imshow(curr, mag, curr_denoise, aspect='auto'):
         mins[:,j+1] *= (data[:,j] > data[:,j+1])*(data[:,j+1] < data[:,j+2])
 
     # plot all minima
-    print(np.sum(mins))
     ax.plot(X[mins], Y[mins], marker='.', markersize=1, color='r', alpha=0.25, linestyle='none')
 
     # plot minima below some threshold on abs(mag)
-    thr = -2 # FIXME don't hard-code this
+    thr = -1.0 # FIXME don't hard-code this
     mins *= data < thr
-    print(np.sum(mins))
 
     ax.plot(X[mins], Y[mins], marker='.', markersize=1, color='b', alpha=0.25, linestyle='none')
 
     # plot just the minima within coherent structure
     mins *= sel
-    print(np.sum(mins))
     ax.plot(X[mins], Y[mins], marker='.', markersize=1, color='k', alpha=0.25, linestyle='none')
 
     #---

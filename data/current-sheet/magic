@@ -66,8 +66,8 @@ def imshow(curr, mag, curr_denoise, aspect='auto'):
         if label is not None:
             ax.set_title(label)
 
-#        ax.set_xlim(xmin=0.25, xmax=0.45)
-#        ax.set_ylim(ymin=0.45, ymax=0.55)
+        ax.set_xlim(xmin=0.25, xmax=0.45)
+        ax.set_ylim(ymin=0.45, ymax=0.55)
 
         ax.tick_params(**plt.IMSHOW_TICK_PARAMS)
 
@@ -98,15 +98,15 @@ def imshow(curr, mag, curr_denoise, aspect='auto'):
     # plot all minima
     ax.plot(X[mins], Y[mins], marker='.', markersize=1, color='r', alpha=0.25, linestyle='none')
 
-    # plot minima below some threshold on abs(mag)
-    thr = -1.0 # FIXME don't hard-code this
-    mins *= data < thr
-
-    ax.plot(X[mins], Y[mins], marker='.', markersize=1, color='b', alpha=0.25, linestyle='none')
-
     # plot just the minima within coherent structure
     mins *= sel
-    ax.plot(X[mins], Y[mins], marker='.', markersize=1, color='k', alpha=0.25, linestyle='none')
+    ax.plot(X[mins], Y[mins], marker='.', markersize=1, color='b', alpha=0.25, linestyle='none')
+
+    # plot minima below some threshold on abs(mag)
+    thr = -1.8 # FIXME don't hard-code this
+    mins *= data < thr
+
+    ax.plot(X[mins], Y[mins], marker='x', markersize=4, color='k', alpha=1.00, linestyle='none')
 
     #---
 

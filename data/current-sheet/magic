@@ -23,35 +23,55 @@ from w4t.utils import dv # PLASMAtools.aux_funcs.derived_var_funcs
 
 #-------------------------------------------------
 
-def imshow(curr, mag, curr_denoise, aspect='auto'):
-    fig = plt.plt.figure(figsize=plt.FIGSIZE)
+def imshow(curr, curr_denoise, mag, div, det, aspect='auto'):
+    fig = plt.plt.figure(figsize=(10,5))
 
     sel = np.abs(curr_denoise) > 0
 
     #---
 
     logcurr = np.log10(np.abs(curr))
+#    logcurr_vmax = None
+#    logcurr_vmin = None
     logcurr_vmax = np.max(logcurr)
     logcurr_vmin = max(np.min(logcurr), logcurr_vmax-3)
 
+    logcurr_denoise = np.log10(np.abs(curr_denoise))
+
     logmag = np.log10(np.abs(mag))
+#    logmag_vmax = None
+#    logmag_vmin = None
     logmag_vmax = np.max(logmag)
     logmag_vmin = max(np.min(logmag), logmag_vmax-3)
 
-    logcurr_denoise = np.log10(np.abs(curr_denoise))
+    logdiv = np.log10(np.abs(div))
+    logdiv_vmax = None
+    logdiv_vmin = None
+#    logdet_vmax = np.max(np.abs(logdet))
+#    logdet_vmin = max(np.min(logdet), logdet_vmax-3)
+
+    logdet = np.log10(np.abs(det))
+    logdet_vmax = None
+    logdet_vmin = None
+#    logdet_vmax = np.max(np.abs(logdet))
+#    logdet_vmin = max(np.min(logdet), logdet_vmax-3)
 
     #---
 
     for ind, (label, cmap, data, ect, vmin, vmax) in enumerate([
             ('$\log|j|$', 'Greys', logcurr, np.ones_like(curr, dtype=bool), logcurr_vmin, logcurr_vmax),
             ('$\log|B|$', 'YlGn_r', logmag, np.ones_like(mag, dtype=bool), logmag_vmin, logmag_vmax),
+            ('$\log|\sum_i \partial_i B_i|$', 'YlGn_r', logdiv, np.ones_like(logdiv, dtype=bool), logdiv_vmin, logdiv_vmax),
+            ('$\log|\mathrm{det}|\partial_i B_j||$', 'YlGn_r', logdet, np.ones_like(logdet, dtype=bool), logdet_vmin, logdet_vmax),
             (None, 'Greys', logcurr_denoise, np.ones_like(curr_denoise, dtype=bool), logcurr_vmin, logcurr_vmax),
             (None, 'YlGn_r', logmag, sel, logmag_vmin, logmag_vmax),
+            (None, 'YlGn_r', logdiv, sel, logdiv_vmin, logdiv_vmax),
+            (None, 'YlGn_r', logdet, sel, logdet_vmin, logdet_vmax),
         ]):
 
         if np.prod(data.shape) == 0: continue
 
-        ax = plt.plt.subplot(2,2,ind+1)
+        ax = plt.plt.subplot(2,4,ind+1)
 
         ax.imshow(
             np.where(ect, data, np.nan),
@@ -174,29 +194,44 @@ _, nx, ny = mag.shape
 
 #------------------------
 
+# compute derived quantities
+
+dvf = dv.DerivedVars(num_of_dims=2, bcs="00")
+
+#-----------
+
 # take the curl to get the current
 
 if args.verbose:
     print('computing curr = curl(mag)')
 
-curr = dv.DerivedVars(num_of_dims=2, bcs="00").vector_curl(np.array([mag[0], mag[1], np.zeros((nx, ny))], dtype=float))
+curr = dvf.vector_curl(mag)
 curr_ha = pywt.WaveletArray(curr, args.wavelet)
 
 if args.Verbose:
     print('    denoising with thr=%.3f' % args.denoise)
 curr_ha.denoise(args.denoise, max_scale=args.max_scale)
 
-#------------------------
+#-----------
 
 if args.verbose:
-    print('    smoothing magnetic field magnitude')
-mag = np.sum(mag**2, axis=0)**0.5 # take the magnitude of the magnetic field vector
+    print('    computing gradient of magnetic field')
+grad_mag = dvf.gradient_tensor(mag)
+
+det = grad_mag[0,0]*grad_mag[1,1] - grad_mag[0,1]*grad_mag[1,0] # determinant of dBi/dxj
+div = grad_mag[0,0] + grad_mag[1,1] # divergence: \sum_i dBi/dxi
+
+#-----------
+
+if args.verbose:
+    print('    computing magnetic field magnitude')
+abs_mag = np.sum(mag**2, axis=0)**0.5 # take the magnitude of the magnetic field vector
 
 #-------------------------------------------------
 
 # let's make some plots
 
-fig = imshow(curr, mag, curr_ha.array, aspect='auto')
+fig = imshow(curr, curr_ha.array, abs_mag, div, det, aspect='auto')
 
 figtmp = os.path.join(
     args.output_dir,

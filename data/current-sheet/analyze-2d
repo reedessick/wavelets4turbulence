@@ -104,7 +104,7 @@ if args.verbose:
 #datum = (mag[0]**2 + mag[1]**2)**0.5
 #label = 'mag_mag'
 
-datum = dv.DerivedVars(num_of_dims=2, bcs="00").vector_curl(np.array([mag[0], mag[1], np.zeros((nx, ny))], dtype=float))
+datum = dv.DerivedVars(num_of_dims=2, bcs="00").vector_curl(mag)
 label = 'curr_z'
 
 if args.abs:

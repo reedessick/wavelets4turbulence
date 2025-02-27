@@ -94,7 +94,7 @@ _, nx, ny = mag.shape
 if args.verbose:
     print('computing curr = curl(mag)')
 
-datum = dv.DerivedVars(num_of_dims=2, bcs="00").vector_curl(np.array([mag[0], mag[1], np.zeros((nx, ny))], dtype=float))
+datum = dv.DerivedVars(num_of_dims=2, bcs="00").vector_curl(mag)
 label = 'curr_z'
 
 #-------------------------------------------------

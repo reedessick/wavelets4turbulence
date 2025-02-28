@@ -23,6 +23,11 @@ from w4t.utils import dv # PLASMAtools.aux_funcs.derived_var_funcs
 
 #-------------------------------------------------
 
+logmag_thr = -1.0
+logo_thr = +1.5
+
+#-------------------------------------------------
+
 def extrema(data):
     """find local extrema neglecting pixels at the edge of the simulation
     """
@@ -105,17 +110,17 @@ def imshow(curr, curr_denoise, mag, mag0, mag1, o, div, det, mins, maxs, aspect=
 
     for ind, (label, cmap, data, ect, vmin, vmax) in enumerate([
             ('$\log|j|$', 'Greys', logcurr, np.ones_like(curr, dtype=bool), logcurr_vmin, logcurr_vmax),
-            ('$\log|\sum_i \partial_i B_i| - \log|B|$', 'YlGn_r', logdiv, np.ones_like(logdiv, dtype=bool), logdiv_vmin, logdiv_vmax),
+#            ('$\log|\sum_i \partial_i B_i| - \log|B|$', 'YlGn_r', logdiv, np.ones_like(logdiv, dtype=bool), logdiv_vmin, logdiv_vmax),
 #            ('$\log|\mathrm{det}|\partial_i B_j||$', 'YlGn_r', logdet, np.ones_like(logdet, dtype=bool), logdet_vmin, logdet_vmax),
-            ('$\mathrm{sgn}(\mathrm{det}|\partial_i B_j|)$', 'PuOr', sgndet, np.ones_like(sgndet, dtype=bool), sgndet_vmin, sgndet_vmax),
+#            ('$\mathrm{sgn}(\mathrm{det}|\partial_i B_j|)$', 'PuOr', sgndet, np.ones_like(sgndet, dtype=bool), sgndet_vmin, sgndet_vmax),
             ('$B_y/|B|$', 'RdBu', mag0/mag, np.ones_like(mag0, dtype=bool), by_vmin, by_vmax),
             ('$B_x/|B|$', 'RdBu', mag1/mag, np.ones_like(mag1, dtype=bool), bx_vmin, bx_vmax),
             ('$\log o$', 'Greys', logo, np.ones_like(o, dtype=bool), logo_vmin, logo_vmax),
             ('$\log|B|$', 'vanimo', logmag, np.ones_like(mag, dtype=bool), logmag_vmin, logmag_vmax),
             (None, 'Greys', logcurr_denoise, np.ones_like(curr_denoise, dtype=bool), logcurr_vmin, logcurr_vmax),
-            (None, 'YlGn_r', logdiv, sel, logdiv_vmin, logdiv_vmax),
+#            (None, 'YlGn_r', logdiv, sel, logdiv_vmin, logdiv_vmax),
 #            (None, 'YlGn_r', logdet, sel, logdet_vmin, logdet_vmax),
-            (None, 'PuOr', sgndet, sel, sgndet_vmin, sgndet_vmax),
+#            (None, 'PuOr', sgndet, sel, sgndet_vmin, sgndet_vmax),
             (None, 'RdBu', mag0/mag, sel, by_vmin, by_vmax),
             (None, 'RdBu', mag1/mag, sel, bx_vmin, bx_vmax),
             (None, 'Greys', logo, sel, logo_vmin, logo_vmax),
@@ -124,7 +129,7 @@ def imshow(curr, curr_denoise, mag, mag0, mag1, o, div, det, mins, maxs, aspect=
 
         if np.prod(data.shape) == 0: continue
 
-        ax = plt.plt.subplot(2,7,ind+1)
+        ax = plt.plt.subplot(2,5,ind+1)
 
         ax.imshow(
             np.where(ect, data, np.nan),
@@ -158,18 +163,16 @@ def imshow(curr, curr_denoise, mag, mag0, mag1, o, div, det, mins, maxs, aspect=
     ax.plot(X[mins], Y[mins], marker='.', markersize=1, color='r', alpha=0.25, linestyle='none')
     ax.plot(X[maxs], Y[maxs], marker='.', markersize=1, color='b', alpha=0.25, linestyle='none')
 
-    # plot just the minima within coherent structure
-    ax.plot(X[mins*sel], Y[mins*sel], marker='o', markersize=4, markeredgecolor='r', markerfacecolor='none', alpha=0.25, linestyle='none')
-    ax.plot(X[maxs*sel], Y[maxs*sel], marker='o', markersize=4, markeredgecolor='b', markerfacecolor='none', alpha=0.25, linestyle='none')
+    # plot minima that we think might be Xs
+    ax.plot(X[mins*(data<logmag_thr)*(logo>logo_thr)], Y[mins*(data<logmag_thr)*(logo>logo_thr)], marker='x', markersize=4, color='k', alpha=1.00, linestyle='none')
 
-    # plot minima below some threshold on abs(mag)
-    thr = -1.8 # FIXME don't hard-code this
-
-    ax.plot(X[mins*(data<thr)], Y[mins*(data<thr)], marker='x', markersize=4, color='k', alpha=1.00, linestyle='none')
+    # plot minima that we think might be Os
+    ax.plot(X[mins*(data<logmag_thr)*(logo<logo_thr)], Y[mins*(data<logmag_thr)*(logo<logo_thr)], marker='o', markersize=4, markeredgecolor='k', markerfacecolor='none', alpha=1.00, linestyle='none')
 
     #---
 
     # finish decorating
+
     plt.plt.subplots_adjust(
         left=0.01,
         right=0.99,
@@ -178,6 +181,101 @@ def imshow(curr, curr_denoise, mag, mag0, mag1, o, div, det, mins, maxs, aspect=
         hspace=0.03,
         wspace=0.03,
     )
+
+    #---
+
+    return fig
+
+#------------------------
+
+def hist(mins, maxs, sel, mag, o):
+    fig = plt.plt.figure(figsize=(5,5))
+
+    ax11 = plt.plt.subplot(2,2,1)
+    ax21 = plt.plt.subplot(2,2,3)
+    ax22 = plt.plt.subplot(2,2,4)
+
+    #---
+
+    logmag = np.log10(mag)
+    logo = np.log10(o)
+
+    #--- define subsets
+
+    everything = np.ones_like(sel, dtype=bool)
+    structure = sel
+
+    for ind, (label, ect) in enumerate([
+            ('everything', everything),
+            ('mins', mins),
+            ('maxs', maxs),
+        ]):
+
+        ectbins = min(100, max(10, int(0.5*np.sum(ect)**0.5)))
+        selbins = min(100, max(10, int(0.5*np.sum(sel*ect)**0.5)))
+
+        color = ax21.plot(np.ravel(logmag[ect]), np.ravel(logo[ect]), marker='.', markersize=1, linestyle='none', alpha=0.25)[0].get_color()
+
+        ax21.plot(np.ravel(logmag[ect*sel]), np.ravel(logo[ect*sel]), marker='o', markersize=4, linestyle='none', alpha=0.25, markeredgecolor=color, markerfacecolor='none')
+
+        ax11.hist(np.ravel(logmag[ect]), bins=ectbins, histtype='step', orientation='vertical', log=True, color=color)
+        ax11.hist(np.ravel(logmag[ect*sel]), bins=selbins, histtype='stepfilled', orientation='vertical', log=True, color=color, alpha=0.25)
+
+        ax22.hist(np.ravel(logo[ect]), bins=ectbins, histtype='step', orientation='horizontal', log=True, color=color)
+        ax22.hist(np.ravel(logo[ect*sel]), bins=selbins, histtype='stepfilled', orientation='horizontal', log=True, color=color, alpha=0.25)
+
+        fig.text(0.95, 0.95-0.03*(2*ind), '%s (%d)' % (label, np.sum(ect)), color=color, ha='right', va='top', fontsize=8)
+        fig.text(0.95, 0.95-0.03*(2*ind+1), 'CS %s(%d)' % (label, np.sum(ect*sel)), color=color, ha='right', va='top', fontsize=8)
+
+    #---
+
+    ax21.set_xlabel('$\log|B|$')
+    ax21.set_ylabel('$\log o$')
+
+    ax11.set_xlim(ax21.get_xlim())
+    plt.plt.setp(ax11.get_xticklabels(), visible=False)
+
+    ax22.set_ylim(ax21.get_ylim())
+    plt.plt.setp(ax22.get_yticklabels(), visible=False)
+
+    #---
+
+    ylim = ax11.get_ylim()
+    ax11.plot([logmag_thr]*2, ylim, color='k', alpha=0.25)
+    ax11.set_ylim(ylim)
+
+    xlim = ax22.get_xlim()
+    ax22.plot(xlim, [logo_thr]*2, color='k', alpha=0.25)
+    ax22.set_xlim(xlim)
+
+    xlim = ax21.get_xlim()
+    ylim = ax21.get_ylim()
+    ax21.plot([logmag_thr]*2, ylim, color='k', alpha=0.25)
+    ax21.plot(xlim, [logo_thr]*2, color='k', alpha=0.25)
+    ax21.set_xlim(xlim)
+    ax21.set_ylim(ylim)
+
+    #---
+
+    for ax in fig.axes:
+        ax.tick_params(
+            left=True,
+            right=True,
+            top=True,
+            bottom=True,
+            direction='in',
+            which='both',
+        )
+
+    plt.plt.subplots_adjust(
+        left=0.10,
+        right=0.95,
+        bottom=0.10,
+        top=0.95,
+        hspace=0.03,
+        wspace=0.03,
+    )
+
     #---
 
     return fig
@@ -305,6 +403,19 @@ fig = imshow(curr, curr_ha.array, abs_mag, mag[0], mag[1], o, div, det, mins, ma
 figtmp = os.path.join(
     args.output_dir,
     '%s_magic-imshow%s' % \
+        (basename, args.tag),
+) + '.%s'
+
+plt.save(fig, figtmp, args.figtype, dpi=args.dpi, verbose=args.verbose)
+plt.close(fig)
+
+#------------------------
+
+fig = hist(mins, maxs, np.abs(curr_ha.array > 0), abs_mag, o)
+
+figtmp = os.path.join(
+    args.output_dir,
+    '%s_magic-hist%s' % \
         (basename, args.tag),
 ) + '.%s'
 

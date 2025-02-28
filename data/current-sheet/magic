@@ -23,8 +23,8 @@ from w4t.utils import dv # PLASMAtools.aux_funcs.derived_var_funcs
 
 #-------------------------------------------------
 
-def imshow(curr, curr_denoise, mag, div, det, aspect='auto'):
-    fig = plt.plt.figure(figsize=(10,5))
+def imshow(curr, curr_denoise, mag, mag0, mag1, div, det, aspect='auto'):
+    fig = plt.plt.figure(figsize=(15,5))
 
     sel = np.abs(curr_denoise) > 0
 
@@ -47,12 +47,16 @@ def imshow(curr, curr_denoise, mag, div, det, aspect='auto'):
     logdiv = np.log10(np.abs(div))
     logdiv_vmax = None
     logdiv_vmin = None
-#    logdet_vmax = np.max(np.abs(logdet))
-#    logdet_vmin = max(np.min(logdet), logdet_vmax-3)
+#    logdiv_vmax = np.max(np.abs(logdiv))
+#    logdiv_vmin = max(np.min(logdiv), logdiv_vmax-3)
 
-    logdet = np.log10(np.abs(det))
-    logdet_vmax = None
-    logdet_vmin = None
+    sgndet = np.sign(det)
+    sgndet_vmax = 1
+    sgndet_vmin = -1
+
+#    logdet = np.log10(np.abs(det))
+#    logdet_vmax = None
+#    logdet_vmin = None
 #    logdet_vmax = np.max(np.abs(logdet))
 #    logdet_vmin = max(np.min(logdet), logdet_vmax-3)
 
@@ -60,18 +64,24 @@ def imshow(curr, curr_denoise, mag, div, det, aspect='auto'):
 
     for ind, (label, cmap, data, ect, vmin, vmax) in enumerate([
             ('$\log|j|$', 'Greys', logcurr, np.ones_like(curr, dtype=bool), logcurr_vmin, logcurr_vmax),
-            ('$\log|B|$', 'YlGn_r', logmag, np.ones_like(mag, dtype=bool), logmag_vmin, logmag_vmax),
             ('$\log|\sum_i \partial_i B_i|$', 'YlGn_r', logdiv, np.ones_like(logdiv, dtype=bool), logdiv_vmin, logdiv_vmax),
-            ('$\log|\mathrm{det}|\partial_i B_j||$', 'YlGn_r', logdet, np.ones_like(logdet, dtype=bool), logdet_vmin, logdet_vmax),
+#            ('$\log|\mathrm{det}|\partial_i B_j||$', 'YlGn_r', logdet, np.ones_like(logdet, dtype=bool), logdet_vmin, logdet_vmax),
+            ('$\mathrm{sgn}(\mathrm{det}|\partial_i B_j|)$', 'PuOr', sgndet, np.ones_like(sgndet, dtype=bool), sgndet_vmin, sgndet_vmax),
+            ('$B_y/|B|$', 'RdBu', mag0/mag, np.ones_like(mag0, dtype=bool), None, None),
+            ('$B_x/|B|$', 'RdBu', mag1/mag, np.ones_like(mag1, dtype=bool), None, None),
+            ('$\log|B|$', 'RdBu', logmag, np.ones_like(mag, dtype=bool), logmag_vmin, logmag_vmax),
             (None, 'Greys', logcurr_denoise, np.ones_like(curr_denoise, dtype=bool), logcurr_vmin, logcurr_vmax),
-            (None, 'YlGn_r', logmag, sel, logmag_vmin, logmag_vmax),
             (None, 'YlGn_r', logdiv, sel, logdiv_vmin, logdiv_vmax),
-            (None, 'YlGn_r', logdet, sel, logdet_vmin, logdet_vmax),
+#            (None, 'YlGn_r', logdet, sel, logdet_vmin, logdet_vmax),
+            (None, 'PuOr', sgndet, sel, sgndet_vmin, sgndet_vmax),
+            (None, 'RdBu', mag0/mag, sel, None, None),
+            (None, 'RdBu', mag1/mag, sel, None, None),
+            (None, 'YlGn_r', logmag, sel, logmag_vmin, logmag_vmax),
         ]):
 
         if np.prod(data.shape) == 0: continue
 
-        ax = plt.plt.subplot(2,4,ind+1)
+        ax = plt.plt.subplot(2,6,ind+1)
 
         ax.imshow(
             np.where(ect, data, np.nan),
@@ -86,8 +96,8 @@ def imshow(curr, curr_denoise, mag, div, det, aspect='auto'):
         if label is not None:
             ax.set_title(label)
 
-#        ax.set_xlim(xmin=0.25, xmax=0.45)
-#        ax.set_ylim(ymin=0.45, ymax=0.55)
+        ax.set_xlim(xmin=0.25, xmax=0.45)
+        ax.set_ylim(ymin=0.45, ymax=0.55)
 
         ax.tick_params(**plt.IMSHOW_TICK_PARAMS)
 
@@ -107,31 +117,53 @@ def imshow(curr, curr_denoise, mag, div, det, aspect='auto'):
     data = logmag
 
     mins = np.ones((nx, ny), dtype=bool)
+    maxs = np.ones((nx, ny), dtype=bool)
+
     mins[0,:] = mins[-1,:] = mins[:,0] = mins[:,-1] = False # exclude edge points
+    maxs[0,:] = maxs[-1,:] = maxs[:,0] = maxs[:,-1] = False
 
     for i in range(nx-2): # look for local minima in the x-direction
-        mins[i+1,:] *= (data[i,:] > data[i+1,:])*(data[i+1,:] < data[i+2,:])
+        mins[i+1,:] *= (data[i,:] > data[i+1,:])*(data[i+1,:] < data[i+2,:]) # check x derivative
+        maxs[i+1,:] *= (data[i,:] < data[i+1,:])*(data[i+1,:] > data[i+2,:])
 
     for j in range(ny-2): # look for local minima in the y-direction
         mins[:,j+1] *= (data[:,j] > data[:,j+1])*(data[:,j+1] < data[:,j+2])
+        maxs[:,j+1] *= (data[:,j] < data[:,j+1])*(data[:,j+1] > data[:,j+2])
 
-    # plot all minima
+    low = np.arange(0, nx-2)
+    mid = low+1
+    hgh = mid+1
+    for i in range(nx-2): # look for local minima along diagonals
+        mins[i+1,mid] *= (data[i,low] > data[i+1,mid])*(data[i+1,mid] < data[i+2,hgh]) # check diagonal
+        mins[i+1,mid] *= (data[i,hgh] > data[i+1,mid])*(data[i+1,mid] < data[i+2,low]) # check diagonal
+
+        maxs[i+1,mid] *= (data[i,low] < data[i+1,mid])*(data[i+1,mid] > data[i+2,hgh]) # check diagonal
+        maxs[i+1,mid] *= (data[i,hgh] < data[i+1,mid])*(data[i+1,mid] > data[i+2,low]) # check diagonal
+        
+    # plot all extrema
     ax.plot(X[mins], Y[mins], marker='.', markersize=1, color='r', alpha=0.25, linestyle='none')
+    ax.plot(X[maxs], Y[maxs], marker='.', markersize=1, color='b', alpha=0.25, linestyle='none')
 
     # plot just the minima within coherent structure
-    ax.plot(X[mins*sel], Y[mins*sel], marker='.', markersize=1, color='b', alpha=0.25, linestyle='none')
+    ax.plot(X[mins*sel], Y[mins*sel], marker='o', markersize=1, color='r', alpha=0.25, linestyle='none')
+    ax.plot(X[maxs*sel], Y[maxs*sel], marker='o', markersize=1, color='b', alpha=0.25, linestyle='none')
 
     # plot minima below some threshold on abs(mag)
     thr = -1.8 # FIXME don't hard-code this
-    mins *= data < thr
 
-    ax.plot(X[mins], Y[mins], marker='x', markersize=4, color='k', alpha=1.00, linestyle='none')
+    ax.plot(X[mins*(data<thr)], Y[mins*(data<thr)], marker='x', markersize=4, color='k', alpha=1.00, linestyle='none')
 
     #---
 
     # finish decorating
-    plt.plt.subplots_adjust(**plt.SUBPLOTS_ADJUST)
-
+    plt.plt.subplots_adjust(
+        left=0.01,
+        right=0.99,
+        bottom=0.05,
+        top=0.90,
+        hspace=0.03,
+        wspace=0.03,
+    )
     #---
 
     return fig
@@ -230,7 +262,7 @@ abs_mag = np.sum(mag**2, axis=0)**0.5 # take the magnitude of the magnetic field
 
 # let's make some plots
 
-fig = imshow(curr, curr_ha.array, abs_mag, div, det, aspect='auto')
+fig = imshow(curr, curr_ha.array, abs_mag, mag[0], mag[1], div, det, aspect='auto')
 
 figtmp = os.path.join(
     args.output_dir,

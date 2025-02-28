@@ -23,8 +23,11 @@ from w4t.utils import dv # PLASMAtools.aux_funcs.derived_var_funcs
 
 #-------------------------------------------------
 
-logmag_thr = -1.0
-logo_thr = +1.5
+x_logmag_thr = -1.50
+x_logo_thr   = +1.25
+
+o_logmag_thr = -1.00
+o_logo_thr   = +0.75
 
 #-------------------------------------------------
 
@@ -164,10 +167,10 @@ def imshow(curr, curr_denoise, mag, mag0, mag1, o, div, det, mins, maxs, aspect=
     ax.plot(X[maxs], Y[maxs], marker='.', markersize=1, color='b', alpha=0.25, linestyle='none')
 
     # plot minima that we think might be Xs
-    ax.plot(X[mins*(data<logmag_thr)*(logo>logo_thr)], Y[mins*(data<logmag_thr)*(logo>logo_thr)], marker='x', markersize=4, color='k', alpha=1.00, linestyle='none')
+    ax.plot(X[mins*(data<x_logmag_thr)*(logo>x_logo_thr)], Y[mins*(data<x_logmag_thr)*(logo>x_logo_thr)], marker='x', markersize=4, markeredgewidth=0.5, color='k', alpha=0.5, linestyle='none')
 
     # plot minima that we think might be Os
-    ax.plot(X[mins*(data<logmag_thr)*(logo<logo_thr)], Y[mins*(data<logmag_thr)*(logo<logo_thr)], marker='o', markersize=4, markeredgecolor='k', markerfacecolor='none', alpha=1.00, linestyle='none')
+    ax.plot(X[mins*(data<o_logmag_thr)*(logo<o_logo_thr)], Y[mins*(data<o_logmag_thr)*(logo<o_logo_thr)], marker='o', markersize=4, markeredgewidth=0.5, markeredgecolor='w', markerfacecolor='none', alpha=0.5, linestyle='none')
 
     #---
 
@@ -205,10 +208,10 @@ def hist(mins, maxs, sel, mag, o):
     everything = np.ones_like(sel, dtype=bool)
     structure = sel
 
-    for ind, (label, ect) in enumerate([
-            ('everything', everything),
-            ('mins', mins),
-            ('maxs', maxs),
+    for ind, (label1, label2, ect) in enumerate([
+            ('everything', 'coherent structure', everything),
+            ('minima', 'minima in coherent structure', mins),
+            ('maxima', 'maxima in coherent structure', maxs),
         ]):
 
         ectbins = min(100, max(10, int(0.5*np.sum(ect)**0.5)))
@@ -224,8 +227,8 @@ def hist(mins, maxs, sel, mag, o):
         ax22.hist(np.ravel(logo[ect]), bins=ectbins, histtype='step', orientation='horizontal', log=True, color=color)
         ax22.hist(np.ravel(logo[ect*sel]), bins=selbins, histtype='stepfilled', orientation='horizontal', log=True, color=color, alpha=0.25)
 
-        fig.text(0.95, 0.95-0.03*(2*ind), '%s (%d)' % (label, np.sum(ect)), color=color, ha='right', va='top', fontsize=8)
-        fig.text(0.95, 0.95-0.03*(2*ind+1), 'CS %s(%d)' % (label, np.sum(ect*sel)), color=color, ha='right', va='top', fontsize=8)
+        fig.text(0.95, 0.95-0.03*(2*ind), '%s (%d)' % (label1, np.sum(ect)), color=color, ha='right', va='top', fontsize=8)
+        fig.text(0.95, 0.95-0.03*(2*ind+1), '%s (%d)' % (label2, np.sum(ect*sel)), color=color, ha='right', va='top', fontsize=8)
 
     #---
 
@@ -241,17 +244,24 @@ def hist(mins, maxs, sel, mag, o):
     #---
 
     ylim = ax11.get_ylim()
-    ax11.plot([logmag_thr]*2, ylim, color='k', alpha=0.25)
+    ax11.plot([x_logmag_thr]*2, ylim, color='k', alpha=0.25)
+    ax11.plot([o_logmag_thr]*2, ylim, color='k', alpha=0.25, linestyle='dashed')
     ax11.set_ylim(ylim)
 
     xlim = ax22.get_xlim()
-    ax22.plot(xlim, [logo_thr]*2, color='k', alpha=0.25)
+    ax22.plot(xlim, [x_logo_thr]*2, color='k', alpha=0.25)
+    ax22.plot(xlim, [o_logo_thr]*2, color='k', alpha=0.25, linestyle='dashed')
     ax22.set_xlim(xlim)
 
     xlim = ax21.get_xlim()
     ylim = ax21.get_ylim()
-    ax21.plot([logmag_thr]*2, ylim, color='k', alpha=0.25)
-    ax21.plot(xlim, [logo_thr]*2, color='k', alpha=0.25)
+
+    ax21.plot([x_logmag_thr, x_logmag_thr, xlim[0]], [ylim[1], x_logo_thr, x_logo_thr], color='k', alpha=0.25)
+    ax21.plot([xlim[0], o_logmag_thr, o_logmag_thr], [o_logo_thr, o_logo_thr, ylim[0]], color='k', alpha=0.25)
+
+    ax21.text(xlim[0]+0.05*(xlim[1]-xlim[0]), ylim[1]-0.05*(ylim[1]-ylim[0]), 'X-like', ha='left', va='top')
+    ax21.text(xlim[0]+0.05*(xlim[1]-xlim[0]), ylim[0]+0.05*(ylim[1]-ylim[0]), 'O-like', ha='left', va='bottom')
+
     ax21.set_xlim(xlim)
     ax21.set_ylim(ylim)
 
@@ -382,13 +392,13 @@ o = np.empty((nx, ny), dtype=float)
 
 o[0,:] = o[-1,:] = o[:,0] = o[:,-1] = np.nan # turn the edge points off
 
-for i in range(nx-2):
+for i in range(nx-2): # iterate through all points and test for symmetry in rotations of pi/2
     for j in range(ny-2):
         o[i+1,j+1] = \
-            + (mag[0,i+1,j+2] + mag[0,i+1,j])**2 \
-            + (mag[1,i,j+1] + mag[1,i+2,j+1])**2 \
+            + (mag[0,i+1,j+2] - mag[1,i,j+1])**2 \
             + (mag[0,i+1,j+2] + mag[1,i+2,j+1])**2 \
-            + (mag[0,i+1,j] + mag[0,i,j+1])**2 \
+            + (mag[0,i+1,j] - mag[1,i+2,j+1])**2 \
+            + (mag[0,i+1,j] + mag[1,i,j+1])**2 \
 
 o /= abs_mag**2 # scale these by the size of the magnetic field at the center point
 

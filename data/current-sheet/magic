@@ -24,10 +24,10 @@ from w4t.utils import dv # PLASMAtools.aux_funcs.derived_var_funcs
 #-------------------------------------------------
 
 x_logmag_thr = -1.50
-x_logo_thr   = +1.25
+x_logo_thr   = +0.00
 
-o_logmag_thr = -0.75
-o_logo_thr   = +1.00
+o_logmag_thr = -1.00
+o_logo_thr   = -0.25
 
 #-------------------------------------------------
 
@@ -62,7 +62,7 @@ def extrema(data):
 
 #------------------------
 
-def imshow(curr, curr_denoise, mag, mag0, mag1, o, div, det, mins, maxs, aspect='auto'):
+def imshow(curr, curr_denoise, mag, mag0, mag1, o, p, div, det, mins, maxs, aspect='auto'):
     fig = plt.plt.figure(figsize=(15,5))
 
     sel = np.abs(curr_denoise) > 0
@@ -103,58 +103,14 @@ def imshow(curr, curr_denoise, mag, mag0, mag1, o, div, det, mins, maxs, aspect=
     by_vmax = +1
     by_vmin = -1
 
-#    logo = np.log10(o)
-    logo = o # FIXME: just for testing
+    logo = np.log10(o)
     logo_vmin = None
     logo_vmax = None
 #    logo_vmin = np.min(logo[logo==logo]) # be careful about nans
 #    logo_vmax = min(np.max(logo[logo==logo]), logo_vmin+5)
 
-    #---
-
-    for ind, (label, cmap, data, ect, vmin, vmax) in enumerate([
-            ('$\log|j|$', 'Greys', logcurr, np.ones_like(curr, dtype=bool), logcurr_vmin, logcurr_vmax),
-#            ('$\log|\sum_i \partial_i B_i| - \log|B|$', 'YlGn_r', logdiv, np.ones_like(logdiv, dtype=bool), logdiv_vmin, logdiv_vmax),
-#            ('$\log|\mathrm{det}|\partial_i B_j||$', 'YlGn_r', logdet, np.ones_like(logdet, dtype=bool), logdet_vmin, logdet_vmax),
-#            ('$\mathrm{sgn}(\mathrm{det}|\partial_i B_j|)$', 'PuOr', sgndet, np.ones_like(sgndet, dtype=bool), sgndet_vmin, sgndet_vmax),
-            ('$B_y/|B|$', 'RdBu', mag0/mag, np.ones_like(mag0, dtype=bool), by_vmin, by_vmax),
-            ('$B_x/|B|$', 'RdBu', mag1/mag, np.ones_like(mag1, dtype=bool), bx_vmin, bx_vmax),
-            ('$\log o$', 'Greys', logo, np.ones_like(o, dtype=bool), logo_vmin, logo_vmax),
-            ('$\log|B|$', 'vanimo', logmag, np.ones_like(mag, dtype=bool), logmag_vmin, logmag_vmax),
-            (None, 'Greys', logcurr_denoise, np.ones_like(curr_denoise, dtype=bool), logcurr_vmin, logcurr_vmax),
-#            (None, 'YlGn_r', logdiv, sel, logdiv_vmin, logdiv_vmax),
-#            (None, 'YlGn_r', logdet, sel, logdet_vmin, logdet_vmax),
-#            (None, 'PuOr', sgndet, sel, sgndet_vmin, sgndet_vmax),
-            (None, 'RdBu', mag0/mag, sel, by_vmin, by_vmax),
-            (None, 'RdBu', mag1/mag, sel, bx_vmin, bx_vmax),
-            (None, 'Greys', logo, sel, logo_vmin, logo_vmax),
-            (None, 'vanimo', logmag, sel, logmag_vmin, logmag_vmax),
-        ]):
-
-        if np.prod(data.shape) == 0: continue
-
-        ax = plt.plt.subplot(2,5,ind+1)
-
-        ax.imshow(
-            np.where(ect, data, np.nan),
-            cmap=cmap,
-            vmax=vmax,
-            vmin=vmin,
-            aspect=aspect,
-            origin='lower',
-            extent=(0, 1, 0, 1),
-        )
-
-        if label is not None:
-            ax.set_title(label)
-
-        ax.set_xlim(xmin=0.25, xmax=0.45)
-        ax.set_ylim(ymin=0.45, ymax=0.55)
-
-        ax.tick_params(**plt.IMSHOW_TICK_PARAMS)
-
-        plt.plt.setp(ax.get_xticklabels(), visible=False)
-        plt.plt.setp(ax.get_yticklabels(), visible=False)
+    p_vmin = 0
+    p_vmax = 1
 
     #---
 
@@ -163,15 +119,86 @@ def imshow(curr, curr_denoise, mag, mag0, mag1, o, div, det, mins, maxs, aspect=
     y = (0.5+np.arange(ny)) / ny
     X, Y = np.meshgrid(x, y)
 
-    # plot all extrema
-    ax.plot(X[mins], Y[mins], marker='.', markersize=1, color='r', alpha=0.25, linestyle='none')
-    ax.plot(X[maxs], Y[maxs], marker='.', markersize=1, color='b', alpha=0.25, linestyle='none')
+    xmins = mins * sel * (logmag < x_logmag_thr) * (logo > x_logo_thr)
+    omins = mins * sel * (logmag < o_logmag_thr) * (logo < o_logo_thr)
 
-    # plot minima that we think might be Xs
-    ax.plot(X[mins*(data<x_logmag_thr)*(logo>x_logo_thr)], Y[mins*(data<x_logmag_thr)*(logo>x_logo_thr)], marker='x', markersize=4, markeredgewidth=0.75, color='k', alpha=0.5, linestyle='none')
+    #---
 
-    # plot minima that we think might be Os
-    ax.plot(X[mins*(data<o_logmag_thr)*(logo<o_logo_thr)], Y[mins*(data<o_logmag_thr)*(logo<o_logo_thr)], marker='o', markersize=4, markeredgewidth=0.75, markeredgecolor='w', markerfacecolor='none', alpha=0.5, linestyle='none')
+    datas = [
+        ('$\log|j|$', 'Greys', logcurr, np.ones_like(curr, dtype=bool), logcurr_vmin, logcurr_vmax),
+#        ('$\log|\sum_i \partial_i B_i| - \log|B|$', 'YlGn_r', logdiv, np.ones_like(logdiv, dtype=bool), logdiv_vmin, logdiv_vmax),
+#        ('$\log|\mathrm{det}|\partial_i B_j||$', 'YlGn_r', logdet, np.ones_like(logdet, dtype=bool), logdet_vmin, logdet_vmax),
+#        ('$\mathrm{sgn}(\mathrm{det}|\partial_i B_j|)$', 'PuOr', sgndet, np.ones_like(sgndet, dtype=bool), sgndet_vmin, sgndet_vmax),
+        ('$B_y/|B|$', 'RdBu', mag0/mag, np.ones_like(mag0, dtype=bool), by_vmin, by_vmax),
+        ('$B_x/|B|$', 'RdBu', mag1/mag, np.ones_like(mag1, dtype=bool), bx_vmin, bx_vmax),
+        ('$\log o$', 'Greys', logo, np.ones_like(logo, dtype=bool), logo_vmin, logo_vmax),
+        ('$p$', 'Greys', p, np.ones_like(p, dtype=bool), p_vmin, p_vmax),
+        ('$\log|B|$', 'vanimo', logmag, np.ones_like(mag, dtype=bool), logmag_vmin, logmag_vmax),
+    ]
+
+    num_datas = len(datas)
+
+    xlim = 0.25, 0.45
+    ylim = 0.45, 0.55
+
+    zoom = False
+
+    for ind, (label, cmap, data, ect, vmin, vmax) in enumerate(datas):
+        if np.prod(data.shape) == 0: continue
+
+        axs = []
+
+        ax = plt.plt.subplot(2,num_datas,ind+1)
+        ax.imshow(
+            data,
+            cmap=cmap,
+            vmax=vmax,
+            vmin=vmin,
+            aspect=aspect,
+            origin='lower',
+            extent=(0, 1, 0, 1),
+        )
+
+        ax.set_title(label)
+
+        axs.append(ax)
+
+        #---
+
+        ax = plt.plt.subplot(2,num_datas,num_datas+ind+1)
+        ax.imshow(
+            np.where(sel, data, np.nan),
+            cmap=cmap,
+            vmax=vmax,
+            vmin=vmin,
+            aspect=aspect,
+            origin='lower',
+            extent=(0, 1, 0, 1),
+        )
+
+        # plot all extrema
+        ax.plot(X[mins], Y[mins], marker='.', markersize=1, color='r', alpha=0.25, linestyle='none')
+        ax.plot(X[maxs], Y[maxs], marker='.', markersize=1, color='b', alpha=0.25, linestyle='none')
+
+        # plot minima that we think might be Xs
+        ax.plot(X[xmins], Y[xmins], marker='x', markersize=4, markeredgewidth=0.75, color='k', alpha=0.5, linestyle='none')
+
+        # plot minima that we think might be Os
+        ax.plot(X[omins], Y[omins], marker='o', markersize=4, markeredgewidth=0.75, markeredgecolor='w', markerfacecolor='none', alpha=0.5, linestyle='none')
+
+        axs.append(ax)
+
+        #---
+
+        for ax in axs:
+            ax.tick_params(**plt.IMSHOW_TICK_PARAMS)
+
+            plt.plt.setp(ax.get_xticklabels(), visible=False)
+            plt.plt.setp(ax.get_yticklabels(), visible=False)
+
+            if zoom:
+                ax.set_xlim(xlim)
+                ax.set_ylim(ylim)
 
     #---
 
@@ -192,7 +219,7 @@ def imshow(curr, curr_denoise, mag, mag0, mag1, o, div, det, mins, maxs, aspect=
 
 #------------------------
 
-def hist(mins, maxs, sel, mag, o):
+def hist(mins, maxs, sel, mag, o, p):
     fig = plt.plt.figure(figsize=(5,5))
 
     ax11 = plt.plt.subplot(2,2,1)
@@ -493,7 +520,8 @@ mins, maxs = extrema(abs_mag)
 #-----------
 
 if args.verbose:
-    print('    computing test statistic for rotation symmetry')
+    print('    computing test statistics for rotation symmetry')
+
 o = np.empty((nx, ny), dtype=float)
 o[0,:] = o[-1,:] = o[:,0] = o[:,-1] = np.nan # turn the edge points off
 
@@ -510,16 +538,16 @@ for i in range(nx-2): # iterate through all points and test for symmetry in rota
             + (mag[0,i+1,j+2] - mag[1,i,j+1])**2 \
             + (mag[0,i+1,j+2] + mag[1,i+2,j+1])**2 \
             + (mag[0,i+1,j] - mag[1,i+2,j+1])**2 \
-            + (mag[0,i+1,j] + mag[1,i,j+1])**2 \
+            + (mag[0,i+1,j] + mag[1,i,j+1])**2
+        o[i+1,j+1] /= mag[0,i+1,j+2]**2 + mag[1,i,j+1]**2 + mag[0,i+1,j]**2 + mag[1,i+2,j+1]**2
 
         # compare the size of B_theta and B_r
-        p[i+1,j+1] = \
-            + np.abs(mag[0,i+1,j+2]/abs_mag[i+1,j+2]) \
-            + np.abs(mag[1,i+2,j+1]/abs_mag[i+2,j+1]) \
-            + np.abs(mag[0,i+1,j]/abs_mag[i+1,j]) \
-            + np.abs(mag[1,i,j+1]/abs_mag[i,j+1]) \
-
-o /= abs_mag**2 # scale these by the size of the magnetic field at the center point
+        p[i+1,j+1] = np.abs( \
+            + mag[1,i+2,j+1]/abs_mag[i+2,j+1] \
+            - mag[0,i+1,j+2]/abs_mag[i+1,j+2] \
+            - mag[1,i,j+1]/abs_mag[i,j+1] \
+            + mag[0,i+1,j]/abs_mag[i+1,j] \
+        )
 
 #-------------------------------------------------
 
@@ -528,8 +556,7 @@ if args.verbose:
     print('plotting')
 
 # imshow of various fields with annotations
-#fig = imshow(curr, curr_ha.array, abs_mag, mag[0], mag[1], o, div, det, mins, maxs, aspect='auto')
-fig = imshow(curr, curr_ha.array, abs_mag, mag[0], mag[1], p, div, det, mins, maxs, aspect='auto')
+fig = imshow(curr, curr_ha.array, abs_mag, mag[0], mag[1], o, p, div, det, mins, maxs, aspect='auto')
 
 figtmp = os.path.join(
     args.output_dir,
@@ -543,8 +570,7 @@ plt.close(fig)
 #------------------------
 
 # histograms of selection criteria
-#fig = hist(mins, maxs, np.abs(curr_ha.array > 0), abs_mag, o)
-fig = hist(mins, maxs, np.abs(curr_ha.array > 0), abs_mag, p)
+fig = hist(mins, maxs, np.abs(curr_ha.array > 0), abs_mag, o, p)
 
 figtmp = os.path.join(
     args.output_dir,

@@ -26,8 +26,8 @@ from w4t.utils import dv # PLASMAtools.aux_funcs.derived_var_funcs
 x_logmag_thr = -1.50
 x_logo_thr   = +1.25
 
-o_logmag_thr = -1.00
-o_logo_thr   = +0.75
+o_logmag_thr = -0.75
+o_logo_thr   = +1.00
 
 #-------------------------------------------------
 
@@ -103,7 +103,8 @@ def imshow(curr, curr_denoise, mag, mag0, mag1, o, div, det, mins, maxs, aspect=
     by_vmax = +1
     by_vmin = -1
 
-    logo = np.log10(o)
+#    logo = np.log10(o)
+    logo = o # FIXME: just for testing
     logo_vmin = None
     logo_vmax = None
 #    logo_vmin = np.min(logo[logo==logo]) # be careful about nans
@@ -167,10 +168,10 @@ def imshow(curr, curr_denoise, mag, mag0, mag1, o, div, det, mins, maxs, aspect=
     ax.plot(X[maxs], Y[maxs], marker='.', markersize=1, color='b', alpha=0.25, linestyle='none')
 
     # plot minima that we think might be Xs
-    ax.plot(X[mins*(data<x_logmag_thr)*(logo>x_logo_thr)], Y[mins*(data<x_logmag_thr)*(logo>x_logo_thr)], marker='x', markersize=4, markeredgewidth=0.5, color='k', alpha=0.5, linestyle='none')
+    ax.plot(X[mins*(data<x_logmag_thr)*(logo>x_logo_thr)], Y[mins*(data<x_logmag_thr)*(logo>x_logo_thr)], marker='x', markersize=4, markeredgewidth=0.75, color='k', alpha=0.5, linestyle='none')
 
     # plot minima that we think might be Os
-    ax.plot(X[mins*(data<o_logmag_thr)*(logo<o_logo_thr)], Y[mins*(data<o_logmag_thr)*(logo<o_logo_thr)], marker='o', markersize=4, markeredgewidth=0.5, markeredgecolor='w', markerfacecolor='none', alpha=0.5, linestyle='none')
+    ax.plot(X[mins*(data<o_logmag_thr)*(logo<o_logo_thr)], Y[mins*(data<o_logmag_thr)*(logo<o_logo_thr)], marker='o', markersize=4, markeredgewidth=0.75, markeredgecolor='w', markerfacecolor='none', alpha=0.5, linestyle='none')
 
     #---
 
@@ -232,6 +233,11 @@ def hist(mins, maxs, sel, mag, o):
 
     #---
 
+    fig.text(0.95, 0.95-0.03*(2*ind+2), 'identified X (%d)' % np.sum(mins*(logmag < x_logmag_thr)*(logo > x_logo_thr)), ha='right', va='top', fontsize=8)
+    fig.text(0.95, 0.95-0.03*(2*ind+3), 'identified O (%d)' % np.sum(mins*(logmag < o_logmag_thr)*(logo < o_logo_thr)), ha='right', va='top', fontsize=8)
+
+    #---
+
     ax21.set_xlabel('$\log|B|$')
     ax21.set_ylabel('$\log o$')
 
@@ -257,7 +263,7 @@ def hist(mins, maxs, sel, mag, o):
     ylim = ax21.get_ylim()
 
     ax21.plot([x_logmag_thr, x_logmag_thr, xlim[0]], [ylim[1], x_logo_thr, x_logo_thr], color='k', alpha=0.25)
-    ax21.plot([xlim[0], o_logmag_thr, o_logmag_thr], [o_logo_thr, o_logo_thr, ylim[0]], color='k', alpha=0.25)
+    ax21.plot([xlim[0], o_logmag_thr, o_logmag_thr], [o_logo_thr, o_logo_thr, ylim[0]], color='k', alpha=0.25, linestyle='dashed')
 
     ax21.text(xlim[0]+0.05*(xlim[1]-xlim[0]), ylim[1]-0.05*(ylim[1]-ylim[0]), 'X-like', ha='left', va='top')
     ax21.text(xlim[0]+0.05*(xlim[1]-xlim[0]), ylim[0]+0.05*(ylim[1]-ylim[0]), 'O-like', ha='left', va='bottom')
@@ -284,6 +290,106 @@ def hist(mins, maxs, sel, mag, o):
         top=0.95,
         hspace=0.03,
         wspace=0.03,
+    )
+
+    #---
+
+    return fig
+
+#------------------------
+
+def oradius(mag0, mag1, x, y, title=None, delta=50):
+    fig = plt.plt.figure(figsize=(5,18))
+
+    ax1 = plt.plt.subplot(6,1,1)
+    ax2 = plt.plt.subplot(6,1,2)
+    ax3 = plt.plt.subplot(6,1,3)
+    ax4 = plt.plt.subplot(6,1,4)
+    ax5 = plt.plt.subplot(6,1,5)
+    ax6 = plt.plt.subplot(6,1,6)
+
+    #---
+
+    nx, ny = mag0.shape
+
+    kwargs = dict(marker='.', markersize=1, color='k', alpha=0.25, linestyle='none')
+
+    # iterate over everything within this square
+    i, j = np.meshgrid(range(max(0, x-delta), min(x+delta, nx)), range(max(0, y-delta), min(y+delta, ny)), indexing='ij')
+    i = np.ravel(i)
+    j = np.ravel(j)
+
+    sel = np.logical_not((i==x)*(j==y)) # throw away the center point
+    i = i[sel]
+    j = j[sel]
+
+    # compute displacement vector
+    rx = i-x
+    ry = j-y
+    r = (rx**2 + ry**2)**0.5
+
+    # compute components of mag field in radial and angular directions
+    br = (mag0[i,j]*rx + mag1[i,j]*ry) / r
+    bt = (mag0[i,j]*(-ry) + mag1[i,j]*rx) / r
+
+    b = (br**2 + bt**2)**0.5
+
+    # add to plots
+    ax1.plot(r, b, **kwargs)
+    ax2.plot(r, bt, **kwargs)
+    ax3.plot(r, br, **kwargs)
+    ax4.plot(r, np.abs(br/bt), **kwargs)
+    ax5.plot(r, bt/b, **kwargs)
+    ax6.plot(r, br/b, **kwargs)
+
+    ax1.plot(0, (mag0[x,y]**2 + mag1[x,y]**2)**0.5, marker='x', markeredgecolor='k', markerfacecolor='none', markersize=4)
+
+    #---
+
+    if title is not None:
+        ax1.set_title(title)
+
+    ylim = ax1.get_ylim()
+    ax1.fill_between([0, 2**0.5], [ylim[0]]*2, [ylim[1]]*2, color='r', alpha=0.10)
+    ax1.set_ylim(ylim)
+
+    ax1.set_ylabel('$|B|$')
+    plt.plt.setp(ax1.get_xticklabels(), visible=False)
+
+    ax2.set_ylabel('$B_\\theta$')
+    plt.plt.setp(ax2.get_xticklabels(), visible=False)
+
+    ax3.set_ylabel('$B_r$')
+    plt.plt.setp(ax3.get_xticklabels(), visible=False)
+
+    ax4.set_yscale('log')
+    ax4.set_ylabel('$B_r/B_\\theta$')
+    plt.plt.setp(ax4.get_xticklabels(), visible=False)
+
+    ax5.set_ylabel('$B_\\theta/|B|$')
+    plt.plt.setp(ax5.get_xticklabels(), visible=False)
+
+    ax6.set_ylabel('$B_r/|B|$')
+    ax6.set_xlabel('$r$')
+
+    for ax in fig.axes:
+        ax.tick_params(
+            left=True,
+            right=True,
+            top=True,
+            bottom=True,
+            which='both',
+            direction='in',
+        )
+
+        ax.set_xlim(xmin=0, xmax=delta*2**0.5)
+
+    plt.plt.subplots_adjust(
+        left=0.15,
+        right=0.95,
+        top=0.95,
+        bottom=0.02,
+        hspace=0.03,
     )
 
     #---
@@ -389,16 +495,29 @@ mins, maxs = extrema(abs_mag)
 if args.verbose:
     print('    computing test statistic for rotation symmetry')
 o = np.empty((nx, ny), dtype=float)
-
 o[0,:] = o[-1,:] = o[:,0] = o[:,-1] = np.nan # turn the edge points off
+
+p = np.empty((nx, ny), dtype=float)
+p[0,:] = p[-1,:] = p[:,0] = p[:,-1] = np.nan
+
+### FIXME: change this to look at btheta vs br? or add another stat to capture that?
 
 for i in range(nx-2): # iterate through all points and test for symmetry in rotations of pi/2
     for j in range(ny-2):
+
+        # compare the effect of rotating the field
         o[i+1,j+1] = \
             + (mag[0,i+1,j+2] - mag[1,i,j+1])**2 \
             + (mag[0,i+1,j+2] + mag[1,i+2,j+1])**2 \
             + (mag[0,i+1,j] - mag[1,i+2,j+1])**2 \
             + (mag[0,i+1,j] + mag[1,i,j+1])**2 \
+
+        # compare the size of B_theta and B_r
+        p[i+1,j+1] = \
+            + np.abs(mag[0,i+1,j+2]/abs_mag[i+1,j+2]) \
+            + np.abs(mag[1,i+2,j+1]/abs_mag[i+2,j+1]) \
+            + np.abs(mag[0,i+1,j]/abs_mag[i+1,j]) \
+            + np.abs(mag[1,i,j+1]/abs_mag[i,j+1]) \
 
 o /= abs_mag**2 # scale these by the size of the magnetic field at the center point
 
@@ -408,7 +527,9 @@ o /= abs_mag**2 # scale these by the size of the magnetic field at the center po
 if args.verbose:
     print('plotting')
 
-fig = imshow(curr, curr_ha.array, abs_mag, mag[0], mag[1], o, div, det, mins, maxs, aspect='auto')
+# imshow of various fields with annotations
+#fig = imshow(curr, curr_ha.array, abs_mag, mag[0], mag[1], o, div, det, mins, maxs, aspect='auto')
+fig = imshow(curr, curr_ha.array, abs_mag, mag[0], mag[1], p, div, det, mins, maxs, aspect='auto')
 
 figtmp = os.path.join(
     args.output_dir,
@@ -421,7 +542,9 @@ plt.close(fig)
 
 #------------------------
 
-fig = hist(mins, maxs, np.abs(curr_ha.array > 0), abs_mag, o)
+# histograms of selection criteria
+#fig = hist(mins, maxs, np.abs(curr_ha.array > 0), abs_mag, o)
+fig = hist(mins, maxs, np.abs(curr_ha.array > 0), abs_mag, p)
 
 figtmp = os.path.join(
     args.output_dir,
@@ -431,3 +554,31 @@ figtmp = os.path.join(
 
 plt.save(fig, figtmp, args.figtype, dpi=args.dpi, verbose=args.verbose)
 plt.close(fig)
+
+#------------------------
+
+# plot radial dependence of mag centered on O points
+
+_, nx, ny = mag.shape
+x = np.arange(nx)
+y = np.arange(ny)
+X, Y = np.meshgrid(x, y, indexing='ij')
+
+o_cent = mins*(np.log10(abs_mag) < o_logmag_thr)*(np.log10(o) < o_logo_thr)
+
+Xo = X[o_cent]
+Yo = Y[o_cent]
+
+for ind, (x, y) in enumerate(zip(Xo, Yo)):
+    title = '(x, y) = (%d, %d)\n$\log o = %.3f$\n$\log|B| = %.3f$' % (x, y, np.log10(o[x,y]), np.log10(abs_mag[x,y]))
+
+    fig = oradius(mag[0], mag[1], x, y, delta=100, title=title)
+
+    figtmp = os.path.join(
+        args.output_dir,
+        '%s_magic-oradius-%06d%s' % \
+            (basename, ind, args.tag),
+    ) + '.%s'
+
+    plt.save(fig, figtmp, args.figtype, dpi=args.dpi, verbose=args.verbose)
+    plt.close(fig)

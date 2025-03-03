@@ -91,6 +91,14 @@ def show(array, title=None, thr=DEFAULT_THR):
     if title is not None:
         ax.set_title(title)
 
+    ax.set_xlabel('$x$')
+    ax.set_ylabel('$y$')
+    ax.set_zlabel('$z$')
+
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_zlim(0, 1)
+
     plt.show()
     plt.close(fig)
 

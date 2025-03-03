@@ -57,9 +57,46 @@ CMAP = 'RdGy'
 LOG_POS_CMAP = 'YlOrRd'
 LOG_NEG_CMAP = 'YlGnBu'
 
+#---
+
+DEFAULT_THR = 0.25 # used to select what actually gets plotted in a scatter plot
+
 #-------------------------------------------------
 
-def scatter(array_dict, log=False, xmin=None, xmax=None, ymin=None, ymax=None):
+def show(array, title=None, thr=DEFAULT_THR):
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1, projection='3d')
+
+    xs = np.arange(len(array)) / len(array) # NOTE this could be fragile
+    xs += (xs[1]-xs[0])/2
+    xs, ys, zs = np.meshgrid(xs, xs, xs, indexing='ij')
+
+    cs = array / np.max(np.abs(array[array==array]))
+
+    sel = np.abs(cs).flatten() > thr
+
+    ax.scatter(
+        xs.flatten()[sel],
+        ys.flatten()[sel],
+        zs.flatten()[sel],
+        c=cs.flatten()[sel],
+        alpha=(1+cs.flatten()[sel])/2,
+        vmin=-1,
+        vmax=+1,
+        s=1.0, # small dots
+        marker='.',
+        cmap=CMAP,
+    )
+
+    if title is not None:
+        ax.set_title(title)
+
+    plt.show()
+    plt.close(fig)
+
+#------------------------
+
+def scatter(array_dict, log=False, thr=DEFAULT_THR):
     """plot 3D data from a Haar decomposed (assumed to be square)
     """
     fig = plt.figure(figsize=FIGSIZE)
@@ -86,7 +123,7 @@ def scatter(array_dict, log=False, xmin=None, xmax=None, ymin=None, ymax=None):
 
                 # plot pos data
                 cs = data / np.max(data[data==data])
-                sel = (array.flatten() > 0) * (data.flatten() == data.flatten()) # avoid nans
+                sel = (array.flatten() > 0) * (data.flatten() == data.flatten()) * (cs.flatten() > thr) # avoid nans
 
                 ax.scatter(
                     xs.flatten()[sel],
@@ -102,7 +139,7 @@ def scatter(array_dict, log=False, xmin=None, xmax=None, ymin=None, ymax=None):
 
                 # plot neg data
                 cs = data / np.max(-data[data==data])
-                sel = (array.flatten() < 0) * (data.flatten() == data.flatten()) # avoid nans
+                sel = (array.flatten() < 0) * (data.flatten() == data.flatten()) * (cs.flatten() > thr) # avoid nans
 
                 ax.scatter(
                     xs.flatten()[sel],
@@ -119,12 +156,14 @@ def scatter(array_dict, log=False, xmin=None, xmax=None, ymin=None, ymax=None):
             else:
                 cs = array / np.max(np.abs(array[array==array]))
 
+                sel = np.abs(cs).flatten() > thr
+
                 ax.scatter(
-                    xs.flatten(),
-                    ys.flatten(),
-                    zs.flatten(),
-                    c=cs.flatten(),
-                    alpha=(1+cs.flatten())/2,
+                    xs.flatten()[sel],
+                    ys.flatten()[sel],
+                    zs.flatten()[sel],
+                    c=cs.flatten()[sel],
+                    alpha=(1+cs.flatten()[sel])/2,
                     vmin=-1,
                     vmax=+1,
                     s=1.0, # small dots

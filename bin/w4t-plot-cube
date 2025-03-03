@@ -1,0 +1,175 @@
+#!/usr/bin/env python3
+
+"""a simple plotting script to examine wavelet decompositions in a cube (3D data)
+"""
+__author__ = "Reed Essick (reed.essick@gmail.com)"
+
+#-------------------------------------------------
+
+import os
+
+import numpy as np
+import matplotlib
+matplotlib.use("Agg")
+from matplotlib import pyplot as plt
+
+from argparse import ArgumentParser
+
+### non-standard libraries
+from w4t import (pywt, utils)
+from w4t.plot import cube as plt
+
+#-------------------------------------------------
+
+parser = ArgumentParser()
+
+#---
+
+parser.add_argument('inpath', type=str)
+parser.add_argument('-f', '--field', default=[], type=str, action='append', required=True)
+
+parser.add_argument('-m', '--max-edgelength', default=None, type=int)
+
+#---
+
+parser.add_argument('-w', '--wavelet', type=str, required=True)
+
+#---
+
+parser.add_argument('--denoise', default=None, type=float)
+parser.add_argument('--smooth', default=False, action='store_true',
+    help='if supplied, retain the small detail coefficients rather than the big ones in the denoising algorithm')
+
+parser.add_argument('--max-scale', default=None, type=int)
+
+#---
+
+parser.add_argument('--log', default=False, action='store_true')
+
+#---
+
+parser.add_argument('-o', '--output-dir', default='.', type=str)
+parser.add_argument('-t', '--tag', default='', type=str)
+
+parser.add_argument('--figtype', default=[], type=str, action='append')
+parser.add_argument('--dpi', default=200, type=float)
+
+#---
+
+parser.add_argument('-v', '--verbose', default=False, action='store_true')
+parser.add_argument('-V', '--Verbose', default=False, action='store_true')
+
+#---
+
+args = parser.parse_args()
+
+os.makedirs(args.output_dir, exist_ok=True)
+
+if args.tag:
+    args.tag = "_"+args.tag
+
+if not args.figtype:
+    args.figtype.append('png')
+
+args.verbose |= args.Verbose
+
+#-------------------------------------------------
+
+basename = os.path.basename(args.inpath).split('.')[0] # used to construct output figure names
+
+#-------------------------------------------------
+
+# iterate over fields
+
+for field in args.field:
+
+    data = utils.load(
+        [field],
+        path=args.inpath,
+        max_edgelength=args.max_edgelength,
+        verbose=args.verbose,
+    )[field]
+
+    if (len(data) > 1): # this is a vector, so compute a few different versions of it
+        data = [
+            (field+'_x', data[0]),
+            (field+'_y', data[1]),
+            (field+'_z', data[2]),
+            (field+'_mag', np.sum(data**2, axis=0)**0.5)
+        ]
+    else:
+        data = [(field, data[0])]
+
+    # iterate over components of this field
+    for label, datum in data:
+
+            if args.Verbose:
+                print('examining '+label)
+
+            # basic instantiation
+            ha = pywt.WaveletArray(datum, args.wavelet) # grab the requested plane
+
+            if args.denoise is not None:
+                if args.Verbose:
+                    print('    denoising with thr=%.3f' % args.denoise)
+                ha.denoise(args.denoise, smooth=args.smooth, max_scale=args.max_scale)
+
+            while ha.active[0] > 1: # continue to decompose
+                scales = '-'.join('%03d'%_ for _ in ha.scales)
+                title = label + '\nscale : ' + scales
+
+                n0, n1, n2 = ha.active
+
+                array_dict = dict()
+
+                array_dict['aaa'] = ha.array[:n0, :n1, :n2]
+
+                array_dict['aad'] = ha.array[:n0, :n1, n2:2*n2]
+                array_dict['ada'] = ha.array[:n0, n1:2*n1, :n2]
+                array_dict['daa'] = ha.array[n0:2*n0, :n1, :n2]
+
+                array_dict['add'] = ha.array[:n0, n1:2*n1, n2:2*n2]
+                array_dict['dad'] = ha.array[n0:2*n0, :n1, n2:2*n2]
+                array_dict['dda'] = ha.array[n0:2*n0, n1:2*n1, :n2]
+
+                array_dict['ddd'] = ha.array[n0:2*n0, n1:2*n1, n2:2*n2]
+
+                #---
+
+                # plot images
+
+                fig = plt.scatter(array_dict, log=args.log)
+                fig.suptitle(title, fontsize=10)
+
+                figtmp = os.path.join(
+                    args.output_dir,
+                    '%s_%s_%s_cube-scatter%s' % \
+                        (basename, label, scales, args.tag),
+                ) + '.%s'
+
+                plt.save(fig, figtmp, args.figtype, dpi=args.dpi, verbose=args.verbose, indent=' '*4)
+                plt.close(fig)
+
+                #---
+
+                # plot histograms
+
+                fig = plt.hist(array_dict, histtype='step', log=True, density=True)
+                fig.suptitle(title, fontsize=10)
+
+                figtmp = os.path.join(
+                    args.output_dir,
+                    '%s_%s_%s_cube-hist%s' % \
+                        (basename, label, scales, args.tag),
+                ) + '.%s'
+
+                plt.save(fig, figtmp, args.figtype, dpi=args.dpi, verbose=args.verbose, indent=' '*4)
+                plt.close(fig)
+
+                #---
+
+                del array_dict
+
+                ha.dwt() # decompose
+
+            del ha

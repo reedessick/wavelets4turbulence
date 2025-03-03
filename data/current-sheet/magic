@@ -87,8 +87,8 @@ def imshow_mag(mag, o, x, mins, aspect='auto', orad=None):
     ax.set_xlim(0, 1)
 
     ax.set_yticks(ax.get_xticks())
-#    ax.set_ylim(0, 1)
-    ax.set_ylim(0.45, 0.55)
+    ax.set_ylim(0, 1)
+#    ax.set_ylim(0.45, 0.55)
 
     ax.set_title('$\log|B|$')
 
@@ -741,7 +741,7 @@ plt.close(fig)
 #------------------------
 
 # imshow of just log(abs_mag) with annotations
-fig = imshow_mag(abs_mag, o, x, mins, aspect='auto', orad=oradii(mag[0], mag[1], Xo, Yo))
+fig = imshow_mag(abs_mag, o, x, mins, aspect='equal', orad=oradii(mag[0], mag[1], Xo, Yo))
 
 figtmp = os.path.join(
     args.output_dir,

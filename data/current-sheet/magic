@@ -23,11 +23,13 @@ from w4t.utils import dv # PLASMAtools.aux_funcs.derived_var_funcs
 
 #-------------------------------------------------
 
-x_logmag_thr = -1.50
-x_logo_thr   = +0.00
+x_logmag_thr = -1.75
+x_x_thr      = +0.01
+x_o_thr      = +1.75
 
-o_logmag_thr = -1.00
-o_logo_thr   = -0.25
+o_logmag_thr = -1.20
+o_x_thr      = +0.01
+o_o_thr      = +1.75
 
 #-------------------------------------------------
 
@@ -62,7 +64,65 @@ def extrema(data):
 
 #------------------------
 
-def imshow(curr, curr_denoise, mag, mag0, mag1, o, p, div, det, mins, maxs, aspect='auto'):
+def imshow_mag(mag, o, x, mins, aspect='auto'):
+    fig = plt.plt.figure(figsize=(10,5))
+
+    ax = fig.add_axes([0.025, 0.05, 0.95, 0.90])
+
+    logmag = np.log10(mag)
+    vmax = np.max(logmag)
+    vmin = max(np.min(logmag), vmax-3)
+
+    ax.imshow(
+        logmag,
+        cmap='Blues',
+        vmin=vmin,
+        vmax=vmax,
+        aspect=aspect,
+        origin='lower',
+        extent=(0, 1, 0, 1),
+    )
+
+    ax.set_xlim(0, 1)
+
+#    ax.set_ylim(0, 1)
+    ax.set_ylim(0.45, 0.55)
+
+    ax.set_title('$\log|B|$')
+
+    xmins = mins * (logmag < x_logmag_thr) * (x < x_x_thr) * (o > x_o_thr)
+    omins = mins * (logmag < o_logmag_thr) * (x > o_x_thr) * (o < o_o_thr)
+
+    nx, ny = mag.shape
+    xs = (0.5+np.arange(nx)) / nx
+    ys = (0.5+np.arange(ny)) / ny
+    X, Y = np.meshgrid(xs, ys)
+
+    ax.contour(X, Y, logmag, colors='w', linewidths=0.1, alpha=0.10, levels=np.linspace(vmin, vmax, 101))
+
+    # plot minima that we think might be Xs
+    ax.plot(X[xmins], Y[xmins], marker='x', markersize=4, markeredgewidth=0.75, color='k', alpha=0.5, linestyle='none')
+
+    # plot minima that we think might be Os
+    ax.plot(X[omins], Y[omins], marker='o', markersize=4, markeredgewidth=0.75, markeredgecolor='k', markerfacecolor='none', alpha=0.5, linestyle='none')
+
+    ax.tick_params(
+        left=True,
+        right=True,
+        top=True,
+        bottom=True,
+        which='both',
+        direction='in',
+    )
+
+    plt.plt.setp(ax.get_xticklabels(), visible=False)
+    plt.plt.setp(ax.get_yticklabels(), visible=False)
+
+    return fig
+
+#------------------------
+
+def imshow(curr, curr_denoise, mag, mag0, mag1, o, x, div, det, mins, maxs, aspect='auto'):
     fig = plt.plt.figure(figsize=(15,5))
 
     sel = np.abs(curr_denoise) > 0
@@ -109,18 +169,19 @@ def imshow(curr, curr_denoise, mag, mag0, mag1, o, p, div, det, mins, maxs, aspe
 #    logo_vmin = np.min(logo[logo==logo]) # be careful about nans
 #    logo_vmax = min(np.max(logo[logo==logo]), logo_vmin+5)
 
-    p_vmin = 0
-    p_vmax = 1
+    logx = np.log10(x)
+    logx_vmin = None
+    logx_vmax = None
 
     #---
 
     nx, ny = mag.shape
-    x = (0.5+np.arange(nx)) / nx
-    y = (0.5+np.arange(ny)) / ny
-    X, Y = np.meshgrid(x, y)
+    xs = (0.5+np.arange(nx)) / nx
+    ys = (0.5+np.arange(ny)) / ny
+    X, Y = np.meshgrid(xs, ys)
 
-    xmins = mins * sel * (logmag < x_logmag_thr) * (logo > x_logo_thr)
-    omins = mins * sel * (logmag < o_logmag_thr) * (logo < o_logo_thr)
+    xmins = mins * sel * (logmag < x_logmag_thr) * (x < x_x_thr) * (o > x_o_thr)
+    omins = mins * sel * (logmag < o_logmag_thr) * (x > o_x_thr) * (o < o_o_thr)
 
     #---
 
@@ -132,16 +193,18 @@ def imshow(curr, curr_denoise, mag, mag0, mag1, o, p, div, det, mins, maxs, aspe
         ('$B_y/|B|$', 'RdBu', mag0/mag, np.ones_like(mag0, dtype=bool), by_vmin, by_vmax),
         ('$B_x/|B|$', 'RdBu', mag1/mag, np.ones_like(mag1, dtype=bool), bx_vmin, bx_vmax),
         ('$\log o$', 'Greys', logo, np.ones_like(logo, dtype=bool), logo_vmin, logo_vmax),
-        ('$p$', 'Greys', p, np.ones_like(p, dtype=bool), p_vmin, p_vmax),
+        ('$\log x$', 'Greys', logx, np.ones_like(logx, dtype=bool), logx_vmin, logx_vmax),
         ('$\log|B|$', 'vanimo', logmag, np.ones_like(mag, dtype=bool), logmag_vmin, logmag_vmax),
     ]
 
     num_datas = len(datas)
 
-    xlim = 0.25, 0.45
+    zoom = False
+
     ylim = 0.45, 0.55
 
-    zoom = False
+#    xlim = 0.25, 0.45 # a big plasmoid
+    xlim = 0.50, 0.75 # multiple smaller plasmoids
 
     for ind, (label, cmap, data, ect, vmin, vmax) in enumerate(datas):
         if np.prod(data.shape) == 0: continue
@@ -181,7 +244,7 @@ def imshow(curr, curr_denoise, mag, mag0, mag1, o, p, div, det, mins, maxs, aspe
         ax.plot(X[maxs], Y[maxs], marker='.', markersize=1, color='b', alpha=0.25, linestyle='none')
 
         # plot minima that we think might be Xs
-        ax.plot(X[xmins], Y[xmins], marker='x', markersize=4, markeredgewidth=0.75, color='k', alpha=0.5, linestyle='none')
+        ax.plot(X[xmins], Y[xmins], marker='x', markersize=4, markeredgewidth=0.75, color='w', alpha=0.5, linestyle='none')
 
         # plot minima that we think might be Os
         ax.plot(X[omins], Y[omins], marker='o', markersize=4, markeredgewidth=0.75, markeredgecolor='w', markerfacecolor='none', alpha=0.5, linestyle='none')
@@ -219,84 +282,136 @@ def imshow(curr, curr_denoise, mag, mag0, mag1, o, p, div, det, mins, maxs, aspe
 
 #------------------------
 
-def hist(mins, maxs, sel, mag, o, p):
+def hist(mins, maxs, sel, mag, o, x):
     fig = plt.plt.figure(figsize=(5,5))
 
-    ax11 = plt.plt.subplot(2,2,1)
-    ax21 = plt.plt.subplot(2,2,3)
-    ax22 = plt.plt.subplot(2,2,4)
-
-    #---
+    #--- define data
 
     logmag = np.log10(mag)
-    logo = np.log10(o)
+    data = [logmag, o, x]
+    labels = ['$\log|B|$', '$o$', '$x$']
 
     #--- define subsets
 
     everything = np.ones_like(sel, dtype=bool)
     structure = sel
 
-    for ind, (label1, label2, ect) in enumerate([
-            ('everything', 'coherent structure', everything),
-            ('minima', 'minima in coherent structure', mins),
-            ('maxima', 'maxima in coherent structure', maxs),
-        ]):
+    #--- iterate and build-up corner plot
 
-        ectbins = min(100, max(10, int(0.5*np.sum(ect)**0.5)))
-        selbins = min(100, max(10, int(0.5*np.sum(sel*ect)**0.5)))
+    num = len(data)
 
-        color = ax21.plot(np.ravel(logmag[ect]), np.ravel(logo[ect]), marker='.', markersize=1, linestyle='none', alpha=0.25)[0].get_color()
+    add_label = True
+    colors = dict()
 
-        ax21.plot(np.ravel(logmag[ect*sel]), np.ravel(logo[ect*sel]), marker='o', markersize=4, linestyle='none', alpha=0.25, markeredgecolor=color, markerfacecolor='none')
+    selections = [
+        ('k', 'everything', 'coherent structure', everything),
+        ('b', 'minima', 'minima in coherent structure', mins),
+        ('r', 'maxima', 'maxima in coherent structure', maxs),
+    ]
 
-        ax11.hist(np.ravel(logmag[ect]), bins=ectbins, histtype='step', orientation='vertical', log=True, color=color)
-        ax11.hist(np.ravel(logmag[ect*sel]), bins=selbins, histtype='stepfilled', orientation='vertical', log=True, color=color, alpha=0.25)
+    for row in range(num):
+        for col in range(row): # joint distribution --> scatter plot
+            ax = plt.plt.subplot(num, num, num*row+col+1)
 
-        ax22.hist(np.ravel(logo[ect]), bins=ectbins, histtype='step', orientation='horizontal', log=True, color=color)
-        ax22.hist(np.ravel(logo[ect*sel]), bins=selbins, histtype='stepfilled', orientation='horizontal', log=True, color=color, alpha=0.25)
+            X = data[col]
+            Y = data[row]
 
-        fig.text(0.95, 0.95-0.03*(2*ind), '%s (%d)' % (label1, np.sum(ect)), color=color, ha='right', va='top', fontsize=8)
-        fig.text(0.95, 0.95-0.03*(2*ind+1), '%s (%d)' % (label2, np.sum(ect*sel)), color=color, ha='right', va='top', fontsize=8)
+            for ind, (color, label1, label2, ect) in enumerate(selections):
+                ax.plot(np.ravel(X[ect]), np.ravel(Y[ect]), marker='.', markersize=1, linestyle='none', alpha=0.05, color=color)
+                ax.plot(np.ravel(X[ect*sel]), np.ravel(Y[ect*sel]), marker='o', markersize=4, linestyle='none', alpha=0.05, markeredgecolor=color, markerfacecolor='none')
+
+
+                if add_label:
+                    fig.text(0.95, 0.95-0.025*(2*ind), '%s (%d)' % (label1, np.sum(ect)), color=color, ha='right', va='top', fontsize=8)
+                    fig.text(0.95, 0.95-0.025*(2*ind+1), '%s (%d)' % (label2, np.sum(ect*sel)), color=color, ha='right', va='top', fontsize=8)
+
+            add_label = False
+
+            if row != num-1:
+                plt.plt.setp(ax.get_xticklabels(), visible=False)
+            else:
+                ax.set_xlabel(labels[col])
+
+            if col != 0:
+                plt.plt.setp(ax.get_yticklabels(), visible=False)
+            else:
+                ax.set_ylabel(labels[row])
+
+            # add annotations for thresholds
+            if row == 0: # logmag
+                xlim = ax.get_xlim()
+                ax.plot(xlim, [x_logmag_thr]*2, color='grey', linestyle='solid', alpha=0.50)
+                ax.plot(xlim, [o_logmag_thr]*2, color='grey', linestyle='dashed', alpha=0.50)
+                ax.set_xlim(xlim)
+
+            elif row == 1:
+                xlim = ax.get_xlim()
+                ax.plot(xlim, [o_o_thr]*2, color='grey', linestyle='dashed', alpha=0.50)
+                ax.plot(xlim, [x_o_thr]*2, color='grey', linestyle='solid', alpha=0.50)
+                ax.set_xlim(xlim)
+
+            elif row == 2:
+                xlim = ax.get_xlim()
+                ax.plot(xlim, [x_x_thr]*2, color='grey', linestyle='solid', alpha=0.50)
+                ax.plot(xlim, [o_x_thr]*2, color='grey', linestyle='dashed', alpha=0.50)
+                ax.set_xlim(xlim)
+
+            if col == 0:
+                ylim = ax.get_ylim()
+                ax.plot([x_logmag_thr]*2, ylim, color='grey', linestyle='solid', alpha=0.50)
+                ax.plot([o_logmag_thr]*2, ylim, color='grey', linestyle='dashed', alpha=0.50)
+                ax.set_ylim(ylim)
+
+            elif col == 1:
+                ylim = ax.get_ylim()
+                ax.plot([x_o_thr]*2, ylim, color='grey', linestyle='solid', alpha=0.50)
+                ax.plot([o_o_thr]*2, ylim, color='grey', linestyle='dashed', alpha=0.50)
+                ax.set_ylim(ylim)
+
+            elif col == 2:
+                ylim = ax.get_ylim()
+                ax.plot([x_x_thr]*2, ylim, color='grey', linestyle='solid', alpha=0.50)
+                ax.plot([o_x_thr]*2, ylim, color='grey', linestyle='dashed', alpha=0.50)
+                ax.set_ylim(ylim)
+
+        # add 1D marginal distribution
+        ax = plt.plt.subplot(num, num, num*row+row+1)
+
+        X = data[row]
+
+        for color, label1, label2, ect in selections:
+            ectbins = min(100, max(10, int(0.5*np.sum(ect)**0.5)))
+            selbins = min(100, max(10, int(0.5*np.sum(sel*ect)**0.5)))
+
+            ax.hist(np.ravel(X[ect]), bins=ectbins, histtype='step', orientation='vertical', log=True, color=color)
+            ax.hist(np.ravel(X[ect*sel]), bins=selbins, histtype='stepfilled', orientation='vertical', log=True, color=color, alpha=0.25)
+
+        ax.set_xlabel(labels[row])
+        if row != 0:
+            ax.yaxis.tick_right()
+
+        ylim = ax.get_ylim()
+        if row == 0:
+            ax.plot([x_logmag_thr]*2, ylim, color='grey', linestyle='solid', alpha=0.50)
+            ax.plot([o_logmag_thr]*2, ylim, color='grey', linestyle='dashed', alpha=0.50)
+
+        elif row == 1:
+            ax.plot([x_o_thr]*2, ylim, color='grey', linestyle='solid', alpha=0.50)
+            ax.plot([o_o_thr]*2, ylim, color='grey', linestyle='dashed', alpha=0.50)
+
+        elif row == 2:
+            ax.plot([x_x_thr]*2, ylim, color='grey', linestyle='solid', alpha=0.50)
+            ax.plot([o_x_thr]*2, ylim, color='grey', linestyle='dashed', alpha=0.50)
+
+        ax.set_ylim(ylim)
 
     #---
 
-    fig.text(0.95, 0.95-0.03*(2*ind+2), 'identified X (%d)' % np.sum(mins*(logmag < x_logmag_thr)*(logo > x_logo_thr)), ha='right', va='top', fontsize=8)
-    fig.text(0.95, 0.95-0.03*(2*ind+3), 'identified O (%d)' % np.sum(mins*(logmag < o_logmag_thr)*(logo < o_logo_thr)), ha='right', va='top', fontsize=8)
+    fig.text(0.95, 0.95-0.025*(2*ind+2), 'identified X (%d)' % np.sum(mins*(logmag < x_logmag_thr)*(x < x_x_thr)*(o > x_o_thr)), ha='right', va='top', fontsize=8)
+    fig.text(0.95, 0.95-0.025*(2*ind+3), 'identified X in coherent structure (%d)' % np.sum(mins*sel*(logmag < x_logmag_thr)*(x < x_x_thr)*(o > x_o_thr)), ha='right', va='top', fontsize=8)
 
-    #---
-
-    ax21.set_xlabel('$\log|B|$')
-    ax21.set_ylabel('$\log o$')
-
-    ax11.set_xlim(ax21.get_xlim())
-    plt.plt.setp(ax11.get_xticklabels(), visible=False)
-
-    ax22.set_ylim(ax21.get_ylim())
-    plt.plt.setp(ax22.get_yticklabels(), visible=False)
-
-    #---
-
-    ylim = ax11.get_ylim()
-    ax11.plot([x_logmag_thr]*2, ylim, color='k', alpha=0.25)
-    ax11.plot([o_logmag_thr]*2, ylim, color='k', alpha=0.25, linestyle='dashed')
-    ax11.set_ylim(ylim)
-
-    xlim = ax22.get_xlim()
-    ax22.plot(xlim, [x_logo_thr]*2, color='k', alpha=0.25)
-    ax22.plot(xlim, [o_logo_thr]*2, color='k', alpha=0.25, linestyle='dashed')
-    ax22.set_xlim(xlim)
-
-    xlim = ax21.get_xlim()
-    ylim = ax21.get_ylim()
-
-    ax21.plot([x_logmag_thr, x_logmag_thr, xlim[0]], [ylim[1], x_logo_thr, x_logo_thr], color='k', alpha=0.25)
-    ax21.plot([xlim[0], o_logmag_thr, o_logmag_thr], [o_logo_thr, o_logo_thr, ylim[0]], color='k', alpha=0.25, linestyle='dashed')
-
-    ax21.text(xlim[0]+0.05*(xlim[1]-xlim[0]), ylim[1]-0.05*(ylim[1]-ylim[0]), 'X-like', ha='left', va='top')
-    ax21.text(xlim[0]+0.05*(xlim[1]-xlim[0]), ylim[0]+0.05*(ylim[1]-ylim[0]), 'O-like', ha='left', va='bottom')
-
-    ax21.set_xlim(xlim)
-    ax21.set_ylim(ylim)
+    fig.text(0.95, 0.95-0.025*(2*ind+4), 'identified O (%d)' % np.sum(mins*(logmag < o_logmag_thr)*(x > o_x_thr)*(o < o_o_thr)), ha='right', va='top', fontsize=8)
+    fig.text(0.95, 0.95-0.025*(2*ind+5), 'identified O in coherent structure (%d)' % np.sum(mins*sel*(logmag < o_logmag_thr)*(x > o_x_thr)*(o < o_o_thr)), ha='right', va='top', fontsize=8)
 
     #---
 
@@ -525,10 +640,8 @@ if args.verbose:
 o = np.empty((nx, ny), dtype=float)
 o[0,:] = o[-1,:] = o[:,0] = o[:,-1] = np.nan # turn the edge points off
 
-p = np.empty((nx, ny), dtype=float)
-p[0,:] = p[-1,:] = p[:,0] = p[:,-1] = np.nan
-
-### FIXME: change this to look at btheta vs br? or add another stat to capture that?
+x = np.empty((nx, ny), dtype=float)
+x[0,:] = x[-1,:] = x[:,0] = x[:,-1] = np.nan
 
 for i in range(nx-2): # iterate through all points and test for symmetry in rotations of pi/2
     for j in range(ny-2):
@@ -541,13 +654,11 @@ for i in range(nx-2): # iterate through all points and test for symmetry in rota
             + (mag[0,i+1,j] + mag[1,i,j+1])**2
         o[i+1,j+1] /= mag[0,i+1,j+2]**2 + mag[1,i,j+1]**2 + mag[0,i+1,j]**2 + mag[1,i+2,j+1]**2
 
-        # compare the size of B_theta and B_r
-        p[i+1,j+1] = np.abs( \
-            + mag[1,i+2,j+1]/abs_mag[i+2,j+1] \
-            - mag[0,i+1,j+2]/abs_mag[i+1,j+2] \
-            - mag[1,i,j+1]/abs_mag[i,j+1] \
-            + mag[0,i+1,j]/abs_mag[i+1,j] \
-        )
+        # compare the size of the gradient of fields in different directions
+        # FIXME: may want to change this to something that's rotationally invariant (ie, maximize over orientation)?
+        delta_perp = (mag[0,i+1,j+2] - mag[0,i+1,j])**2 + (mag[1,i+1,j+2] - mag[1,i+1,j])**2
+        delta_parr = (mag[0,i+1,j+1] - mag[0,i,j+1])**2 + (mag[1,i+2,j+1] - mag[1,i,j+1])**2
+        x[i+1,j+1] = delta_perp*delta_parr / (delta_perp**2 + delta_parr**2)
 
 #-------------------------------------------------
 
@@ -556,7 +667,7 @@ if args.verbose:
     print('plotting')
 
 # imshow of various fields with annotations
-fig = imshow(curr, curr_ha.array, abs_mag, mag[0], mag[1], o, p, div, det, mins, maxs, aspect='auto')
+fig = imshow(curr, curr_ha.array, abs_mag, mag[0], mag[1], o, x, div, det, mins, maxs, aspect='auto')
 
 figtmp = os.path.join(
     args.output_dir,
@@ -569,8 +680,22 @@ plt.close(fig)
 
 #------------------------
 
+# imshow of just log(abs_mag) with annotations
+fig = imshow_mag(abs_mag, o, x, mins, aspect='auto')
+
+figtmp = os.path.join(
+    args.output_dir,
+    '%s_magic-mag%s' % \
+        (basename, args.tag),
+) + '.%s'
+
+plt.save(fig, figtmp, args.figtype, dpi=args.dpi, verbose=args.verbose)
+plt.close(fig)
+
+#------------------------
+
 # histograms of selection criteria
-fig = hist(mins, maxs, np.abs(curr_ha.array > 0), abs_mag, o, p)
+fig = hist(mins, maxs, np.abs(curr_ha.array > 0), abs_mag, o, x)
 
 figtmp = os.path.join(
     args.output_dir,
@@ -585,12 +710,13 @@ plt.close(fig)
 
 # plot radial dependence of mag centered on O points
 
+'''
 _, nx, ny = mag.shape
-x = np.arange(nx)
-y = np.arange(ny)
-X, Y = np.meshgrid(x, y, indexing='ij')
+xs = np.arange(nx)
+ys = np.arange(ny)
+X, Y = np.meshgrid(xs, ys, indexing='ij')
 
-o_cent = mins*(np.log10(abs_mag) < o_logmag_thr)*(np.log10(o) < o_logo_thr)
+o_cent = mins*(np.log10(abs_mag) < o_logmag_thr)*(o < o_o_thr)
 
 Xo = X[o_cent]
 Yo = Y[o_cent]
@@ -608,3 +734,4 @@ for ind, (x, y) in enumerate(zip(Xo, Yo)):
 
     plt.save(fig, figtmp, args.figtype, dpi=args.dpi, verbose=args.verbose)
     plt.close(fig)
+'''

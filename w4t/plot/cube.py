@@ -69,59 +69,55 @@ def scatter(array_dict, log=False, xmin=None, xmax=None, ymin=None, ymax=None):
     for group in GROUPS:
 
         for ind, nickname in group:
-            data = array_dict[nickname]
+            array = array_dict[nickname]
 
-            num = np.prod(data.shape)
+            num = np.prod(array.shape)
             if num == 0: # no data
                 continue
 
             ax = fig.add_subplot(4,3,ind, projection='3d')
-
-            array = array_dict[nickname]
 
             xs = np.arange(len(array)) / len(array) # NOTE this could be fragile
             xs += (xs[1]-xs[0])/2
             xs, ys, zs = np.meshgrid(xs, xs, xs, indexing='ij')
 
             if log:
-                array = np.log10(array)
+                data = np.log10(np.abs(array))
 
                 # plot pos data
-                cs = data / np.max(array)
-                sel = data >= 0
+                cs = data / np.max(data[data==data])
+                sel = (array.flatten() > 0) * (data.flatten() == data.flatten()) # avoid nans
 
                 ax.scatter(
                     xs.flatten()[sel],
                     ys.flatten()[sel],
                     zs.flatten()[sel],
                     c=cs.flatten()[sel],
-                    alpha=cs.flatten()[sel],
-                    vmin=-1,
-                    vmax=+1,
+#                    alpha=cs.flatten()[sel],
+#                    vmax=+1,
                     s=1.0, # small dots
                     marker='.',
                     cmap=LOG_POS_CMAP,
                 )
 
                 # plot neg data
-                cs = data / np.max(-array)
-                sel = data < 0
+                cs = data / np.max(-data[data==data])
+                sel = (array.flatten() < 0) * (data.flatten() == data.flatten()) # avoid nans
 
                 ax.scatter(
                     xs.flatten()[sel],
                     ys.flatten()[sel],
                     zs.flatten()[sel],
                     c=cs.flatten()[sel],
-                    alpha=cs.flatten()[sel],
-                    vmin=-1,
-                    vmax=+1,
+#                    alpha=cs.flatten()[sel],
+#                    vmax=+1,
                     s=1.0, # small dots
                     marker='.',
                     cmap=LOG_NEG_CMAP,
                 )
 
             else:
-                cs = array / np.max(np.abs(array))
+                cs = array / np.max(np.abs(array[array==array]))
 
                 ax.scatter(
                     xs.flatten(),

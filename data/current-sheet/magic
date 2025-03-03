@@ -64,7 +64,7 @@ def extrema(data):
 
 #------------------------
 
-def imshow_mag(mag, o, x, mins, aspect='auto'):
+def imshow_mag(mag, o, x, mins, aspect='auto', orad=None):
     fig = plt.plt.figure(figsize=(10,5))
 
     ax = fig.add_axes([0.025, 0.05, 0.95, 0.90])
@@ -75,7 +75,7 @@ def imshow_mag(mag, o, x, mins, aspect='auto'):
 
     ax.imshow(
         logmag,
-        cmap='Blues',
+        cmap='vanimo',
         vmin=vmin,
         vmax=vmax,
         aspect=aspect,
@@ -83,8 +83,10 @@ def imshow_mag(mag, o, x, mins, aspect='auto'):
         extent=(0, 1, 0, 1),
     )
 
+    ax.set_xticks(np.arange(0, 1+0.05, 0.05))
     ax.set_xlim(0, 1)
 
+    ax.set_yticks(ax.get_xticks())
 #    ax.set_ylim(0, 1)
     ax.set_ylim(0.45, 0.55)
 
@@ -98,13 +100,23 @@ def imshow_mag(mag, o, x, mins, aspect='auto'):
     ys = (0.5+np.arange(ny)) / ny
     X, Y = np.meshgrid(xs, ys)
 
-    ax.contour(X, Y, logmag, colors='w', linewidths=0.1, alpha=0.10, levels=np.linspace(vmin, vmax, 101))
+    ax.contour(X, Y, logmag, colors='w', linewidths=0.1, alpha=0.50, levels=np.linspace(vmin, vmax, 101))
 
     # plot minima that we think might be Xs
-    ax.plot(X[xmins], Y[xmins], marker='x', markersize=4, markeredgewidth=0.75, color='k', alpha=0.5, linestyle='none')
+    ax.plot(X[xmins], Y[xmins], marker='x', markersize=4, markeredgewidth=0.75, color='w', alpha=0.5, linestyle='none')
 
     # plot minima that we think might be Os
-    ax.plot(X[omins], Y[omins], marker='o', markersize=4, markeredgewidth=0.75, markeredgecolor='k', markerfacecolor='none', alpha=0.5, linestyle='none')
+    ax.plot(X[omins], Y[omins], marker='o', markersize=4, markeredgewidth=0.75, markeredgecolor='w', markerfacecolor='none', alpha=0.5, linestyle='none')
+
+    if orad is not None:
+        nx, ny = mag.shape
+        t = np.linspace(0, 2*np.pi, 101)
+        ct = np.cos(t)
+        st = np.sin(t)
+        for X, Y, R in orad:
+            if R > 10: ### FIXME remove ad hoc threshold
+                ax.plot((Y+0.5)/ny, (X+0.5)/nx, color='k', marker='o', markersize=2) # mark this point as special
+            ax.plot((Y+0.5+R*st)/ny, (X+0.5+R*ct)/nx, color='k', alpha=0.50, linewidth=0.5) # plot in this silly way to match imshow
 
     ax.tick_params(
         left=True,
@@ -192,8 +204,8 @@ def imshow(curr, curr_denoise, mag, mag0, mag1, o, x, div, det, mins, maxs, aspe
 #        ('$\mathrm{sgn}(\mathrm{det}|\partial_i B_j|)$', 'PuOr', sgndet, np.ones_like(sgndet, dtype=bool), sgndet_vmin, sgndet_vmax),
         ('$B_y/|B|$', 'RdBu', mag0/mag, np.ones_like(mag0, dtype=bool), by_vmin, by_vmax),
         ('$B_x/|B|$', 'RdBu', mag1/mag, np.ones_like(mag1, dtype=bool), bx_vmin, bx_vmax),
-        ('$\log o$', 'Greys', logo, np.ones_like(logo, dtype=bool), logo_vmin, logo_vmax),
-        ('$\log x$', 'Greys', logx, np.ones_like(logx, dtype=bool), logx_vmin, logx_vmax),
+        ('$\log o$', 'Greys_r', logo, np.ones_like(logo, dtype=bool), logo_vmin, logo_vmax),
+        ('$\log x$', 'Greys_r', logx, np.ones_like(logx, dtype=bool), logx_vmin, logx_vmax),
         ('$\log|B|$', 'vanimo', logmag, np.ones_like(mag, dtype=bool), logmag_vmin, logmag_vmax),
     ]
 
@@ -440,6 +452,30 @@ def hist(mins, maxs, sel, mag, o, x):
 
 #------------------------
 
+def oradii(mag0, mag1, x, y):
+    """a simple estimate of the radius
+    """
+    abs_mag = (mag0**2 + mag1**2)**0.5
+
+    ans = []
+    for X, Y in zip(x, y):
+        r = 0
+        ave = +1
+        while ave > 0.75: # FIXME ad hoc threshold
+            r += 1 # move out one step
+
+            # compute average
+            ave = (+mag1[X+r,Y])/abs_mag[X+r,Y] + (-mag0[X,Y+r])/abs_mag[X,Y+r] \
+                  + (-mag1[X-r,Y])/abs_mag[X-r,Y] + (mag0[X,Y-r])/abs_mag[X,Y-r]
+            ave /= 4 # make this an average
+            ave = np.abs(ave)
+
+        ans.append((X, Y, r))
+
+    return ans
+
+#---
+
 def oradius(mag0, mag1, x, y, title=None, delta=50):
     fig = plt.plt.figure(figsize=(5,18))
 
@@ -452,6 +488,7 @@ def oradius(mag0, mag1, x, y, title=None, delta=50):
 
     #---
 
+    abs_mag = (mag0**2 + mag1**2)**0.5
     nx, ny = mag0.shape
 
     kwargs = dict(marker='.', markersize=1, color='k', alpha=0.25, linestyle='none')
@@ -485,6 +522,17 @@ def oradius(mag0, mag1, x, y, title=None, delta=50):
     ax6.plot(r, br/b, **kwargs)
 
     ax1.plot(0, (mag0[x,y]**2 + mag1[x,y]**2)**0.5, marker='x', markeredgecolor='k', markerfacecolor='none', markersize=4)
+    ax1.plot([np.min(r), np.max(r)], [np.mean(abs_mag)]*2, color='m', alpha=1.0)
+
+    #---
+
+    inds = np.arange(1, min(max(min(x, nx-x), delta), max(min(y, ny-y), delta)))
+
+    ave = (+mag1[x+inds,y])/abs_mag[x+inds,y] + (-mag[0,x,y+inds])/abs_mag[x,y+inds] \
+          + (-mag[1,x-inds,y])/abs_mag[x-inds,y] + (mag[0,x,y-inds])/abs_mag[x,y-inds]
+    ave /= 4 # make this an average
+
+    ax5.plot(inds, ave, color='b')
 
     #---
 
@@ -662,6 +710,18 @@ for i in range(nx-2): # iterate through all points and test for symmetry in rota
 
 #-------------------------------------------------
 
+_, nx, ny = mag.shape
+xs = np.arange(nx)
+ys = np.arange(ny)
+X, Y = np.meshgrid(xs, ys, indexing='ij')
+
+o_cent = mins * (np.log10(abs_mag) < o_logmag_thr) * (o < o_o_thr) * (x > o_x_thr)
+
+Xo = X[o_cent]
+Yo = Y[o_cent]
+
+#-------------------------------------------------
+
 # let's make some plots
 if args.verbose:
     print('plotting')
@@ -681,7 +741,7 @@ plt.close(fig)
 #------------------------
 
 # imshow of just log(abs_mag) with annotations
-fig = imshow_mag(abs_mag, o, x, mins, aspect='auto')
+fig = imshow_mag(abs_mag, o, x, mins, aspect='auto', orad=oradii(mag[0], mag[1], Xo, Yo))
 
 figtmp = os.path.join(
     args.output_dir,
@@ -710,28 +770,16 @@ plt.close(fig)
 
 # plot radial dependence of mag centered on O points
 
-'''
-_, nx, ny = mag.shape
-xs = np.arange(nx)
-ys = np.arange(ny)
-X, Y = np.meshgrid(xs, ys, indexing='ij')
-
-o_cent = mins*(np.log10(abs_mag) < o_logmag_thr)*(o < o_o_thr)
-
-Xo = X[o_cent]
-Yo = Y[o_cent]
-
-for ind, (x, y) in enumerate(zip(Xo, Yo)):
+for (x, y) in zip(Xo, Yo):
     title = '(x, y) = (%d, %d)\n$\log o = %.3f$\n$\log|B| = %.3f$' % (x, y, np.log10(o[x,y]), np.log10(abs_mag[x,y]))
 
     fig = oradius(mag[0], mag[1], x, y, delta=100, title=title)
 
     figtmp = os.path.join(
         args.output_dir,
-        '%s_magic-oradius-%06d%s' % \
-            (basename, ind, args.tag),
+        '%s_magic-oradius-%06d-%06d%s' % \
+            (basename, x, y, args.tag),
     ) + '.%s'
 
     plt.save(fig, figtmp, args.figtype, dpi=args.dpi, verbose=args.verbose)
     plt.close(fig)
-'''

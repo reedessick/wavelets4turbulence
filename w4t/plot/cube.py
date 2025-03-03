@@ -93,7 +93,7 @@ def scatter(array_dict, log=False, xmin=None, xmax=None, ymin=None, ymax=None):
                     ys.flatten()[sel],
                     zs.flatten()[sel],
                     c=cs.flatten()[sel],
-#                    alpha=cs.flatten()[sel],
+                    alpha=0.25,
 #                    vmax=+1,
                     s=1.0, # small dots
                     marker='.',
@@ -109,7 +109,7 @@ def scatter(array_dict, log=False, xmin=None, xmax=None, ymin=None, ymax=None):
                     ys.flatten()[sel],
                     zs.flatten()[sel],
                     c=cs.flatten()[sel],
-#                    alpha=cs.flatten()[sel],
+                    alpha=0.25,
 #                    vmax=+1,
                     s=1.0, # small dots
                     marker='.',

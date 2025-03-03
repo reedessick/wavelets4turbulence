@@ -200,6 +200,9 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
         WARNING: this function modifies data in-place. Data will be lost for the coefficients that are set to zero.
         """
+        if max_scale is None:
+            max_scale = self.shape[0] # continue to denoise over all scales
+
         levels = copy.copy(self.levels) # make a copy so we can remember the level of decomposition
 
         self.idecompose() # start from the top

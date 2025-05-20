@@ -206,6 +206,8 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
         levels = copy.copy(self.levels) # make a copy so we can remember the level of decomposition
 
         self.idecompose() # start from the top
+        max_scale = min(max_scale, min(*self.active)) # limit this to the size of the array
+
         while self.scales[0] < max_scale: # continue to denoise
             self.dwt() # decompose again
 

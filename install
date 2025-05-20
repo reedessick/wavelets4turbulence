@@ -18,13 +18,5 @@ popd
 
 #------------------------
 
-# install PyWavelets
-for package in numpy scipy matplotlib PyWavelets
-do
-    pip install $package --prefix $OPTDIR --force-reinstall
-done
-
-#------------------------
-
 # install this module
 pip install . --prefix $OPTDIR

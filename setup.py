@@ -16,7 +16,12 @@ scripts = glob.glob('bin/*')
 packages = find_packages()
 
 # set up requirements
-requires = []
+requires = [
+    'numpy',
+    'scipy',
+    'matplotlib',
+    'PyWavelets',
+]
 
 #------------------------
 

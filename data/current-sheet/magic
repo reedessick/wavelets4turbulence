@@ -195,28 +195,36 @@ def imshow(curr, curr_denoise, mag, mag0, mag1, o, x, div, det, mins, maxs, aspe
     xmins = mins * sel * (logmag < x_logmag_thr) * (x < x_x_thr) * (o > x_o_thr)
     omins = mins * sel * (logmag < o_logmag_thr) * (x > o_x_thr) * (o < o_o_thr)
 
+#    xmins = mins * sel * (logmag < -1.2) * (sgndet < 0) # do this based on just the sign of det|d_i B_j| and where |B| ~ 0
+#    omins = mins * sel * (logmag < -1.2) * (sgndet > 0)
+
     #---
 
     datas = [
         ('$\log|j|$', 'Greys', logcurr, np.ones_like(curr, dtype=bool), logcurr_vmin, logcurr_vmax),
-#        ('$\log|\sum_i \partial_i B_i| - \log|B|$', 'YlGn_r', logdiv, np.ones_like(logdiv, dtype=bool), logdiv_vmin, logdiv_vmax),
-#        ('$\log|\mathrm{det}|\partial_i B_j||$', 'YlGn_r', logdet, np.ones_like(logdet, dtype=bool), logdet_vmin, logdet_vmax),
-#        ('$\mathrm{sgn}(\mathrm{det}|\partial_i B_j|)$', 'PuOr', sgndet, np.ones_like(sgndet, dtype=bool), sgndet_vmin, sgndet_vmax),
         ('$B_y/|B|$', 'RdBu', mag0/mag, np.ones_like(mag0, dtype=bool), by_vmin, by_vmax),
         ('$B_x/|B|$', 'RdBu', mag1/mag, np.ones_like(mag1, dtype=bool), bx_vmin, bx_vmax),
         ('$\log o$', 'Greys_r', logo, np.ones_like(logo, dtype=bool), logo_vmin, logo_vmax),
         ('$\log x$', 'Greys_r', logx, np.ones_like(logx, dtype=bool), logx_vmin, logx_vmax),
+#        ('$\log|\sum_i \partial_i B_i| - \log|B|$', 'YlGn_r', logdiv, np.ones_like(logdiv, dtype=bool), logdiv_vmin, logdiv_vmax),
+#        ('$\log|\mathrm{det}|\partial_i B_j||$', 'YlGn_r', logdet, np.ones_like(logdet, dtype=bool), logdet_vmin, logdet_vmax),
+        ('$\mathrm{sgn}(\mathrm{det}|\partial_i B_j|)$', 'PuOr', sgndet, np.ones_like(sgndet, dtype=bool), sgndet_vmin, sgndet_vmax),
         ('$\log|B|$', 'vanimo', logmag, np.ones_like(mag, dtype=bool), logmag_vmin, logmag_vmax),
     ]
 
     num_datas = len(datas)
 
-    zoom = False
+    #---
+
+    zoomy= True
+    zoomx= False
 
     ylim = 0.45, 0.55
 
 #    xlim = 0.25, 0.45 # a big plasmoid
     xlim = 0.50, 0.75 # multiple smaller plasmoids
+
+    #---
 
     for ind, (label, cmap, data, ect, vmin, vmax) in enumerate(datas):
         if np.prod(data.shape) == 0: continue
@@ -271,9 +279,10 @@ def imshow(curr, curr_denoise, mag, mag0, mag1, o, x, div, det, mins, maxs, aspe
             plt.plt.setp(ax.get_xticklabels(), visible=False)
             plt.plt.setp(ax.get_yticklabels(), visible=False)
 
-            if zoom:
-                ax.set_xlim(xlim)
+            if zoomy:
                 ax.set_ylim(ylim)
+            if zoomx:
+                ax.set_xlim(xlim)
 
     #---
 

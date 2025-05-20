@@ -1,0 +1,220 @@
+#!/usr/bin/env python3
+
+"""make a visualization of wavelet thresholding and associated statistics
+"""
+__author__ = "Reed Essick (reed.essick@gmail.com)"
+
+#-------------------------------------------------
+
+import os
+
+import numpy as np
+import matplotlib
+matplotlib.use("Agg")
+from matplotlib import pyplot as plt
+
+### non-standard libraries
+from w4t import (pywt, utils)
+from w4t.plot import plane as plt
+
+#-------------------------------------------------
+
+denoise = 5.0 # adjusting this by-hand to get something pretty...
+
+max_scale = 128
+
+#---
+
+indexes = [1, 2, 3, 4, 5, 6] # for computing the spectrum
+
+#---
+
+path = '../data/M05MA10/Turb_hdf5_plt_cnt_0050'
+field = 'vort'
+
+max_edgelength = 512
+
+#---
+
+cmap = 'Reds'
+color = 'r'
+
+cmap_coherent = 'Greens'
+color_coherent = 'b'
+
+output_dir = '.'
+
+#-------------------------------------------------
+
+def aaa_imshow(ha, figtmp, norms=None, cmap='Reds'):
+    print('iterating over scales')
+
+    compute_norms = norms is None
+    if compute_norms:
+        norms = []
+
+    ha.idecompose() # reset the decomposition
+
+    ind = 0
+    while ha.active[0] > 1:
+        scales = '-'.join('%03d'%_ for _ in ha.scales)
+        title = field + '\nscale : ' + scales
+
+        n0, n1, n2 = ha.active
+
+        array_dict = dict()
+
+        array_dict['aaa'] = ha.array[:n0, :n1, :n2]
+
+        array_dict['aad'] = ha.array[:n0, :n1, n2:2*n2]
+        array_dict['ada'] = ha.array[:n0, n1:2*n1, :n2]
+        array_dict['daa'] = ha.array[n0:2*n0, :n1, :n2]
+
+        array_dict['add'] = ha.array[:n0, n1:2*n1, n2:2*n2]
+        array_dict['dad'] = ha.array[n0:2*n0, :n1, n2:2*n2]
+        array_dict['dda'] = ha.array[n0:2*n0, n1:2*n1, :n2]
+
+        array_dict['ddd'] = ha.array[n0:2*n0, n1:2*n1, n2:2*n2]
+
+        # plot the mid-plane
+        fig = plt.plt.figure(figsize=(5,5))
+        ax = fig.add_axes([0.10, 0.10, 0.80, 0.80])
+
+        if compute_norms:
+            norm = np.mean(array_dict['aaa']**2)**0.5
+            norms.append(norm)
+        else:
+            norm = norms[ind]
+
+        # approximate the mid-plane
+        plane = 0.5*(array_dict['aaa'][:,:,n2//2] + array_dict['aaa'][:,:,n2//2-1]) / norm
+
+        # zero out tiny coefficients
+        plane = np.where(
+            plane > 1e-2, ### FIXME? this is kind fragile...
+            plane,
+            np.nan,
+        )
+
+        # plot
+        ax.imshow(
+            plane,
+            cmap=cmap,
+            vmax=1.0,
+            vmin=0.0,
+            origin='lower',
+            extent=(0, 1, 0, 1),
+        )
+
+        # decorate
+        fig.suptitle(title, fontsize=10)
+
+        # save
+        plt.save(fig, (figtmp%scales)+'.%s', ['png'], verbose=True)
+        plt.close(fig)
+
+        #---
+
+        del array_dict
+
+        ha.dwt() # decompose
+        ind += 1
+
+    return norms
+
+#-------------------------------------------------
+#
+# NOW DO THINGS
+#
+#-------------------------------------------------
+
+basename = os.path.basename(path).split('.')[0]
+
+data = utils.load([field], path=path, max_edgelength=max_edgelength, verbose=True)[field]
+data = np.sum(data**2, axis=0)**0.5 # compute magnitude
+                                    # NOTE: be careful if not using a vector field?
+
+#-------------------------------------------------
+
+# instantiate wavelet object
+ha = pywt.WaveletArray(data, 'haar')
+
+#---
+
+# make images of the flow at different scales (approx coefficients)
+figtmp = os.path.join(output_dir, '%s_%s_%s_midplane-imshow' % (basename, field, '%s'))
+
+norms = aaa_imshow(ha, figtmp, norms=None, cmap=cmap)
+
+#------------------------
+
+# compute spectrum
+print('computing spectrum of the full flow')
+scales, mom, cov = ha.spectrum(index=indexes, use_abs=True)
+ha.idecompose() # reset the decomposition
+
+#-------------------------------------------------
+
+# make images of flow after denoising
+
+print('denoising')
+ha.denoise(denoise, smooth=False, max_scale=max_scale)
+
+#---
+
+# make images of selected flow
+aaa_imshow(ha, figtmp+'-denoise', norms=norms, cmap=cmap_coherent)
+
+#------------------------
+
+# compute spectrum
+#print('computing spectrum of coherent structures')
+#dn_scales, dn_mom, dn_cov = ha.spectrum(index=indexes, use_abs=True)
+#ha.idecompose() # reset the decomposition
+
+#-------------------------------------------------
+
+# make image of spectrum
+
+print('plotting structure functions (moments of detail coefficients)')
+
+fig = plt.plt.figure(figsize=(5,3))
+ax = fig.add_axes([0.15, 0.15, 0.80, 0.80])
+
+# plot
+for ind, index in enumerate(indexes):
+
+    # full flow
+    color = ax.plot(scales[:,0], mom[:,ind]**(1/index), alpha=0.75, marker='.', label='$p=%d$'%index)[0].get_color()
+    for a, b, c in zip(scales[:,0], mom[:,ind], cov[:,ind,ind]**0.5):
+        ax.plot([a]*2, [(b-c)**(1/index), (b+c)**(1/index)], color=color, alpha=0.50)
+
+    # coherent structures?
+
+# decorate
+ax.set_xlabel('scale')
+ax.set_ylabel(r'$\left< d^{p}_{\vec{x},s}\right>^{1/p}_{\vec{x}}$')
+
+ax.set_yscale('log')
+
+ax.set_xscale('log')
+ax.set_xticks(scales[::-1,0])
+ax.set_xticklabels(['%d'%_ for _ in ax.get_xticks()])
+ax.set_xlim(xmin=scales[-1,0], xmax=scales[0,0])
+
+ax.tick_params(
+    left=True,
+    right=True,
+    bottom=True,
+    top=True,
+    direction='in',
+    which='both',
+)
+
+ax.legend(loc='lower left', ncol=2)
+
+# save
+figtmp = os.path.join(output_dir, '%s_%s_spectrum' % (basename, field)) + '.%s'
+
+plt.save(fig, figtmp, ['png'], verbose=True)
+plt.close(fig)

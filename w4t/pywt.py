@@ -230,6 +230,80 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
     #--------------------
 
+    def structures(self, thr=0):
+        """returns a list of sets of pixels corresponding to spatially separate structures at the current scale
+        thr sets the threshold for considering a pixel to be "on" and therefore eligible to be included in a structure
+        """
+        return self._structures(np.abs(self.approx) >= thr)
+
+    @staticmethod
+    def _structures(sel):
+        # iterate until there are no more selected pixels
+        clusters = []
+        while np.any(sel):
+            pix = WaveletArray._sel2pix(sel)
+            cluster, sel = WaveletArray._pix2cluster(pix, sel)
+            clusters.append(cluster)
+
+        # return : list of clusters, each of which is a list of pixels
+        return clusters
+
+    @staticmethod
+    def _sel2pix(sel):
+        """pick a pixel from this boolean array
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def _pix2cluster(pix, sel):
+        """starting at location "pix", identify all contiguous pixels with sel[pix]=True.
+        Updates sel in place.
+        """
+        cluster = [pix]
+        tocheck = [pix]
+        sel[pix] = False # mark this as checked
+
+        shape = sel.shape
+
+        while len(tocheck):
+            pix = tocheck.pop(0) # grab the next pixel
+
+            for neighbor in WaveletArray._neighbors(pix, shape): # iterate over neighbors
+                if sel[neighbor]:
+                    tocheck.append(neighbor)
+                    cluster.append(neighbor)
+                    sel[neighbor] = False # mark this as checked
+
+        # return
+        return cluster, sel
+
+    @staticmethod
+    def _neighbors(pix, shape):
+        """return a list of possible neighbors for this pix
+        """
+        # check consistency of data
+        ndim = len(shape)
+        assert len(pix) == ndim
+
+        # get vectors so we can make changes
+        pix = np.array(pix, dtype=int)
+        shift = np.empty(ndim, dtype=int)
+
+        # iterate through dimensions
+        new = []
+        for dim, (ind, num) in enumerate(zip(pix, shape)):
+            shift[:] = 0
+            shift[dim] = 1
+            if ind > 0:       # there is a pixel at ind - 1
+                new.append(pix-shift)
+            elif ind < num-1: # there is a pixel at ind + 1
+                new.append(pix+shift)
+
+        # return
+        return [tuple(_) for _ in new]
+
+    #--------------------
+
     def spectrum(self, index=[2], use_abs=False):
         """compute and return the moments of the detail distributions at each scale in the decomposition
     index should be an iterable corresponding to which moments you want to compute

@@ -19,9 +19,9 @@ from w4t.plot import plane as plt
 
 #-------------------------------------------------
 
-denoise = 5.0 # adjusting this by-hand to get something pretty...
+denoise = 1.5 # adjusting this by-hand to get something pretty...
 
-max_scale = 128
+max_scale = 512
 
 #---
 
@@ -36,17 +36,17 @@ max_edgelength = 512
 
 #---
 
-cmap = 'Reds'
-color = 'r'
+#cmap = 'cividis_r'
+#cmap = 'Greys'
+cmap = 'afmhot'
 
-cmap_coherent = 'Greens'
-color_coherent = 'b'
+cmap_coherent = cmap
 
 output_dir = '.'
 
 #-------------------------------------------------
 
-def aaa_imshow(ha, figtmp, norms=None, cmap='Reds'):
+def aaa_imshow(ha, figtmp, norms=None, cmap='Reds', vmin=-2.0, vmax=2.0, label='', thr=None):
     print('iterating over scales')
 
     compute_norms = norms is None
@@ -58,7 +58,7 @@ def aaa_imshow(ha, figtmp, norms=None, cmap='Reds'):
     ind = 0
     while ha.active[0] > 1:
         scales = '-'.join('%03d'%_ for _ in ha.scales)
-        title = field + '\nscale : ' + scales
+        title = label # + '\nscale : ' + scales
 
         n0, n1, n2 = ha.active
 
@@ -78,7 +78,7 @@ def aaa_imshow(ha, figtmp, norms=None, cmap='Reds'):
 
         # plot the mid-plane
         fig = plt.plt.figure(figsize=(5,5))
-        ax = fig.add_axes([0.10, 0.10, 0.80, 0.80])
+        ax = fig.add_axes([0.05, 0.01, 0.90, 0.90])
 
         if compute_norms:
             norm = np.mean(array_dict['aaa']**2)**0.5
@@ -90,18 +90,19 @@ def aaa_imshow(ha, figtmp, norms=None, cmap='Reds'):
         plane = 0.5*(array_dict['aaa'][:,:,n2//2] + array_dict['aaa'][:,:,n2//2-1]) / norm
 
         # zero out tiny coefficients
-        plane = np.where(
-            plane > 1e-2, ### FIXME? this is kind fragile...
-            plane,
-            np.nan,
-        )
+        if thr is not None: ### FIXME? this seems kinda fragile...
+            plane = np.where(
+                np.abs(plane) > thr,
+                plane,
+                np.nan,
+            )
 
         # plot
         ax.imshow(
             plane,
             cmap=cmap,
-            vmax=1.0,
-            vmin=0.0,
+            vmax=vmax,
+            vmin=vmin,
             origin='lower',
             extent=(0, 1, 0, 1),
         )
@@ -109,8 +110,11 @@ def aaa_imshow(ha, figtmp, norms=None, cmap='Reds'):
         # decorate
         fig.suptitle(title, fontsize=10)
 
+        ax.set_xticks([]) # remove any ticks
+        ax.set_yticks([])
+
         # save
-        plt.save(fig, (figtmp%scales)+'.%s', ['png'], verbose=True)
+        plt.save(fig, (figtmp%scales)+'.%s', ['png'], dpi=500, verbose=True)
         plt.close(fig)
 
         #---
@@ -131,8 +135,12 @@ def aaa_imshow(ha, figtmp, norms=None, cmap='Reds'):
 basename = os.path.basename(path).split('.')[0]
 
 data = utils.load([field], path=path, max_edgelength=max_edgelength, verbose=True)[field]
-data = np.sum(data**2, axis=0)**0.5 # compute magnitude
-                                    # NOTE: be careful if not using a vector field?
+
+#---
+
+data = np.sum(data**2, axis=0)**0.5 # magnitude
+label = r'$\left| \vec{\omega} = \vec{\nabla} \times \vec{u} \right|$'
+vmin, vmax = 0.0, 2.0
 
 #-------------------------------------------------
 
@@ -144,7 +152,7 @@ ha = pywt.WaveletArray(data, 'haar')
 # make images of the flow at different scales (approx coefficients)
 figtmp = os.path.join(output_dir, '%s_%s_%s_midplane-imshow' % (basename, field, '%s'))
 
-norms = aaa_imshow(ha, figtmp, norms=None, cmap=cmap)
+norms = aaa_imshow(ha, figtmp, norms=None, vmin=vmin, vmax=vmax, cmap=cmap, label=label)
 
 #------------------------
 
@@ -163,14 +171,14 @@ ha.denoise(denoise, smooth=False, max_scale=max_scale)
 #---
 
 # make images of selected flow
-aaa_imshow(ha, figtmp+'-denoise', norms=norms, cmap=cmap_coherent)
+aaa_imshow(ha, figtmp+'-denoise', norms=norms, vmin=vmin, vmax=vmax, cmap=cmap_coherent, label=label) #, thr=1e-1)
 
 #------------------------
 
 # compute spectrum
-#print('computing spectrum of coherent structures')
-#dn_scales, dn_mom, dn_cov = ha.spectrum(index=indexes, use_abs=True)
-#ha.idecompose() # reset the decomposition
+print('computing spectrum of coherent structures')
+dn_scales, dn_mom, dn_cov = ha.spectrum(index=indexes, use_abs=True)
+ha.idecompose() # reset the decomposition
 
 #-------------------------------------------------
 
@@ -185,22 +193,27 @@ ax = fig.add_axes([0.15, 0.15, 0.80, 0.80])
 for ind, index in enumerate(indexes):
 
     # full flow
-    color = ax.plot(scales[:,0], mom[:,ind]**(1/index), alpha=0.75, marker='.', label='$p=%d$'%index)[0].get_color()
+    color = ax.plot(scales[:,0], mom[:,ind]**(1/index), alpha=0.5, marker='.', label='$p=%d$'%index)[0].get_color()
     for a, b, c in zip(scales[:,0], mom[:,ind], cov[:,ind,ind]**0.5):
         ax.plot([a]*2, [(b-c)**(1/index), (b+c)**(1/index)], color=color, alpha=0.50)
 
     # coherent structures?
+    ax.plot(dn_scales[:,0], dn_mom[:,ind]**(1/index), color=color, linestyle='dashed', alpha=0.5)
+#    for a, b, c in zip(scales[:,0], mom[:,ind], cov[:,ind,ind]**0.5):
+#        ax.plot([a]*2, [(b-c)**(1/index), (b+c)**(1/index)], color=color, alpha=0.50)
+
 
 # decorate
 ax.set_xlabel('scale')
 ax.set_ylabel(r'$\left< d^{p}_{\vec{x},s}\right>^{1/p}_{\vec{x}}$')
 
 ax.set_yscale('log')
+ax.set_ylim(ymin=1e0, ymax=6e3)
 
 ax.set_xscale('log')
 ax.set_xticks(scales[::-1,0])
 ax.set_xticklabels(['%d'%_ for _ in ax.get_xticks()])
-ax.set_xlim(xmin=scales[-1,0], xmax=scales[0,0])
+ax.set_xlim(xmin=scales[-2,0], xmax=scales[0,0])
 
 ax.tick_params(
     left=True,
@@ -216,5 +229,5 @@ ax.legend(loc='lower left', ncol=2)
 # save
 figtmp = os.path.join(output_dir, '%s_%s_spectrum' % (basename, field)) + '.%s'
 
-plt.save(fig, figtmp, ['png'], verbose=True)
+plt.save(fig, figtmp, ['png'], dpi=500, verbose=True)
 plt.close(fig)

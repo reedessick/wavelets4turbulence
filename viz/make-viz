@@ -32,13 +32,12 @@ indexes = [1, 2, 3, 4, 5, 6] # for computing the spectrum
 path = '../data/M05MA10/Turb_hdf5_plt_cnt_0050'
 field = 'vort'
 
-max_edgelength = 512
+#max_edgelength = 512 # should be a power of 2
+max_edgelength = 128
 
 #---
 
-#cmap = 'cividis_r'
-#cmap = 'Greys'
-cmap = 'afmhot'
+cmap = 'PiYG'
 
 cmap_coherent = cmap
 
@@ -46,7 +45,7 @@ output_dir = '.'
 
 #-------------------------------------------------
 
-def aaa_imshow(ha, figtmp, norms=None, cmap='Reds', vmin=-2.0, vmax=2.0, label='', thr=None):
+def aaa_imshow(ha, figtmp, norms=None, cmap='Reds', vmin=-2.0, vmax=2.0, label='', thr=0.0, structures=False):
     print('iterating over scales')
 
     compute_norms = norms is None
@@ -58,6 +57,9 @@ def aaa_imshow(ha, figtmp, norms=None, cmap='Reds', vmin=-2.0, vmax=2.0, label='
     ind = 0
     while ha.active[0] > 1:
         scales = '-'.join('%03d'%_ for _ in ha.scales)
+
+        print('processing: '+scales)
+
         title = label # + '\nscale : ' + scales
 
         n0, n1, n2 = ha.active
@@ -76,12 +78,9 @@ def aaa_imshow(ha, figtmp, norms=None, cmap='Reds', vmin=-2.0, vmax=2.0, label='
 
         array_dict['ddd'] = ha.array[n0:2*n0, n1:2*n1, n2:2*n2]
 
-        # plot the mid-plane
-        fig = plt.plt.figure(figsize=(5,5))
-        ax = fig.add_axes([0.05, 0.01, 0.90, 0.90])
-
+        # get normalization
         if compute_norms:
-            norm = np.mean(array_dict['aaa']**2)**0.5
+            norm = np.std(array_dict['aaa'])
             norms.append(norm)
         else:
             norm = norms[ind]
@@ -89,15 +88,10 @@ def aaa_imshow(ha, figtmp, norms=None, cmap='Reds', vmin=-2.0, vmax=2.0, label='
         # approximate the mid-plane
         plane = 0.5*(array_dict['aaa'][:,:,n2//2] + array_dict['aaa'][:,:,n2//2-1]) / norm
 
-        # zero out tiny coefficients
-        if thr is not None: ### FIXME? this seems kinda fragile...
-            plane = np.where(
-                np.abs(plane) > thr,
-                plane,
-                np.nan,
-            )
+        # plot the mid-plane
+        fig = plt.plt.figure(figsize=(5,5))
+        ax = fig.add_axes([0.05, 0.01, 0.90, 0.90])
 
-        # plot
         ax.imshow(
             plane,
             cmap=cmap,
@@ -116,6 +110,106 @@ def aaa_imshow(ha, figtmp, norms=None, cmap='Reds', vmin=-2.0, vmax=2.0, label='
         # save
         plt.save(fig, (figtmp%scales)+'.%s', ['png'], dpi=500, verbose=True)
         plt.close(fig)
+
+        #---
+
+        # plot a histogram of values within plane
+
+        fig = plt.plt.figure()
+        ax = fig.gca()
+
+        _, bins, _ = ax.hist(np.abs(plane.flatten()), bins=max(100, int(0.5*(n0*n1)**0.5)), histtype='step', density=True)
+        ax.hist(np.abs(plane.flatten()), bins=bins, histtype='step', density=True, cumulative=True)
+
+        ylim = ax.get_ylim()
+        ax.plot([thr]*2, ylim, color='k', alpha=0.5)
+        ax.set_ylim(ylim)
+
+        ax.set_xlabel('abs(pixel coefficient)')
+
+        # save
+        plt.save(fig, (figtmp%scales+'_hist')+'.%s', ['png'], dpi=500, verbose=True)
+        plt.close(fig)
+
+        #---
+
+        if structures: # identify structures and make separate plots for each
+#            print('identifying clusters in 2D midplane')
+#            sel = np.abs(plane) > thr # which pixels we consider in 2D
+
+            print('identifying clusters in full 3D box')
+            sel = np.abs(array_dict['aaa']/norm) > thr # which pixels we consider in 3D
+
+            clusters = ha._structures(sel)
+
+            num_clusters = len(clusters)
+            print('    found %d clusters' % num_clusters)
+
+            sel = 0.5*(sel[:,:,n2//2].astype(int) + sel[:,:,n2//2-1].astype(int)) # just the midplane
+
+            for cnd, cluster in enumerate(clusters):
+                print('    cluster : %d / %d' % (cnd, num_clusters))
+                num_pix = len(cluster)
+                print('        len = %d / %d' % (num_pix, n0*n1*n2))
+
+#                a = np.zeros((n0, n1), dtype=float) # 2D representation
+                a = np.zeros((n0, n1, n2), dtype=float) # 3D representation
+                a[:] = np.nan
+
+                cluster = tuple(np.transpose(cluster)) # make this so an array can understand it
+#                a[cluster] = plane[cluster] # 2D
+                a[cluster] = array_dict['aaa'][cluster] / norm # 3D
+
+                a = np.where( # deal with nans in neighboring planes
+                    np.isnan(a[:,:,n2//2]),
+                    np.where(
+                        np.isnan(a[:,:,n2//2-1]),
+                        np.nan,
+                        a[:,:,n2//2-1],
+                    ),
+                    np.where(
+                        np.isnan(a[:,:,n2//2-1]),
+                        a[:,:,n2//2],
+                        0.5*(a[:,:,n2//2] + a[:,:,n2//2-1]),
+                    ),
+                )
+
+                if np.all(np.isnan(a)): # nothing to show!
+                    print('    nothing to show!')
+
+                else:
+                    fig = plt.plt.figure(figsize=(5,5))
+                    ax = fig.add_axes([0.05, 0.01, 0.90, 0.90])
+
+                    # plot the overall set of pixels selected
+                    ax.imshow(
+                        sel,
+                        cmap='Greys',
+                        vmax=1,
+                        vmin=0,
+                        origin='lower',
+                        extent=(0, 1, 0, 1),
+                    )
+
+                    # plot only this cluster
+                    ax.imshow(
+                        a,
+                        cmap=cmap,
+                        vmax=vmax,
+                        vmin=vmin,
+                        origin='lower',
+                        extent=(0, 1, 0, 1),
+                    )
+
+                    # decorate
+                    fig.suptitle('cluster %d\n%d pixels' % (cnd, num_pix), fontsize=10)
+
+                    ax.set_xticks([]) # remove any ticks
+                    ax.set_yticks([])
+
+                    # save
+                    plt.save(fig, (figtmp%scales + '_cluster-%03d'%cnd)+'.%s', ['png'], dpi=500, verbose=True)
+                    plt.close(fig)
 
         #---
 
@@ -138,9 +232,14 @@ data = utils.load([field], path=path, max_edgelength=max_edgelength, verbose=Tru
 
 #---
 
-data = np.sum(data**2, axis=0)**0.5 # magnitude
-label = r'$\left| \vec{\omega} = \vec{\nabla} \times \vec{u} \right|$'
-vmin, vmax = 0.0, 2.0
+#data = np.sum(data**2, axis=0)**0.5 # magnitude
+#label = r'$\left| \vec{\omega} = \vec{\nabla} \times \vec{u} \right|$'
+
+data = data[0]
+label = r'$\omega_x$'
+
+vmin = -3.0
+vmax = +3.0
 
 #-------------------------------------------------
 
@@ -171,7 +270,7 @@ ha.denoise(denoise, smooth=False, max_scale=max_scale)
 #---
 
 # make images of selected flow
-aaa_imshow(ha, figtmp+'-denoise', norms=norms, vmin=vmin, vmax=vmax, cmap=cmap_coherent, label=label) #, thr=1e-1)
+aaa_imshow(ha, figtmp+'-denoise', norms=norms, vmin=vmin, vmax=vmax, cmap=cmap_coherent, label=label, structures=True, thr=1.0)
 
 #------------------------
 

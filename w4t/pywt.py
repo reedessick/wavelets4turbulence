@@ -4,8 +4,8 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 #-------------------------------------------------
 
-import numpy as np
 import copy
+import numpy as np
 
 ### non-standard libraries
 import pywt
@@ -238,6 +238,7 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
     @staticmethod
     def _structures(sel):
+        sel = copy.copy(sel) # make a copy so we can update it in-place
         clusters = []
         while np.any(sel): # iterate until there are no more selected pixels
             pix = WaveletArray._sel2pix(sel) # grab a new pixel
@@ -287,20 +288,20 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
         # get vectors so we can make changes
         pix = np.array(pix, dtype=int)
-        shift = np.empty(ndim, dtype=int)
 
-        # iterate through dimensions
-        new = []
+        # iterate through dimensions to figure out all the possible shifts
+        shifts = [()]
         for dim, (ind, num) in enumerate(zip(pix, shape)):
-            shift[:] = 0
-            shift[dim] = 1
-            if ind > 0:       # there is a pixel at ind - 1
-                new.append(pix-shift)
+            new = [shift+(0,) for shift in shifts]
+            if ind > 0: # there is a pixel at ind - 1
+                new += [shift+(-1,) for shift in shifts]
             if ind < num-1: # there is a pixel at ind + 1
-                new.append(pix+shift)
+                new += [shift+(+1,) for shift in shifts]
+            shifts = new
+        shifts = [np.array(shift) for shift in shifts if np.any(shift)]
 
-        # return
-        return [tuple(_) for _ in new]
+        # define new pixels
+        return [tuple(pix+shift) for shift in shifts]
 
     #--------------------
 

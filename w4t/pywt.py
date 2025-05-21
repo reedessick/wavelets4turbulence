@@ -238,12 +238,11 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
     @staticmethod
     def _structures(sel):
-        # iterate until there are no more selected pixels
         clusters = []
-        while np.any(sel):
-            pix = WaveletArray._sel2pix(sel)
-            cluster, sel = WaveletArray._pix2cluster(pix, sel)
-            clusters.append(cluster)
+        while np.any(sel): # iterate until there are no more selected pixels
+            pix = WaveletArray._sel2pix(sel) # grab a new pixel
+            cluster, sel = WaveletArray._pix2cluster(pix, sel) # find everything that belongs in that pixel's cluster
+            clusters.append(cluster) # record the cluster
 
         # return : list of clusters, each of which is a list of pixels
         return clusters
@@ -252,7 +251,8 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
     def _sel2pix(sel):
         """pick a pixel from this boolean array
         """
-        raise NotImplementedError
+        assert np.any(sel), 'cannot select a pixel from a boolean array with all entries == False'
+        return tuple(np.transpose(np.nonzero(sel))[0])
 
     @staticmethod
     def _pix2cluster(pix, sel):
@@ -268,17 +268,17 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
         while len(tocheck):
             pix = tocheck.pop(0) # grab the next pixel
 
-            for neighbor in WaveletArray._neighbors(pix, shape): # iterate over neighbors
+            for neighbor in WaveletArray._pix2neighbors(pix, shape): # iterate over neighbors
                 if sel[neighbor]:
                     tocheck.append(neighbor)
                     cluster.append(neighbor)
                     sel[neighbor] = False # mark this as checked
 
         # return
-        return cluster, sel
+        return np.array(cluster), sel
 
     @staticmethod
-    def _neighbors(pix, shape):
+    def _pix2neighbors(pix, shape):
         """return a list of possible neighbors for this pix
         """
         # check consistency of data
@@ -296,7 +296,7 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
             shift[dim] = 1
             if ind > 0:       # there is a pixel at ind - 1
                 new.append(pix-shift)
-            elif ind < num-1: # there is a pixel at ind + 1
+            if ind < num-1: # there is a pixel at ind + 1
                 new.append(pix+shift)
 
         # return

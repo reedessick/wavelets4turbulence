@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+
+import numpy as np
+import copy
+from w4t.pywt import WaveletArray
+
+#-------------------------------------------------
+
+np.random.seed(123)
+
+#-------------------------------------------------
+
+data = np.random.normal(size=(4,4,4))
+
+ha = WaveletArray(data, 'haar')
+
+#------------------------
+
+sel = np.abs(ha.approx) > 0.75
+print(sel)
+
+#------------------------
+
+pix = ha._sel2pix(sel)
+print(pix)
+
+#------------------------
+
+neighbors = ha._pix2neighbors(pix, sel.shape)
+print('neighbors')
+for neighbor in neighbors:
+    print('    ', neighbor)
+
+#------------------------
+
+cluster, new = ha._pix2cluster(pix, copy.copy(sel))
+print(sel)
+print(new)
+print('cluster')
+for _ in cluster:
+    print('    ', _)
+
+#------------------------
+
+clusters = ha._structures(copy.copy(sel))
+for cnd, cluster in enumerate(clusters):
+    print('cluster %d' % cnd)
+    for _ in cluster:
+        print('    ', _)

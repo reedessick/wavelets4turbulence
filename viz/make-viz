@@ -34,7 +34,7 @@ path = '../data/M05MA10/Turb_hdf5_plt_cnt_0050'
 field = 'vort'
 
 #max_edgelength = 512 # should be a power of 2
-max_edgelength = 64
+max_edgelength = 512
 
 thr = 2.0 ### may need to make this much bigger to actually separate structures meaningfully
 
@@ -322,7 +322,7 @@ ha = pywt.WaveletArray(data, 'haar')
 #---
 
 # make images of the flow at different scales (approx coefficients)
-figtmp = os.path.join(output_dir, '%s_%s_%s_midplane-imshow' % (basename, field, '%s'))
+figtmp = os.path.join(output_dir, '%s_%s_%s_imshow' % (basename, field, '%s'))
 
 norms = aaa_imshow(
     ha,

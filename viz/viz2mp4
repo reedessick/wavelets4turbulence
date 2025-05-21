@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# make a short movie out of a sequence of png files
+# Reed Essick (reed.essick@gmail.com)
+
+#-------------------------------------------------
+
+base="Turb_hdf5_plt_cnt_0050_vort_"
+
+for scale in "001-001-001"
+do
+
+    base_scale="${base}${scale}_midplane-imshow"
+
+    for denoise in "" "-denoise"
+    do
+
+        base_scale_denoise="${base_scale}${denoise}
+
+        for dim in "x" "y" "z"
+        do
+
+            basename="${base_scale_denoise}-${dim}"
+-%03d.png
+
+            ffmpeg \
+                -framerate 10 \
+                -i ./Turb_hdf5_plt_cnt_0050_vort_004-004-004_midplane-imshow-y-001.png \
+                -c:v libx264 \
+                -pix_fmt yuv420p \
+                out.mp4 \
+            || exit 1
+
+        done
+    done
+done

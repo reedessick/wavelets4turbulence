@@ -10,13 +10,13 @@ np.random.seed(123)
 
 #-------------------------------------------------
 
-data = np.random.normal(size=(4,4,4))
+data = np.random.normal(size=(10,10))
 
 ha = WaveletArray(data, 'haar')
 
 #------------------------
 
-sel = np.abs(ha.approx) > 0.75
+sel = np.abs(ha.approx) > 1.0
 print(sel)
 
 #------------------------
@@ -47,3 +47,5 @@ for cnd, cluster in enumerate(clusters):
     print('cluster %d' % cnd)
     for _ in cluster:
         print('    ', _)
+
+    print(sel[tuple(np.transpose(cluster))])

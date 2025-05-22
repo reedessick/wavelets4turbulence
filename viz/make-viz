@@ -20,9 +20,8 @@ from w4t.plot import plane as plt
 
 #-------------------------------------------------
 
-denoise = 1.5 # adjusting this by-hand to get something pretty...
-
-max_scale = 512
+denoise = 2.0 # this controls what is retained as "coherent"
+thr = 1.0     # this controls the part of the coherent structure used to identify individual structures
 
 #---
 
@@ -34,9 +33,9 @@ path = '../data/M05MA10/Turb_hdf5_plt_cnt_0050'
 field = 'vort'
 
 #max_edgelength = 512 # should be a power of 2
-max_edgelength = 512
+max_edgelength = 256
 
-thr = 2.0 ### may need to make this much bigger to actually separate structures meaningfully
+max_scale = 512
 
 #---
 
@@ -45,11 +44,22 @@ cmap = 'PiYG'
 cmap_coherent = cmap
 
 output_dir = '.'
-dpi = 500
+dpi = 100
 
 #-------------------------------------------------
 
-def aaa_imshow(ha, figtmp, norms=None, cmap='Reds', vmin=-2.0, vmax=2.0, label='', thr=0.0, structures=False, grand_tour=False):
+def aaa_imshow(
+        ha,
+        figtmp,
+        norms=None,
+        cmap='Reds',
+        vmin=-2.0,
+        vmax=2.0,
+        label='',
+        thr=0.0,
+        structures=False,
+        grand_tour=False,
+    ):
     print('iterating over scales')
 
     compute_norms = norms is None
@@ -165,6 +175,7 @@ def aaa_imshow(ha, figtmp, norms=None, cmap='Reds', vmin=-2.0, vmax=2.0, label='
             sel = np.abs(array_dict['aaa']/norm) > thr # which pixels we consider in 3D
 
             clusters = ha._structures(sel)
+            clusters.sort(key=lambda x: -len(x)) # biggest first
 
             num_clusters = len(clusters)
             print('    found %d clusters' % num_clusters)
@@ -198,7 +209,7 @@ def aaa_imshow(ha, figtmp, norms=None, cmap='Reds', vmin=-2.0, vmax=2.0, label='
                     ),
                 )
 
-                if np.all(np.isnan(a)):
+                if np.all(np.isnan(plane)):
                     sys.stdout.write('\r    nothing to show!')
 
                 else:
@@ -237,49 +248,49 @@ def aaa_imshow(ha, figtmp, norms=None, cmap='Reds', vmin=-2.0, vmax=2.0, label='
                     plt.save(fig, (figtmp%scales + '_cluster-%03d'%cnd)+'.%s', ['png'], dpi=dpi, verbose=True)
                     plt.close(fig)
 
-                    if grand_tour:
-                        sys.stdout.write('\r    plotting grand tour!\n')
+                if grand_tour:
+                    sys.stdout.write('\r    plotting grand tour!\n')
 
-                        for axis, (n, x) in enumerate([(n0, 'x'), (n1, 'y'), (n2, 'z')]):
-                            for xnd in range(n):
-                                fig = plt.plt.figure(figsize=(5,5))
-                                ax = fig.add_axes([0.05, 0.01, 0.90, 0.90])
+                    for axis, (n, x) in enumerate([(n0, 'x'), (n1, 'y'), (n2, 'z')]):
+                        for xnd in range(n):
+                            fig = plt.plt.figure(figsize=(5,5))
+                            ax = fig.add_axes([0.05, 0.01, 0.90, 0.90])
 
-                                # plot the overall set of pixels selected
-                                ax.imshow(
-                                    np.take(sel, xnd, axis=axis),
-                                    cmap='Greys',
-                                    vmax=1,
-                                    vmin=0,
-                                    origin='lower',
-                                    extent=(0, 1, 0, 1),
-                                )
+                            # plot the overall set of pixels selected
+                            ax.imshow(
+                                np.take(sel, xnd, axis=axis),
+                                cmap='Greys',
+                                vmax=1,
+                                vmin=0,
+                                origin='lower',
+                                extent=(0, 1, 0, 1),
+                            )
 
-                                # plot only this cluster
-                                ax.imshow(
-                                    np.take(a, xnd, axis=axis) / norm,
-                                    cmap=cmap,
-                                    vmax=vmax,
-                                    vmin=vmin,
-                                    origin='lower',
-                                    extent=(0, 1, 0, 1),
-                                )
+                            # plot only this cluster
+                            ax.imshow(
+                                np.take(a, xnd, axis=axis) / norm,
+                                cmap=cmap,
+                                vmax=vmax,
+                                vmin=vmin,
+                                origin='lower',
+                                extent=(0, 1, 0, 1),
+                            )
 
-                                # decorate
-                                fig.suptitle('cluster %d (%d pixels)\n$%s=%d$' % (cnd, num_pix, x, xnd), fontsize=10)
+                            # decorate
+                            fig.suptitle('cluster %d (%d pixels)\n$%s=%d$' % (cnd, num_pix, x, xnd), fontsize=10)
 
-                                ax.set_xticks([]) # remove any ticks
-                                ax.set_yticks([])
+                            ax.set_xticks([]) # remove any ticks
+                            ax.set_yticks([])
 
-                                # save
-                                plt.save(
-                                    fig,
-                                    (figtmp%scales + '_cluster-%03d-%s-%03d'%(cnd,x,xnd))+'.%s',
-                                    ['png'],
-                                    dpi=dpi,
-                                    verbose=True,
-                                )
-                                plt.close(fig)
+                            # save
+                            plt.save(
+                                fig,
+                                (figtmp%scales + '_cluster-%03d-%s-%03d'%(cnd,x,xnd))+'.%s',
+                                ['png'],
+                                dpi=dpi,
+                                verbose=True,
+                            )
+                            plt.close(fig)
 
             sys.stdout.write('\n')
             sys.stdout.flush()
@@ -332,7 +343,7 @@ norms = aaa_imshow(
     vmax=vmax,
     cmap=cmap,
     label=label,
-    grand_tour=True,
+    grand_tour=False,
 )
 
 #------------------------
@@ -360,7 +371,7 @@ aaa_imshow(
     vmax=vmax,
     cmap=cmap_coherent,
     label=label,
-    grand_tour=True,
+    grand_tour=False,
     structures=True,
     thr=thr,
 )

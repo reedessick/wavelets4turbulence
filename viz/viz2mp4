@@ -12,12 +12,12 @@ do
 
     base_scale="${base}_${scale}_imshow"
 
-    for denoise in "" # "-denoise"
+    for denoise in "" "-denoise"
     do
 
         base_scale_denoise="${base_scale}${denoise}"
 
-        for dim in "x" # "y" "z"
+        for dim in "x" "y" "z"
         do
 
             basename="${base_scale_denoise}-${dim}"

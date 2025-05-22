@@ -34,7 +34,7 @@ field = 'vort'
 
 max_edgelength = 512 # should be a power of 2
 
-max_scale = 64
+max_scale = 512 # let's just let the wavelet denoising do the heavy lifting. We can always make this cut later?
 
 #---
 

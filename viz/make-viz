@@ -20,8 +20,8 @@ from w4t.plot import plane as plt
 
 #-------------------------------------------------
 
-denoise = 2.0 # this controls what is retained as "coherent"
-thr = 1.0     # this controls the part of the coherent structure used to identify individual structures
+denoise = 2.5 # this controls what is retained as "coherent"
+thr = 1.5     # this controls the part of the coherent structure used to identify individual structures
 
 #---
 
@@ -32,10 +32,9 @@ indexes = [1, 2, 3, 4, 5, 6] # for computing the spectrum
 path = '../data/M05MA10/Turb_hdf5_plt_cnt_0050'
 field = 'vort'
 
-#max_edgelength = 512 # should be a power of 2
-max_edgelength = 256
+max_edgelength = 512 # should be a power of 2
 
-max_scale = 512
+max_scale = 64
 
 #---
 
@@ -248,7 +247,7 @@ def aaa_imshow(
                     plt.save(fig, (figtmp%scales + '_cluster-%03d'%cnd)+'.%s', ['png'], dpi=dpi, verbose=True)
                     plt.close(fig)
 
-                if grand_tour:
+                if grand_tour and (num_pix > 100): # FIXME? arbitrary cut-off for how big the cluster has to be to get a grand tour...
                     sys.stdout.write('\r    plotting grand tour!\n')
 
                     for axis, (n, x) in enumerate([(n0, 'x'), (n1, 'y'), (n2, 'z')]):
@@ -268,7 +267,7 @@ def aaa_imshow(
 
                             # plot only this cluster
                             ax.imshow(
-                                np.take(a, xnd, axis=axis) / norm,
+                                np.take(a, xnd, axis=axis),
                                 cmap=cmap,
                                 vmax=vmax,
                                 vmin=vmin,
@@ -343,7 +342,7 @@ norms = aaa_imshow(
     vmax=vmax,
     cmap=cmap,
     label=label,
-    grand_tour=False,
+    grand_tour=True,
 )
 
 #------------------------
@@ -371,7 +370,7 @@ aaa_imshow(
     vmax=vmax,
     cmap=cmap_coherent,
     label=label,
-    grand_tour=False,
+    grand_tour=True,
     structures=True,
     thr=thr,
 )

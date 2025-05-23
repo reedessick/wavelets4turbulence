@@ -242,6 +242,7 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
         else:
             # figure out how to slice the array
+            # FIXME! we may be able to slice this up into many smaller pieces by using more than 1 axis?
             num = len(sel)
             n = num // num_proc # the min number per job
             m = num % num_proc # the number of jobs that will have an extra
@@ -254,13 +255,13 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
             # parallelize and then merge
             with mp.Pool(processes=num_proc) as pool:
-                strucs = self._merge_structures(pool.map(self._structures, [sel[s:e] for s, e in bounds]), bounds)
+                strucs = self._merge_structures(pool.map(self._structures, [sel[s:e] for s, e in bounds]), bounds, self.ndim)
 
         # return
         return strucs
 
     @staticmethod
-    def _merge_structures(strucs, bounds):
+    def _merge_structures(strucs, bounds, ndim):
         """the additional overhead may be significant
         """
 
@@ -284,7 +285,7 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
                         for mnd, existing in enumerate(merged):
                             old_matches = existing[:,0] == s-1
                             # only check those that are on the border and are close enough that they would match
-                            if np.any(old_matches) and np.any(np.sum((pix-existing[old_matches])**2, axis=1) <= 2):
+                            if np.any(old_matches) and np.any(np.sum((pix-existing[old_matches])**2, axis=1) <= ndim):
                                 connected.add(mnd)
 
                     if connected: # we need to merge something

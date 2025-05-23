@@ -238,7 +238,7 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
         """
         sel = np.abs(self.approx) >= thr
         if num_proc == 1:
-            return self._structures(sel)
+            strucs = self._structures(sel)
 
         else:
             # figure out how to slice the array
@@ -254,7 +254,15 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
             # parallelize and then merge
             with mp.Pool(processes=num_proc) as pool:
-                return self._merge_structures(pool.map(self._structures, [sel[s:e] for s, e in bounds]), bounds)
+                strucs = self._merge_structures(pool.map(self._structures, [sel[s:e] for s, e in bounds]), bounds)
+
+        # sort into a predictable order
+        for dim in range(self.ndim):
+            strucs = [struc[np.argsort(struc[:,-(dim+1)])] for struc in strucs] # order the indiv pixels within each structure
+            strucs.sort(key=lambda x:x[0,-(dim+1)]) # order structures
+
+        # return
+        return strucs
 
     @staticmethod
     def _merge_structures(strucs, bounds):

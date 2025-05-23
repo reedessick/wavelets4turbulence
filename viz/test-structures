@@ -4,27 +4,34 @@ import numpy as np
 import copy
 from w4t.pywt import WaveletArray
 
+import time
+
 #-------------------------------------------------
 
 np.random.seed(123)
 
 #-------------------------------------------------
 
-data = np.random.normal(size=(10,10))
+data = np.random.normal(size=(500,500))
 
 ha = WaveletArray(data, 'haar')
 
 #------------------------
 
-sel = np.abs(ha.approx) > 1.0
+thr = 1.0
+sel = np.abs(ha.approx) > thr
 print(sel)
 
 #------------------------
+
+print('testing ability to select a pixel from a boolean array')
 
 pix = ha._sel2pix(sel)
 print(pix)
 
 #------------------------
+
+print('testing ability to identify neighbors')
 
 neighbors = ha._pix2neighbors(pix, sel.shape)
 print('neighbors')
@@ -32,6 +39,8 @@ for neighbor in neighbors:
     print('    ', neighbor)
 
 #------------------------
+
+print('testing ability to find a cluster that includes a pixel')
 
 cluster, new = ha._pix2cluster(pix, copy.copy(sel))
 print(sel)
@@ -42,6 +51,8 @@ for _ in cluster:
 
 #------------------------
 
+print('testing ability to find all clusters')
+
 clusters = ha._structures(copy.copy(sel))
 for cnd, cluster in enumerate(clusters):
     print('cluster %d' % cnd)
@@ -49,3 +60,33 @@ for cnd, cluster in enumerate(clusters):
         print('    ', _)
 
     print(sel[tuple(np.transpose(cluster))])
+
+#------------------------
+
+# test multiprocessing
+
+print('testing multiprocessing')
+
+t0 = time.time()
+sc = ha.structures(thr=thr)
+print('single-core structure identification:', time.time()-t0)
+
+t0 = time.time()
+mp = ha.structures(thr=thr, num_proc=4)
+print('multiprocessing structure identification:', time.time()-t0)
+
+sc.sort(key=lambda x:len(x))
+mp.sort(key=lambda x:len(x))
+
+assert len(sc) == len(mp), 'identified different numbers of structures'
+
+for ind in range(len(sc)):
+
+    for jnd, pix in enumerate(mp[ind]):
+        if np.any(np.all(pix==mp[ind][jnd+1:], axis=1)):
+            print('pix repeated!', pix)
+
+    assert len(sc[ind]) == len(mp[ind]), 'identified structures contain different numbers of pixels'
+
+    for pix in sc[ind]:
+        assert np.sum(np.all(pix==mp[ind], axis=1)) == 1, 'pixel mismatch or repeated pixel'

@@ -7,6 +7,8 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 import copy
 import numpy as np
 
+import multiprocessing as mp
+
 ### non-standard libraries
 import pywt
 
@@ -230,11 +232,62 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
     #--------------------
 
-    def structures(self, thr=0):
+    def structures(self, thr=0, num_proc=1):
         """returns a list of sets of pixels corresponding to spatially separate structures at the current scale
         thr sets the threshold for considering a pixel to be "on" and therefore eligible to be included in a structure
         """
-        return self._structures(np.abs(self.approx) >= thr)
+        sel = np.abs(self.approx) >= thr
+        if num_proc == 1:
+            return self._structures(sel)
+
+        else:
+            # figure out how to slice the array
+            num = len(sel)
+            n = num // num_proc # the min number per job
+            m = num % num_proc # the number of jobs that will have an extra
+            bounds = []
+            s = 0
+            for job in range(num_proc):
+                e = s+n + (job<m)
+                bounds.append((s,e))
+                s = e
+
+            # parallelize and then merge
+            with mp.Pool(processes=num_proc) as pool:
+                return self._merge_structures(pool.map(self._structures, [sel[s:e] for s, e in bounds]), bounds)
+
+    @staticmethod
+    def _merge_structures(strucs, bounds):
+        """the additional overhead may be significant
+        """
+        merged = strucs[0]
+        for new, (s, e) in zip(strucs[1:], bounds[1:]): # iterate through remaining slices
+
+            for cluster in new: # for identified clusters in the new slice
+                cluster[:,0] += s # bump these to start in the correct place in the overall array
+                matches = cluster[:,0] == s
+
+                if np.any(matches): # matches preceeding boundary, so check whether it connects to an existing cluster
+
+                    connected = set() # these are the sets of pixels in merged that are connected to cluster
+
+                    for pix in cluster[matches]:
+
+                        for mnd, existing in enumerate(merged):
+                            old_matches = existing[:,0] == s-1
+                            # only check those that are on the border and are close enough that they would match
+                            if np.any(old_matches) and np.any(np.sum((pix-existing[old_matches])**2, axis=1) <= 2):
+                                connected.add(mnd)
+
+                    if connected: # we need to merge something
+                        cluster = np.concatenate(tuple([merged[mnd] for mnd in connected])+(cluster,))
+
+                    merged = [merged[mnd] for mnd in range(len(merged)) if (mnd not in connected)] + [cluster]
+
+                else: # no chance this connects to an existing cluster, so just add it
+                    merged.append(cluster)
+
+        return merged
 
     @staticmethod
     def _structures(sel):

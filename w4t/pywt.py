@@ -263,6 +263,11 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
     def _merge_structures(strucs, bounds):
         """the additional overhead may be significant
         """
+
+        ### FIXME! this is the bottleneck in parallelization!
+        import time
+        t0 = time.time()
+
         merged = strucs[0]
         for new, (s, e) in zip(strucs[1:], bounds[1:]): # iterate through remaining slices
 
@@ -289,6 +294,9 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
                 else: # no chance this connects to an existing cluster, so just add it
                     merged.append(cluster)
+
+        ### FIXME! report how long this took
+        print('>>> merging took %.3f sec' % (time.time()-t0))
 
         return merged
 

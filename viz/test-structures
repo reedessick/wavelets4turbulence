@@ -12,7 +12,7 @@ np.random.seed(123)
 
 #-------------------------------------------------
 
-data = np.random.normal(size=(320,)*3)
+data = np.random.normal(size=(500,)*2)
 
 ha = WaveletArray(data, 'haar')
 
@@ -43,17 +43,20 @@ for neighbor in neighbors:
 print('testing ability to find a cluster that includes a pixel')
 
 cluster, new = ha._pix2cluster(pix, copy.copy(sel), ha._shape2shifts(sel.shape))
-print(sel)
-print(new)
-print('cluster')
-for _ in cluster:
-    print('    ', _)
+#print(sel)
+#print(new)
+#print('cluster')
+#for _ in cluster:
+#    print('    ', _)
 
 #------------------------
 
 print('testing ability to find all clusters')
 
+t0 = time.time()
 clusters = ha._structures(copy.copy(sel))
+print(time.time()-t0)
+
 
 print('sanity-checking clusters')
 
@@ -89,15 +92,24 @@ sc = ha.structures(thr=thr)
 print('single-core structure identification:', time.time()-t0)
 
 t0 = time.time()
-mp = ha.structures(thr=thr, num_proc=4)
+mp = ha.structures(thr=thr, num_proc=2)
 print('multiprocessing structure identification:', time.time()-t0)
 
-for dim in range(ha.ndim):
-    sc = [struc[np.argsort(struc[:,-(dim+1)])] for struc in sc] # order the indiv pixels within each structure
-    sc.sort(key=lambda x:x[0,-(dim+1)]) # order structures
+#---
 
-    mp = [struc[np.argsort(struc[:,-(dim+1)])] for struc in mp] # order the indiv pixels within each structure
-    mp.sort(key=lambda x:x[0,-(dim+1)]) # order structures
+# sort into a predictable order
+for dim in range(ha.ndim):
+    sc = [s[np.argsort(s[:,dim])] for s in sc]
+    mp = [s[np.argsort(s[:,dim])] for s in mp]
+
+for l in [sc, mp]:
+    for dim in range(ha.ndim):
+        l.sort(key=lambda x:x[0,dim])
+    l.sort(key=lambda x:len(x))
+
+#---
+
+print('checking for consistency')
 
 assert len(sc) == len(mp), 'identified different numbers of structures'
 

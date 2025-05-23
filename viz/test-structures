@@ -12,7 +12,7 @@ np.random.seed(123)
 
 #-------------------------------------------------
 
-data = np.random.normal(size=(10,)*2)
+data = np.random.normal(size=(200,)*2)
 
 ha = WaveletArray(data, 'haar')
 
@@ -33,7 +33,7 @@ print(pix)
 
 print('testing ability to identify neighbors')
 
-neighbors = ha._pix2neighbors(pix, sel.shape)
+neighbors = ha._pix2neighbors(pix, ha._shape2shifts(sel.shape), sel.shape)
 print('neighbors')
 for neighbor in neighbors:
     print('    ', neighbor)
@@ -42,7 +42,7 @@ for neighbor in neighbors:
 
 print('testing ability to find a cluster that includes a pixel')
 
-cluster, new = ha._pix2cluster(pix, copy.copy(sel))
+cluster, new = ha._pix2cluster(pix, copy.copy(sel), ha._shape2shifts(sel.shape))
 print(sel)
 print(new)
 print('cluster')
@@ -54,23 +54,24 @@ for _ in cluster:
 print('testing ability to find all clusters')
 
 clusters = ha._structures(copy.copy(sel))
-for cnd, cluster in enumerate(clusters):
-    print('cluster %d' % cnd)
-    for _ in cluster:
-        print('    ', _)
 
-    print(sel[tuple(np.transpose(cluster))])
-
-    if len(cluster) > 1:
-        for ind in range(len(cluster)):
-            dist = np.sum((cluster[ind]-cluster)**2, axis=1)
-            dist = list(dist[:ind])+list(dist[ind+1:])
-
-            if cnd < len(clusters)-1:
-                ance = [np.min(np.sum((cluster[ind]-other)**2, axis=1)) for other in clusters[cnd+1:]]
-                print(    ind, np.min(dist), np.min(ance))
-            else:
-                print(    ind, np.min(dist))
+#for cnd, cluster in enumerate(clusters):
+#
+#    print('cluster %d' % cnd)
+#    for _ in cluster:
+#        print('    ', _)
+#
+#    print(sel[tuple(np.transpose(cluster))])
+#
+#    if len(cluster) > 1:
+#        for ind in range(len(cluster)):
+#            dist = np.sum((cluster[ind]-cluster)**2, axis=1)
+#            dist = list(dist[:ind])+list(dist[ind+1:])
+#            assert np.min(dist) <= 2
+#
+#            if cnd < len(clusters)-1:
+#                ance = [np.min(np.sum((cluster[ind]-other)**2, axis=1)) for other in clusters[cnd+1:]]
+#                assert np.min(ance) > 2
 
 #------------------------
 
@@ -117,11 +118,11 @@ for ind in range(len(sc)):
 
 t0 = time.time()
 s2s = ha._structures(sel)
-print('_structures:    ', time.time()-t0)
+print('_structures:         ', time.time()-t0)
 
 t0 = time.time()
 p2s = ha._pix2structures(np.transpose(np.nonzero(sel)), max_sep=1.5)
-print('_pix2structures:', time.time()-t0)
+print('_pix2structures:     ', time.time()-t0)
 
 for cnd, cluster in enumerate(p2s):
     if len(cluster) > 1:

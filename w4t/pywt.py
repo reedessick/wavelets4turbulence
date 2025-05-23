@@ -305,17 +305,19 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
         tocheck = np.zeros_like(inds, dtype=bool)
 
         clusters = []
-
+        tocheck = []
         while np.any(actives): # there is at least one pixel that still needs to be assigned
-            cluster[:] = False # start a new cluster
+            cluster = []
             ind = inds[actives][0] # grab the next index
 
-            cluster[ind] = tocheck[ind] = True # add this to the new cluster and declare that we need to check it 
+            # add this to the new cluster and declare that we need to check it 
+            cluster.append(ind)
+            tocheck.append(ind) 
 
-            while np.any(tocheck):
+            while tocheck:
 
-                jnd = inds[tocheck][0] # grab the next index
-                actives[jnd] = tocheck[jnd] = False # declare that we checked this index
+                jnd = tocheck.pop(0) # grab the next index
+                actives[jnd] = False # declare that we checked this index
 
                 # compute euclidean distances for remaining active pixels and identify those that are close
                 sel = np.sum((pixels[jnd] - pixels[actives])**2, axis=1) <= max_sep2
@@ -323,11 +325,12 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
                 assert np.sum(actives[:ind+1]) == 0
 
                 if np.any(sel):
-                    cluster[inds[actives][sel]] = True
-                    tocheck[inds[actives][sel]] = True # declare that we need to check the new neighbors
+                    new = list(inds[actives][sel])
+                    cluster += new
+                    tocheck += new
                     actives[inds[actives][sel]] = False # these have already been checked
 
-            clusters.append(pixels[cluster]) # add cluster to running list
+            clusters.append(pixels[np.array(cluster)]) # add cluster to running list
 
         return clusters
 
@@ -335,68 +338,64 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
     def _structures(sel):
         sel = copy.copy(sel) # make a copy so we can update it in-place
         clusters = []
-        while np.any(sel): # iterate until there are no more selected pixels
+
+        # define the shift template
+        shifts = WaveletArray._shape2shifts(sel.shape)
+
+        while np.any(sel): # iterate until there are no more selected pixels, this loop in necessary
             pix = WaveletArray._sel2pix(sel) # grab a new pixel
-            cluster, sel = WaveletArray._pix2cluster(pix, sel) # find everything that belongs in that pixel's cluster
+            cluster, sel = WaveletArray._pix2cluster(pix, sel, shifts) # find everything that belongs in that pixel's cluster
             clusters.append(cluster) # record the cluster
 
         # return : list of clusters, each of which is a list of pixels
         return clusters
 
     @staticmethod
+    def _shape2shifts(shape):
+        shifts = [()]
+        for dim in range(len(shape)): # this loop is necessary, but will only be done once
+            shifts = [shift+(0,) for shift in shifts] + [shift+(-1,) for shift in shifts] + [shift+(+1,) for shift in shifts]
+        return np.array([np.array(shift) for shift in shifts if np.any(shift)], dtype=int)
+
+    @staticmethod
     def _sel2pix(sel):
         """pick a pixel from this boolean array
         """
-        assert np.any(sel), 'cannot select a pixel from a boolean array with all entries == False'
-        return tuple(np.transpose(np.nonzero(sel))[0])
+#        assert np.any(sel), 'cannot select a pixel from a boolean array with all entries == False'
+        return np.transpose(np.nonzero(sel))[0]
 
     @staticmethod
-    def _pix2cluster(pix, sel):
+    def _pix2cluster(pix, sel, shifts):
         """starting at location "pix", identify all contiguous pixels with sel[pix]=True.
         Updates sel in place.
         """
         cluster = [pix]
         tocheck = [pix]
-        sel[pix] = False # mark this as checked
+        sel[tuple(pix)] = False # mark this as checked
 
-        shape = sel.shape
-
-        while len(tocheck):
+        # iterate through 
+        while len(tocheck): # this loop is probably necessary
             pix = tocheck.pop(0) # grab the next pixel
 
-            for neighbor in WaveletArray._pix2neighbors(pix, shape): # iterate over neighbors
-                if sel[neighbor]:
+            # FIXME! avoid this loop by doing array manipulations?!?
+
+            for neighbor in WaveletArray._pix2neighbors(pix, shifts, sel.shape): # iterate over neighbors
+                if sel[tuple(neighbor)]:
                     tocheck.append(neighbor)
                     cluster.append(neighbor)
-                    sel[neighbor] = False # mark this as checked
+                    sel[tuple(neighbor)] = False # mark this as checked
 
         # return
         return np.array(cluster), sel
 
     @staticmethod
-    def _pix2neighbors(pix, shape):
+    def _pix2neighbors(pix, shifts, shape):
         """return a list of possible neighbors for this pix
         """
-        # check consistency of data
-        ndim = len(shape)
-        assert len(pix) == ndim
+        neighbors = pix + shifts
 
-        # get vectors so we can make changes
-        pix = np.array(pix, dtype=int)
-
-        # iterate through dimensions to figure out all the possible shifts
-        shifts = [()]
-        for dim, (ind, num) in enumerate(zip(pix, shape)):
-            new = [shift+(0,) for shift in shifts]
-            if ind > 0: # there is a pixel at ind - 1
-                new += [shift+(-1,) for shift in shifts]
-            if ind < num-1: # there is a pixel at ind + 1
-                new += [shift+(+1,) for shift in shifts]
-            shifts = new
-        shifts = [np.array(shift) for shift in shifts if np.any(shift)]
-
-        # define new pixels
-        return [tuple(pix+shift) for shift in shifts]
+        # exclude neighbors that fall outside grid boundaries
+        return neighbors[np.all(neighbors >= 0, axis=1)*np.all(neighbors < shape, axis=1)]
 
     #--------------------
 

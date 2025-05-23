@@ -9,7 +9,10 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 import os
 import sys
 
+import copy
+
 import numpy as np
+
 import matplotlib
 matplotlib.use("Agg")
 from matplotlib import pyplot as plt
@@ -29,12 +32,15 @@ indexes = [1, 2, 3, 4, 5, 6] # for computing the spectrum
 
 #---
 
+wavelet = 'haar'
+
 path = '../data/M05MA10/Turb_hdf5_plt_cnt_0050'
 field = 'vort'
 
-max_edgelength = 512 # should be a power of 2
+#max_edgelength = 512 # should be a power of 2
+max_edgelength = 512
 
-max_scale = 512 # let's just let the wavelet denoising do the heavy lifting. We can always make this cut later?
+max_scale = 32 # let's just let the wavelet denoising do the heavy lifting. We can always make this cut later?
 
 #---
 
@@ -58,6 +64,7 @@ def aaa_imshow(
         thr=0.0,
         structures=False,
         grand_tour=False,
+        orthographic=False,
     ):
     print('iterating over scales')
 
@@ -166,6 +173,56 @@ def aaa_imshow(
 
         #---
 
+        if orthographic and (ha.ndim==3):
+            print('plotting orthographic views')
+            levels = copy.copy(ha.levels) # make a copy so we can reset
+
+            fig = plt.plt.figure(figsize=(10,10))
+
+            for ax, axis, xlabel, ylabel in [
+                    (plt.plt.subplot(2,2,1), 1, None, 'z'),
+                    (plt.plt.subplot(2,2,3), 2, 'y', 'x'),
+                    (plt.plt.subplot(2,2,4), 0, 'z', None),
+                ]:
+                ha.decompose(axis=axis) # collapse along one axis
+                a = np.take(ha.approx, 0, axis=axis)
+                vlim = np.max(np.abs(a))
+
+                ax.imshow(
+                    a,
+                    cmap=cmap,
+                    vmax=+vlim,
+                    vmin=-vlim,
+                    origin='lower',
+                    extent=(0, 1, 0, 1),
+                )
+
+                ax.set_xticks([]) # remove any ticks
+                ax.set_yticks([])
+
+                ax.set_xlabel(xlabel)
+                ax.set_ylabel(ylabel)
+
+                ha.set_levels(levels)
+
+            # decorate
+            fig.suptitle(title, fontsize=10)
+
+            plt.plt.subplots_adjust(
+                left=0.05,
+                right=0.95,
+                bottom=0.05,
+                top=0.95,
+                hspace=0.01,
+                wspace=0.01,
+            )
+
+            # save
+            plt.save(fig, (figtmp%scales)+'-ortho'+'.%s', ['png'], dpi=dpi, verbose=True)
+            plt.close(fig)
+
+        #---
+
         if structures: # identify structures and make separate plots for each
 #            print('identifying clusters in 2D midplane')
 #            sel = np.abs(plane) > thr # which pixels we consider in 2D
@@ -247,6 +304,69 @@ def aaa_imshow(
                     plt.save(fig, (figtmp%scales + '_cluster-%03d'%cnd)+'.%s', ['png'], dpi=dpi, verbose=True)
                     plt.close(fig)
 
+                #---
+
+                if orthographic and (ha.ndim==3) and (num_pix > 100):
+                    print('plotting orthographic views')
+                    
+                    _ha = pywt.WaveletArray(np.where(np.isnan(a), 0.0, a), wavelet)
+                    levels = copy.copy(_ha.levels) # make a copy so we can reset
+
+                    fig = plt.plt.figure(figsize=(10,10))
+
+                    for ax_ind, axis, xlabel, ylabel, trans in [
+                            (1, 1, 'x', 'z', True),
+                            (3, 2, 'x', 'y', True),
+                            (4, 0, 'z', 'y', False),
+                        ]:
+                        ax = plt.plt.subplot(2,2,ax_ind)
+                        _ha.decompose(axis=axis) # collapse along one axis
+
+                        b = np.take(_ha.approx, 0, axis=axis)
+                        if trans:
+                            b = np.transpose(b)
+                        vlim = np.max(np.abs(b))
+
+                        ax.imshow(
+                            b,
+                            cmap=cmap,
+                            vmax=+vlim,
+                            vmin=-vlim,
+                            origin='lower',
+                            extent=(0, 1, 0, 1),
+                        )
+
+                        ax.set_xticks([]) # remove any ticks
+                        ax.set_yticks([])
+
+                        ax.set_xlabel(xlabel)
+                        if ax_ind <= 2:
+                            ax.xaxis.set_label_position('top')
+
+                        ax.set_ylabel(ylabel)
+                        if (ax_ind % 2) == 0:
+                            ax.yaxis.set_label_position('right')
+
+                        _ha.set_levels(levels)
+
+                    # decorate
+                    fig.suptitle(title, fontsize=10)
+
+                    plt.plt.subplots_adjust(
+                        left=0.05,
+                        right=0.95,
+                        bottom=0.05,
+                        top=0.95,
+                        hspace=0.01,
+                        wspace=0.01,
+                    )
+
+                    # save
+                    plt.save(fig, (figtmp%scales)+('-ortho_cluster-%03d'%cnd)+'.%s', ['png'], dpi=dpi, verbose=True)
+                    plt.close(fig)
+
+                #---
+
                 if grand_tour and (num_pix > 100): # FIXME? arbitrary cut-off for how big the cluster has to be to get a grand tour...
                     sys.stdout.write('\r    plotting grand tour!\n')
 
@@ -327,7 +447,7 @@ vmax = +3.0
 #-------------------------------------------------
 
 # instantiate wavelet object
-ha = pywt.WaveletArray(data, 'haar')
+ha = pywt.WaveletArray(data, wavelet)
 
 #---
 
@@ -342,7 +462,8 @@ norms = aaa_imshow(
     vmax=vmax,
     cmap=cmap,
     label=label,
-    grand_tour=True,
+    orthographic=True,
+    grand_tour=False,
 )
 
 #------------------------
@@ -370,7 +491,8 @@ aaa_imshow(
     vmax=vmax,
     cmap=cmap_coherent,
     label=label,
-    grand_tour=True,
+    orthographic=True,
+    grand_tour=False,
     structures=True,
     thr=thr,
 )

@@ -256,11 +256,6 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
             with mp.Pool(processes=num_proc) as pool:
                 strucs = self._merge_structures(pool.map(self._structures, [sel[s:e] for s, e in bounds]), bounds)
 
-        # sort into a predictable order
-        for dim in range(self.ndim):
-            strucs = [struc[np.argsort(struc[:,-(dim+1)])] for struc in strucs] # order the indiv pixels within each structure
-            strucs.sort(key=lambda x:x[0,-(dim+1)]) # order structures
-
         # return
         return strucs
 
@@ -296,6 +291,45 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
                     merged.append(cluster)
 
         return merged
+
+    @staticmethod
+    def _pix2structures(pixels, max_sep=1.5):
+        """takes an array of pixel coordinates and separates them into structures based on (euclidean_distance <= max_sep)
+        pixels can be identified from a boolean array via "np.transpose(np.nonzero(sel))"
+        """
+        max_sep2 = max_sep**2
+        inds = np.arange(len(pixels))
+
+        actives = np.ones_like(inds, dtype=bool)
+        cluster = np.zeros_like(inds, dtype=bool)
+        tocheck = np.zeros_like(inds, dtype=bool)
+
+        clusters = []
+
+        while np.any(actives): # there is at least one pixel that still needs to be assigned
+            cluster[:] = False # start a new cluster
+            ind = inds[actives][0] # grab the next index
+
+            cluster[ind] = tocheck[ind] = True # add this to the new cluster and declare that we need to check it 
+
+            while np.any(tocheck):
+
+                jnd = inds[tocheck][0] # grab the next index
+                actives[jnd] = tocheck[jnd] = False # declare that we checked this index
+
+                # compute euclidean distances for remaining active pixels and identify those that are close
+                sel = np.sum((pixels[jnd] - pixels[actives])**2, axis=1) <= max_sep2
+
+                assert np.sum(actives[:ind+1]) == 0
+
+                if np.any(sel):
+                    cluster[inds[actives][sel]] = True
+                    tocheck[inds[actives][sel]] = True # declare that we need to check the new neighbors
+                    actives[inds[actives][sel]] = False # these have already been checked
+
+            clusters.append(pixels[cluster]) # add cluster to running list
+
+        return clusters
 
     @staticmethod
     def _structures(sel):

@@ -12,7 +12,7 @@ np.random.seed(123)
 
 #-------------------------------------------------
 
-data = np.random.normal(size=(80,)*3)
+data = np.random.normal(size=(320,)*3)
 
 ha = WaveletArray(data, 'haar')
 
@@ -55,23 +55,28 @@ print('testing ability to find all clusters')
 
 clusters = ha._structures(copy.copy(sel))
 
-for cnd, cluster in enumerate(clusters):
+print('sanity-checking clusters')
 
-#    print('cluster %d' % cnd)
-#    for _ in cluster:
-#        print('    ', _)
-#
-#    print(sel[tuple(np.transpose(cluster))])
+assert np.sum(sel) == np.sum([len(cluster) for cluster in clusters]), 'found the wrong number of pixels in clusters!'
 
-    if len(cluster) > 1:
-        for ind in range(len(cluster)):
-            dist = np.sum((cluster[ind]-cluster)**2, axis=1)
-            dist = list(dist[:ind])+list(dist[ind+1:])
-            assert np.min(dist) <= ha.ndim
+if False:
+    for cnd, cluster in enumerate(clusters):
 
-            if cnd < len(clusters)-1:
-                ance = [np.min(np.sum((cluster[ind]-other)**2, axis=1)) for other in clusters[cnd+1:]]
-                assert np.min(ance) > ha.ndim
+#        print('cluster %d' % cnd)
+#        for _ in cluster:
+#            print('    ', _)
+
+        assert np.all(sel[tuple(np.transpose(cluster))]), 'not all pixels in this cluster were active...'
+
+        if len(cluster) > 1:
+            for ind in range(len(cluster)):
+                dist = np.sum((cluster[ind]-cluster)**2, axis=1)
+                dist = list(dist[:ind])+list(dist[ind+1:])
+                assert np.min(dist) <= ha.ndim
+
+                if cnd < len(clusters)-1:
+                    ance = [np.min(np.sum((cluster[ind]-other)**2, axis=1)) for other in clusters[cnd+1:]]
+                    assert np.min(ance) > ha.ndim
 
 #------------------------
 

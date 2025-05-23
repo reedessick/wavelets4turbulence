@@ -293,48 +293,6 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
         return merged
 
     @staticmethod
-    def _pix2structures(pixels, max_sep=1.5):
-        """takes an array of pixel coordinates and separates them into structures based on (euclidean_distance <= max_sep)
-        pixels can be identified from a boolean array via "np.transpose(np.nonzero(sel))"
-        """
-        max_sep2 = max_sep**2
-        inds = np.arange(len(pixels))
-
-        actives = np.ones_like(inds, dtype=bool)
-        cluster = np.zeros_like(inds, dtype=bool)
-        tocheck = np.zeros_like(inds, dtype=bool)
-
-        clusters = []
-        tocheck = []
-        while np.any(actives): # there is at least one pixel that still needs to be assigned
-            cluster = []
-            ind = inds[actives][0] # grab the next index
-
-            # add this to the new cluster and declare that we need to check it 
-            cluster.append(ind)
-            tocheck.append(ind) 
-
-            while tocheck:
-
-                jnd = tocheck.pop(0) # grab the next index
-                actives[jnd] = False # declare that we checked this index
-
-                # compute euclidean distances for remaining active pixels and identify those that are close
-                sel = np.sum((pixels[jnd] - pixels[actives])**2, axis=1) <= max_sep2
-
-                assert np.sum(actives[:ind+1]) == 0
-
-                if np.any(sel):
-                    new = list(inds[actives][sel])
-                    cluster += new
-                    tocheck += new
-                    actives[inds[actives][sel]] = False # these have already been checked
-
-            clusters.append(pixels[np.array(cluster)]) # add cluster to running list
-
-        return clusters
-
-    @staticmethod
     def _structures(sel):
         sel = copy.copy(sel) # make a copy so we can update it in-place
         clusters = []
@@ -369,7 +327,7 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
         """starting at location "pix", identify all contiguous pixels with sel[pix]=True.
         Updates sel in place.
         """
-        cluster = [pix]
+        cluster = [np.array([pix])]
         tocheck = [pix]
         sel[tuple(pix)] = False # mark this as checked
 
@@ -377,16 +335,15 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
         while len(tocheck): # this loop is probably necessary
             pix = tocheck.pop(0) # grab the next pixel
 
-            # FIXME! avoid this loop by doing array manipulations?!?
+            neighbors = WaveletArray._pix2neighbors(pix, shifts, sel.shape)
+            successes = neighbors[sel[tuple(np.transpose(neighbors))]]
 
-            for neighbor in WaveletArray._pix2neighbors(pix, shifts, sel.shape): # iterate over neighbors
-                if sel[tuple(neighbor)]:
-                    tocheck.append(neighbor)
-                    cluster.append(neighbor)
-                    sel[tuple(neighbor)] = False # mark this as checked
+            cluster.append(successes)
+            tocheck += list(successes)
+            sel[tuple(np.transpose(successes))] = False
 
         # return
-        return np.array(cluster), sel
+        return np.concatenate(tuple(cluster)), sel
 
     @staticmethod
     def _pix2neighbors(pix, shifts, shape):

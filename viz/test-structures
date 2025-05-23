@@ -12,7 +12,7 @@ np.random.seed(123)
 
 #-------------------------------------------------
 
-data = np.random.normal(size=(200,)*2)
+data = np.random.normal(size=(80,)*3)
 
 ha = WaveletArray(data, 'haar')
 
@@ -55,23 +55,23 @@ print('testing ability to find all clusters')
 
 clusters = ha._structures(copy.copy(sel))
 
-#for cnd, cluster in enumerate(clusters):
-#
+for cnd, cluster in enumerate(clusters):
+
 #    print('cluster %d' % cnd)
 #    for _ in cluster:
 #        print('    ', _)
 #
 #    print(sel[tuple(np.transpose(cluster))])
-#
-#    if len(cluster) > 1:
-#        for ind in range(len(cluster)):
-#            dist = np.sum((cluster[ind]-cluster)**2, axis=1)
-#            dist = list(dist[:ind])+list(dist[ind+1:])
-#            assert np.min(dist) <= 2
-#
-#            if cnd < len(clusters)-1:
-#                ance = [np.min(np.sum((cluster[ind]-other)**2, axis=1)) for other in clusters[cnd+1:]]
-#                assert np.min(ance) > 2
+
+    if len(cluster) > 1:
+        for ind in range(len(cluster)):
+            dist = np.sum((cluster[ind]-cluster)**2, axis=1)
+            dist = list(dist[:ind])+list(dist[ind+1:])
+            assert np.min(dist) <= ha.ndim
+
+            if cnd < len(clusters)-1:
+                ance = [np.min(np.sum((cluster[ind]-other)**2, axis=1)) for other in clusters[cnd+1:]]
+                assert np.min(ance) > ha.ndim
 
 #------------------------
 
@@ -110,53 +110,3 @@ for ind in range(len(sc)):
 
     for pix in sc[ind]:
         assert np.sum(np.all(pix==mp[ind], axis=1)) == 1, 'pixel mismatch or repeated pixel'
-
-#------------------------
-
-
-# check pix2structures vs _structures
-
-t0 = time.time()
-s2s = ha._structures(sel)
-print('_structures:         ', time.time()-t0)
-
-t0 = time.time()
-p2s = ha._pix2structures(np.transpose(np.nonzero(sel)), max_sep=1.5)
-print('_pix2structures:     ', time.time()-t0)
-
-for cnd, cluster in enumerate(p2s):
-    if len(cluster) > 1:
-        for ind in range(len(cluster)):
-            dist = np.sum((cluster[ind]-cluster)**2, axis=1)
-            dist = list(dist[:ind])+list(dist[ind+1:])
-            assert min(dist) <= 2
-
-            if cnd < len(p2s)-1:
-                ance = [np.min(np.sum((cluster[ind]-other)**2, axis=1)) for other in p2s[cnd+1:]]
-                assert np.min(ance) > 2
-
-#---
-
-for dim in range(ha.ndim):
-    s2s = [struc[np.argsort(struc[:,-(dim+1)])] for struc in s2s] # order the indiv pixels within each structure
-    s2s.sort(key=lambda x:x[0,-(dim+1)]) # order structures
-
-    p2s = [struc[np.argsort(struc[:,-(dim+1)])] for struc in p2s] # order the indiv pixels within each structure
-    p2s.sort(key=lambda x:x[0,-(dim+1)]) # order structures
-
-assert len(s2s) == len(p2s), 'identified different numbers of structures'
-
-for ind in range(len(s2s)):
-
-    for jnd, pix in enumerate(s2s[ind]):
-        if np.any(np.all(pix==s2s[ind][jnd+1:], axis=1)):
-            raise RuntimeError('pix repeated in s2s!', pix)
-
-    for jnd, pix in enumerate(p2s[ind]):
-        if np.any(np.all(pix==p2s[ind][jnd+1:], axis=1)):
-            raise RuntimeError('pix repeated in p2s!', pix)
-
-    assert len(sc[ind]) == len(mp[ind]), 'identified structures contain different numbers of pixels'
-
-    for pnd in range(len(s2s[ind])):
-        assert np.sum(np.all(s2s[ind][pnd]==p2s[ind], axis=1)) == 1, 'pixel mismatch: cluster %d pixel %d' % (ind, pnd)

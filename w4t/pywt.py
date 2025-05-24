@@ -5,6 +5,8 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 #-------------------------------------------------
 
 import copy
+import time
+
 import numpy as np
 
 import multiprocessing as mp
@@ -253,29 +255,50 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
                 bounds.append((s,e))
                 s = e
 
-            # parallelize and then merge
+            # identify structures and then merge in parallel
             with mp.Pool(processes=num_proc) as pool:
-                strucs = pool.map(self._structures, [sel[s:e] for s, e in bounds]) # find structures in separate regions
 
-            ### old merging --> FIXME: remove this once new merging works 
-            old_strucs = self._merge_structures(copy.deepcopy(strucs), bounds, self.ndim, timeit=timeit) # merge these
+                # identify structures
+                if timeit:
+                    t0 = time.time()
 
-            ### new merging --> FIXME: you should be able to parallelize this
+                strucs = pool.starmap(self._structures, [(sel[s:e], s) for s, e in bounds]) # find structures in separate regions
+
+                if timeit:
+                    print('identify structures: %f' % (time.time()-t0))
+
+                # merge
+                if timeit:
+                    t0 = time.time()
+
+                ### FIXME! this loop does not appear to work correctly...
+
+                while len(strucs) > 2:
+                    num_pairs = len(strucs) // 2
+                    ans = pool.starmap(
+                        self._merge2structures,
+                        [(strucs[2*n], bounds[2*n], strucs[2*n+1], bounds[2*n+1], self.ndim) for n in range(num_pairs)],
+                    )
+
+                    strucs = [a for a,b in ans] + strucs[2*num_pairs:]
+                    bounds = [b for a,b in ans] + bounds[2*num_pairs:]
+
+                if timeit:
+                    print('preliminary merge structures: %f' % (time.time()-t0))
+
             if timeit:
-                import time
                 t0 = time.time()
 
-            while len(strucs) > 1:
-                struc, bound = self._merge2structures(strucs[0], bounds[0], strucs[1], bounds[1], self.ndim)
-                strucs = [struc] + strucs[2:]
-                bounds = [bound] + bounds[2:]
-            strucs = strucs[0]
+            # merge the final 2 structures with a single process
+            strucs, _ = self._merge2structures(strucs[0], bounds[0], strucs[1], bounds[1], self.ndim)
 
             if timeit:
-                print('>>> new merging:', time.time()-t0)
+                print('final merge structures: %f' % (time.time()-t0))
 
         # return
         return strucs
+
+    #-------
 
     @staticmethod
     def _merge2structures(struc1, bounds1, struc2, bounds2, ndim):
@@ -294,7 +317,6 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
         interesting1 = []
         for struc in struc1:
-            struc[:,0] += s1
             if np.max(struc[:,0]) == e1-1:
                 interesting1.append(struc)
             else:
@@ -302,7 +324,6 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
         interesting2 = []
         for struc in struc2:
-            struc[:,0] += s2
             if np.min(struc[:,0]) == s2:
                 interesting2.append(struc)
             else:
@@ -313,14 +334,16 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
         unconnected2 = []
         for cluster2 in interesting2:
-            matches2 = cluster2[:,0] == s2
+            cluster2_matches2 = cluster2[cluster2[:,0] == s2]
             connected = set()
 
-            for pix in cluster2[matches2]:
-                for mnd, cluster1 in enumerate(interesting1):
-                    matches1 = cluster1[:,0] == e1-1
-                    if np.any(np.sum((pix-cluster1[matches1])**2, axis=1) <= ndim):
+            for mnd, cluster1 in enumerate(interesting1): # loop over this first so we can break once we find a connection
+                cluster1_matches1 = cluster1[cluster1[:,0] == e1-1]
+
+                for pix in cluster2_matches2:
+                    if np.any(np.sum((pix-cluster1_matches1)**2, axis=1) <= ndim):
                         connected.add(mnd)
+                        break
 
             if connected: # any are connected --> update interesting1
                 cluster2 = np.concatenate(tuple([interesting1[mnd] for mnd in connected])+(cluster2,))
@@ -331,61 +354,10 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
         # now concatenate all clusters
         return unconnected + interesting1 + unconnected2, (s1, e2)
 
-
-
-
-
-
-
-
-
-
-
-
+    #-------
 
     @staticmethod
-    def _merge_structures(strucs, bounds, ndim, timeit=False):
-        """merge sets of structures into a single set
-        """
-
-        if timeit:### FIXME! this is the bottleneck in parallelization!
-            import time
-            t0 = time.time()
-
-        merged = strucs[0]
-        for new, (s, e) in zip(strucs[1:], bounds[1:]): # iterate through remaining slices
-
-            for cluster in new: # for identified clusters in the new slice
-                cluster[:,0] += s # bump these to start in the correct place in the overall array
-                matches = cluster[:,0] == s
-
-                if np.any(matches): # matches preceeding boundary, so check whether it connects to an existing cluster
-
-                    connected = set() # these are the sets of pixels in merged that are connected to cluster
-
-                    for pix in cluster[matches]:
-
-                        for mnd, existing in enumerate(merged):
-                            old_matches = existing[:,0] == s-1
-                            # only check those that are on the border and are close enough that they would match
-                            if np.any(old_matches) and np.any(np.sum((pix-existing[old_matches])**2, axis=1) <= ndim):
-                                connected.add(mnd)
-
-                    if connected: # we need to merge something
-                        cluster = np.concatenate(tuple([merged[mnd] for mnd in connected])+(cluster,))
-
-                    merged = [merged[mnd] for mnd in range(len(merged)) if (mnd not in connected)] + [cluster]
-
-                else: # no chance this connects to an existing cluster, so just add it
-                    merged.append(cluster)
-
-        if timeit:
-            print('>>> merging:', time.time()-t0)
-
-        return merged
-
-    @staticmethod
-    def _structures(sel):
+    def _structures(sel, start=0):
         sel = copy.copy(sel) # make a copy so we can update it in-place
         clusters = []
 
@@ -398,6 +370,10 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
             clusters.append(cluster) # record the cluster
 
         # return : list of clusters, each of which is a list of pixels
+        if start:
+            for cluster in clusters:
+                cluster[:,0] += start
+
         return clusters
 
     @staticmethod

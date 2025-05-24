@@ -12,7 +12,7 @@ np.random.seed(123)
 
 #-------------------------------------------------
 
-data = np.random.normal(size=(64,)*3)
+data = np.random.normal(size=(128,)*3)
 
 ha = WaveletArray(data, 'haar')
 
@@ -27,7 +27,7 @@ print(sel)
 print('testing ability to select a pixel from a boolean array')
 
 pix = ha._sel2pix(sel)
-print(pix)
+print('    ', pix)
 
 #------------------------
 
@@ -56,7 +56,6 @@ print('testing ability to find all clusters')
 t0 = time.time()
 clusters = ha._structures(copy.copy(sel))
 print(time.time()-t0)
-
 
 print('sanity-checking clusters')
 
@@ -91,9 +90,10 @@ t0 = time.time()
 sc = ha.structures(thr=thr)
 print('single-core structure identification:', time.time()-t0)
 
+num_proc = 2
 t0 = time.time()
-mp = ha.structures(thr=thr, num_proc=2)
-print('multiprocessing structure identification:', time.time()-t0)
+mp = ha.structures(thr=thr, num_proc=num_proc, timeit=True)
+print('multiprocessing structure identification with %d procs: %f' %(num_proc, time.time()-t0))
 
 #---
 

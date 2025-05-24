@@ -232,7 +232,7 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
     #--------------------
 
-    def structures(self, thr=0, num_proc=1):
+    def structures(self, thr=0, num_proc=1, timeit=False):
         """returns a list of sets of pixels corresponding to spatially separate structures at the current scale
         thr sets the threshold for considering a pixel to be "on" and therefore eligible to be included in a structure
         """
@@ -255,19 +255,102 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
             # parallelize and then merge
             with mp.Pool(processes=num_proc) as pool:
-                strucs = self._merge_structures(pool.map(self._structures, [sel[s:e] for s, e in bounds]), bounds, self.ndim)
+                strucs = pool.map(self._structures, [sel[s:e] for s, e in bounds]) # find structures in separate regions
+
+            ### old merging --> FIXME: remove this once new merging works 
+            old_strucs = self._merge_structures(copy.deepcopy(strucs), bounds, self.ndim, timeit=timeit) # merge these
+
+            ### new merging --> FIXME: you should be able to parallelize this
+            if timeit:
+                import time
+                t0 = time.time()
+
+            while len(strucs) > 1:
+                struc, bound = self._merge2structures(strucs[0], bounds[0], strucs[1], bounds[1], self.ndim)
+                strucs = [struc] + strucs[2:]
+                bounds = [bound] + bounds[2:]
+            strucs = strucs[0]
+
+            if timeit:
+                print('>>> new merging:', time.time()-t0)
 
         # return
         return strucs
 
     @staticmethod
-    def _merge_structures(strucs, bounds, ndim):
-        """the additional overhead may be significant
+    def _merge2structures(struc1, bounds1, struc2, bounds2, ndim):
+        """merge 2 sets of structures into a single set
+        """
+        s1, e1 = bounds1
+        s2, e2 = bounds2
+        if e1!=s2:
+            if e2==s1:
+                return WaveletArray._merge2structures(struc2, bounds2, struc1, bounds1, ndim)
+            else:
+                raise ValueError('regions do not seem to be contiguous')
+
+        # sort the structures into those that might be connected and those that cannot be connected
+        unconnected = []
+
+        interesting1 = []
+        for struc in struc1:
+            struc[:,0] += s1
+            if np.max(struc[:,0]) == e1-1:
+                interesting1.append(struc)
+            else:
+                unconnected.append(struc)
+
+        interesting2 = []
+        for struc in struc2:
+            struc[:,0] += s2
+            if np.min(struc[:,0]) == s2:
+                interesting2.append(struc)
+            else:
+                unconnected.append(struc)
+
+        # now compare the structures that are in "interesting"
+        ### FIXME switch to first check bounding boxes?
+
+        unconnected2 = []
+        for cluster2 in interesting2:
+            matches2 = cluster2[:,0] == s2
+            connected = set()
+
+            for pix in cluster2[matches2]:
+                for mnd, cluster1 in enumerate(interesting1):
+                    matches1 = cluster1[:,0] == e1-1
+                    if np.any(np.sum((pix-cluster1[matches1])**2, axis=1) <= ndim):
+                        connected.add(mnd)
+
+            if connected: # any are connected --> update interesting1
+                cluster2 = np.concatenate(tuple([interesting1[mnd] for mnd in connected])+(cluster2,))
+                interesting1 = [interesting1[mnd] for mnd in range(len(interesting1)) if (mnd not in connected)] + [cluster2]
+            else:
+                unconnected2.append(cluster2)
+
+        # now concatenate all clusters
+        return unconnected + interesting1 + unconnected2, (s1, e2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @staticmethod
+    def _merge_structures(strucs, bounds, ndim, timeit=False):
+        """merge sets of structures into a single set
         """
 
-        ### FIXME! this is the bottleneck in parallelization!
-        import time
-        t0 = time.time()
+        if timeit:### FIXME! this is the bottleneck in parallelization!
+            import time
+            t0 = time.time()
 
         merged = strucs[0]
         for new, (s, e) in zip(strucs[1:], bounds[1:]): # iterate through remaining slices
@@ -296,8 +379,8 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
                 else: # no chance this connects to an existing cluster, so just add it
                     merged.append(cluster)
 
-        ### FIXME! report how long this took
-        print('>>> merging took %.3f sec' % (time.time()-t0))
+        if timeit:
+            print('>>> merging:', time.time()-t0)
 
         return merged
 

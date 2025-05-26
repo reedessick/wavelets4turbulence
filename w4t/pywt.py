@@ -330,20 +330,42 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
                 unconnected.append(struc)
 
         # now compare the structures that are in "interesting"
-        ### FIXME switch to first check bounding boxes?
+
+        box1 = np.empty((ndim-1, 2), dtype=int) # use to check bounding boxes first
+        box2 = np.empty((ndim-1, 2), dtype=int)
 
         unconnected2 = []
+
         for cluster2 in interesting2:
-            cluster2_matches2 = cluster2[cluster2[:,0] == s2]
             connected = set()
+            c2_m2 = cluster2[cluster2[:,0] == s2] # identify which pixels touch the boundary
+            box2[:] = np.array([(np.min(c2_m2[:,dim]), np.max(c2_m2[:,dim])) for dim in range(1,ndim)]) # bounding box
 
             for mnd, cluster1 in enumerate(interesting1): # loop over this first so we can break once we find a connection
-                cluster1_matches1 = cluster1[cluster1[:,0] == e1-1]
+                c1_m1 = cluster1[cluster1[:,0] == e1-1]
+                box1[:] = np.array([(np.min(c1_m1[:,dim]), np.max(c1_m1[:,dim])) for dim in range(1,ndim)])
 
-                for pix in cluster2_matches2:
-                    if np.any(np.sum((pix-cluster1_matches1)**2, axis=1) <= ndim):
-                        connected.add(mnd)
-                        break
+                if np.all((box1[:,0] <= box2[:,1]+1)*(box2[:,0] <= box1[:,1]+1)): # bounding boxes overlap within 1 pixel
+
+                    start = np.max([box1[:,0], box2[:,0]], axis=0) - 1 # the starting point of overlapping region
+                    stop = np.min([box1[:,1], box2[:,1]], axis=0) + 1 # the stopping point of overlapping region
+
+                    # grab just the pixels in the overlapping region
+                    c1_m1_o = c1_m1[np.all(start <= c1_m1[:,1:], axis=1)*np.all(c1_m1[:,1:] <= stop, axis=1)]
+
+                    if len(c1_m1_o): # there are some pixels in this overlapping region
+
+                        # iterate over only the pixels in the overlapping region
+                        for pix in c2_m2[np.all(start <= c2_m2[:,1:], axis=1)*np.all(c2_m2[:,1:] <= stop, axis=1)]:
+                            if np.any(np.sum((pix-c1_m1_o)**2, axis=1) <= ndim):
+                                connected.add(mnd)
+                                break
+
+                    else: # there are no pixels in the overlapping region
+                        pass
+
+                else: # bounding boxes do not overlap, so no pixels can overlap
+                    pass
 
             if connected: # any are connected --> update interesting1
                 cluster2 = np.concatenate(tuple([interesting1[mnd] for mnd in connected])+(cluster2,))

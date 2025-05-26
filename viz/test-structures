@@ -12,9 +12,12 @@ np.random.seed(123)
 
 #-------------------------------------------------
 
-data = np.random.normal(size=(128,)*3)
+data = np.random.normal(size=(256,)*3)
 
 ha = WaveletArray(data, 'haar')
+
+print('shape')
+print('    ', ha.shape)
 
 #------------------------
 
@@ -90,7 +93,7 @@ t0 = time.time()
 sc = ha.structures(thr=thr)
 print('single-core structure identification:', time.time()-t0)
 
-num_proc = 4
+num_proc = 6
 t0 = time.time()
 mp = ha.structures(thr=thr, num_proc=num_proc, timeit=True)
 print('multiprocessing structure identification with %d procs: %f' %(num_proc, time.time()-t0))

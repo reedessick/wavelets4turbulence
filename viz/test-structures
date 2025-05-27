@@ -12,7 +12,7 @@ np.random.seed(123)
 
 #-------------------------------------------------
 
-data = np.random.normal(size=(128,)*3)
+data = np.random.normal(size=(256,)*3)
 
 ha = WaveletArray(data, 'haar')
 

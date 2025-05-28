@@ -231,7 +231,7 @@ def aaa_imshow(
             print('identifying clusters in full 3D box')
             sel = np.abs(array_dict['aaa']/norm) > thr # which pixels we consider in 3D
 
-            clusters = ha._structures(sel)
+            clusters = ha.structures(sel)
             clusters.sort(key=lambda x: -len(x)) # biggest first
 
             num_clusters = len(clusters)

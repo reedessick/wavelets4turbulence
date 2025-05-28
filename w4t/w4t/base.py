@@ -251,4 +251,4 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
         """returns a list of sets of pixels corresponding to spatially separate structures at the current scale
         thr sets the threshold for considering a pixel to be "on" and therefore eligible to be included in a structure
         """
-        return structures.structures(np.abs(self.approx)>=thr, num_proc=num_proc, timeit=timeit)
+        return structures.find_structures(np.abs(self.approx)>=thr, num_proc=num_proc, timeit=timeit)

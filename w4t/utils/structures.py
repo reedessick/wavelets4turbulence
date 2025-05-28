@@ -11,7 +11,7 @@ import multiprocessing as mp
 
 #-------------------------------------------------
 
-def structures(sel, num_proc=1, timeit=False):
+def find_structures(sel, num_proc=1, timeit=False):
     """returns a list of sets of pixels corresponding to spatially separate structures at the current scale
     thr sets the threshold for considering a pixel to be "on" and therefore eligible to be included in a structure
     """

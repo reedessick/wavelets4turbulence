@@ -1,0 +1,9 @@
+#!/usr/bin/env python3
+
+"""a simple executable to convert FLASH HDF files into a simpler format
+"""
+__author__ = "Reed Essick (reed.essick@gmail.com)"
+
+#-------------------------------------------------
+
+raise NotImplementedError

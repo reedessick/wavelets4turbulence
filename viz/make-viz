@@ -18,7 +18,8 @@ matplotlib.use("Agg")
 from matplotlib import pyplot as plt
 
 ### non-standard libraries
-from w4t import (pywt, utils)
+from w4t.w4t import pywt
+from w4t.utils import io
 from w4t.plot import plane as plt
 
 #-------------------------------------------------
@@ -38,7 +39,7 @@ path = '../data/M05MA10/Turb_hdf5_plt_cnt_0050'
 field = 'vort'
 
 #max_edgelength = 512 # should be a power of 2
-max_edgelength = 512
+max_edgelength = 128
 
 max_scale = 32 # let's just let the wavelet denoising do the heavy lifting. We can always make this cut later?
 
@@ -309,7 +310,7 @@ def aaa_imshow(
                 if orthographic and (ha.ndim==3) and (num_pix > 100):
                     print('plotting orthographic views')
                     
-                    _ha = pywt.WaveletArray(np.where(np.isnan(a), 0.0, a), wavelet)
+                    _ha = pywt.PyWaveletArray(np.where(np.isnan(a), 0.0, a), wavelet)
                     levels = copy.copy(_ha.levels) # make a copy so we can reset
 
                     fig = plt.plt.figure(figsize=(10,10))
@@ -431,7 +432,7 @@ def aaa_imshow(
 
 basename = os.path.basename(path).split('.')[0]
 
-data = utils.load([field], path=path, max_edgelength=max_edgelength, verbose=True)[field]
+data = io.load([field], path=path, max_edgelength=max_edgelength, verbose=True)[field]
 
 #---
 
@@ -447,7 +448,7 @@ vmax = +3.0
 #-------------------------------------------------
 
 # instantiate wavelet object
-ha = pywt.WaveletArray(data, wavelet)
+ha = pywt.PyWaveletArray(data, wavelet)
 
 #---
 

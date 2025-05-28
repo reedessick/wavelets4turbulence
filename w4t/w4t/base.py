@@ -195,19 +195,19 @@ class WaveletArray(object):
         self.idecompose() # start at the top
 
         scales = []
-        moments = []
+        moms = []
         covs = []
         while self.active[0] > 1:
             self.dwt() # decompose
             scales.append(self.scales)
             _, m, c = moments.moments(np.abs(self.detail.flatten()) if use_abs else self.detail.flatten(), index)
-            moments.append(m)
+            moms.append(m)
             covs.append(c)
 
         if correct_normalization:
             raise NotImplementedError('do not know how to correct moments for wavelet normalization')
 
-        return np.array(scales, dtype=float), np.array(moments, dtype=float), np.array(covs, dtype=float)
+        return np.array(scales, dtype=float), np.array(moms, dtype=float), np.array(covs, dtype=float)
 
     #--------------------
 

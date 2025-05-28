@@ -1,78 +1,21 @@
-"""a module for Haar decompositions
+"""a module for general wavelet decompositions
 """
 __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 #-------------------------------------------------
 
-import numpy as np
 import copy
 
+import numpy as np
+
 ### non-standard libraries
-from . import utils
+from w4t.utils import moments
+from w4t.utils import structures
 
 #-------------------------------------------------
 
-__SCALE__ = 1./2**0.5 # used to normalize sums
-
-def haar(array, axis=None):
-    """take the Haar decomposition of array along axis. If axis is None, use the last axis of array (axis=-1)
-    approx = SCALE * (array[i+1] + array[i])
-    detail = SCALE * (array[i+1] - array[i])
-    return approx, detail
-    """
-    if axis is None:
-        axis = -1
-
-    # figure out the indexes for Haar transform
-    num = np.shape(array)[axis]
-    assert num % 2 == 0, 'axes length (axis=%d --> len=%d) must be a multiple of 2' % (axis, num)
-
-    inds = np.arange(num)[::2]
-    jnds = inds + 1
-
-    # compute Haar transform
-    inds = np.take(array, inds, axis=axis)
-    jnds = np.take(array, jnds, axis=axis)
-
-    # return
-    return __SCALE__*(jnds+inds), __SCALE__*(jnds-inds) ### FIXME: include a normalization to keep stdv of Gaussian coeffs constant?
-
-#---
-
-def ihaar(approx, detail, axis=None):
-    """invert the Haar decomposition along an axis. If axis is None, use the last axis of the array (axis=-1)
-    array[i]   = 0.5 * (approx - detail) / SCALE
-    array[i+1] = 0.5 * (approx + detail) / SCALE
-    return array
-    """
-    if axis is None:
-        axis = -1
-
-    # set up the output array
-    shape = np.shape(approx)
-    assert shape == np.shape(detail), 'mismatch in shape between approx and detail'
-
-    shape = list(shape)
-    num = shape[axis]
-    shape[axis] *= 2
-
-    array = np.empty(shape, dtype=float)
-
-    # put the data into the array
-    inds = np.arange(num)*2
-    jnds = inds + 1
-
-    shape = tuple(num if a==axis else 1 for a in range(len(shape)))
-    np.put_along_axis(array, inds.reshape(shape), 0.5*(approx-detail)/__SCALE__, axis)
-    np.put_along_axis(array, jnds.reshape(shape), 0.5*(approx+detail)/__SCALE__, axis)
-
-    # return
-    return array
-
-#------------------------
-
-class HaarArray(object):
-    """an object that manages storage and Haar decompositions of ND arrays
+class WaveletArray(object):
+    """an object that manages storage and wavelet decompositions of ND arrays
     """
 
     def __init__(self, array):
@@ -135,7 +78,10 @@ class HaarArray(object):
 
     #--------------------
 
-    def haar(self, axis=None):
+    def _dwtn(self, axis):
+        raise NotImplementedError('children need to overwrite this')
+
+    def dwt(self, axis=None):
         """apply the Haar decomposition to axis. If axis=None, apply it to all axes
         """
         if axis is not None:
@@ -145,7 +91,7 @@ class HaarArray(object):
             inds = np.arange(ind)
 
             # perform decomposition
-            a, d = haar(np.take(self.array, inds, axis=axis), axis=axis)
+            a, d = self._dwtn(np.take(self.array, inds, axis=axis), axis)
 
             # update in place
             num = ind//2
@@ -159,9 +105,14 @@ class HaarArray(object):
 
         else:
             for axis in range(self.ndim):
-                self.haar(axis=axis)
+                self.dwt(axis=axis)
 
-    def ihaar(self, axis=None):
+    #---
+
+    def _idwtn(self, a, d, axis):
+        raise NotImplementedError('children need to overwrite this')
+
+    def idwt(self, axis=None):
         """apply the inverse Haar decomposition to axis. If axis=None, apply it to all axes
         """
         if axis is not None:
@@ -170,10 +121,10 @@ class HaarArray(object):
             ind = self.active[axis]
 
             # perform inverse decomposition
-            x = ihaar(
-                np.take(self.array, np.arange(ind), axis=axis),
-                np.take(self.array, np.arange(ind, 2*ind), axis=axis),
-                axis=axis,
+            x = self._idwtn(
+                np.take(self.array, np.arange(ind), axis=axis), # a
+                np.take(self.array, np.arange(ind, 2*ind), axis=axis), # d
+                axis,
             )
 
             # update in place
@@ -189,7 +140,7 @@ class HaarArray(object):
 
         else:
             for axis in range(self.ndim):
-                self.ihaar(axis=axis)
+                self.idwt(axis=axis)
 
     #-------
 
@@ -198,7 +149,7 @@ class HaarArray(object):
         """
         if axis is not None:
             while self.active[axis] > 1: ### keep decomposing
-                self.haar(axis=axis)
+                self.dwt(axis=axis)
 
         else:
             for axis in range(self.ndim):
@@ -209,7 +160,7 @@ class HaarArray(object):
         """
         if axis is not None:
             while self.levels[axis] > 0: ### keep inverting
-                self.ihaar(axis=axis)
+                self.idwt(axis=axis)
 
         else:
             for axis in range(self.ndim):
@@ -218,56 +169,24 @@ class HaarArray(object):
     #---
 
     def set_levels(self, levels):
-        """haar and/or ihaar until we reach the target decomposition specified by levels
+        """dwt and/or idwt until we reach the target decomposition specified by levels
         """
         assert len(levels) == self.ndim, 'bad shape for levels'
         for axis in range(self.ndim):
-            if self.levels[axis] > levels[axis]: # need to ihaar
+            if self.levels[axis] > levels[axis]: # need to idwt
                 while self.levels[axis] > levels[axis]:
-                    self.ihaar(axis=axis)
+                    self.idwt(axis=axis)
 
-            elif self.levels[axis] < levels[axis]: # need to haar
+            elif self.levels[axis] < levels[axis]: # need to dwt
                 while self.levels[axis] < levels[axis]:
-                    self.haar(axis=axis)
+                    self.dwt(axis=axis)
 
             else: # levels already match
                 pass
 
     #--------------------
 
-    def denoise(self, num_std, smooth=False):
-        """perform basic "wavelet denoising" by taking the full wavelet decomposition and zeroing all detail coefficients with \
-with absolute values less than a threshold. This threshold is taken as num_std*std(detail) within each scale separately
-
-        WARNING: this function modifies data in-place. Data will be lost for the coefficients that are set to zero.
-        """
-        levels = copy.copy(self.levels) # make a copy so we can remember the level of decomposition
-
-        self.decompose() # completely decompose
-        while self.scales[0] > 1: # work our way to smaller scales
-
-            # set up all possible combos of scales relevant here
-            slices = [tuple()]
-            for dim, num in enumerate(self.active):
-                slices = [_+(slice(0,num),) for _ in slices] + [_+(slice(num,2*num),) for _ in slices]
-            slices = slices[1:] # skip the corner that is only approximants
-
-            # iterate over slices, derive and apply thresholds for each set separately
-            for s in slices:
-                sel = np.abs(self.array[s]) <= np.std(self.array[s])*num_std # the small-amplitude detail coeffs
-                if smooth: # zero the high-amplitude detail coefficients
-                    sel = np.logical_not(sel)
-                self.array[s] *= np.where(sel, 0.0, 1.0)
-
-            # ihaar to go up to the next scale
-            self.ihaar()
-
-        # work back to the level of decomposition we were at initially
-        self.set_levels(levels)
-
-    #--------------------
-
-    def spectrum(self, index=[2], use_abs=False):
+    def spectrum(self, index=[2], use_abs=False, correct_normalization=False):
         """compute and return the moments of the detail distributions at each scale in the decomposition
     index should be an iterable corresponding to which moments you want to compute
         """
@@ -279,22 +198,57 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
         moments = []
         covs = []
         while self.active[0] > 1:
-            self.haar() # decompose
+            self.dwt() # decompose
             scales.append(self.scales)
-            _, m, c = utils.moments(np.abs(self.detail.flatten()) if use_abs else self.detail.flatten(), index)
+            _, m, c = moments.moments(np.abs(self.detail.flatten()) if use_abs else self.detail.flatten(), index)
             moments.append(m)
             covs.append(c)
+
+        if correct_normalization:
+            raise NotImplementedError('do not know how to correct moments for wavelet normalization')
 
         return np.array(scales, dtype=float), np.array(moments, dtype=float), np.array(covs, dtype=float)
 
     #--------------------
 
-    def coefficients(self, levels):
-        """extract and return the coefficients corresponding to decomposition at levels
-        """
-        raise NotImplementedError
+    def denoise(self, num_std, smooth=False, max_scale=None):
+        """perform basic "wavelet denoising" by taking the full wavelet decomposition and zeroing all detail coefficients with \
+with absolute values less than a threshold. This threshold is taken as num_std*std(detail) within each scale separately
 
-    def pixels(self, levels):
-        """compute the pixel boundaries corresponding to the coefficients of the decomposition at levels
+        WARNING: this function modifies data in-place. Data will be lost for the coefficients that are set to zero.
         """
-        raise NotImplementedError
+        if max_scale is None:
+            max_scale = self.shape[0] # continue to denoise over all scales
+
+        levels = copy.copy(self.levels) # make a copy so we can remember the level of decomposition
+
+        self.idecompose() # start from the top
+        max_scale = min(max_scale, min(*self.active)) # limit this to the size of the array
+
+        while self.scales[0] < max_scale: # continue to denoise
+            self.dwt() # decompose again
+
+            slices = [tuple()]
+            for dim, num in enumerate(self.active):
+                slices = [_+(slice(0,num),) for _ in slices] + [_+(slice(num,2*num),) for _ in slices]
+
+            for s in slices[1:]: # only touch the detail coefficients
+                sel = np.abs(self.array[s]) <= np.std(self.array[s])*num_std # the small-amplitude detail coeffs
+                if smooth: # zero the high-amplitude detail coefficients
+                    sel = np.logical_not(sel)
+                self.array[s] *= np.where(sel, 0.0, 1.0)
+
+        # zero the remaining approx coeffs
+        if not smooth:
+            self.array[tuple(slice(0,num) for num in self.active)] *= 0
+
+        # put the levels back
+        self.set_levels(levels)
+
+    #--------------------
+
+    def structures(self, thr=0, num_proc=1, timeit=False):
+        """returns a list of sets of pixels corresponding to spatially separate structures at the current scale
+        thr sets the threshold for considering a pixel to be "on" and therefore eligible to be included in a structure
+        """
+        return structures.structures(np.abs(self.approx)>=thr, num_proc=num_proc, timeit=timeit)

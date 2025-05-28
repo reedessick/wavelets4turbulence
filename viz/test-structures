@@ -2,7 +2,8 @@
 
 import numpy as np
 import copy
-from w4t.pywt import WaveletArray
+from w4t.utils import structures
+from w4t.w4t.pywt import PyWaveletArray
 
 import time
 
@@ -12,9 +13,9 @@ np.random.seed(123)
 
 #-------------------------------------------------
 
-data = np.random.normal(size=(256,)*3)
+data = np.random.normal(size=(64,)*3)
 
-ha = WaveletArray(data, 'haar')
+ha = PyWaveletArray(data, 'haar')
 
 print('shape')
 print('    ', ha.shape)
@@ -29,14 +30,14 @@ print(sel)
 
 print('testing ability to select a pixel from a boolean array')
 
-pix = ha._sel2pix(sel)
+pix = structures._sel2pix(sel)
 print('    ', pix)
 
 #------------------------
 
 print('testing ability to identify neighbors')
 
-neighbors = ha._pix2neighbors(pix, ha._shape2shifts(sel.shape), sel.shape)
+neighbors = structures._pix2neighbors(pix, structures._shape2shifts(sel.shape), sel.shape)
 print('neighbors')
 for neighbor in neighbors:
     print('    ', neighbor)
@@ -45,7 +46,7 @@ for neighbor in neighbors:
 
 print('testing ability to find a cluster that includes a pixel')
 
-cluster, new = ha._pix2cluster(pix, copy.copy(sel), ha._shape2shifts(sel.shape))
+cluster, new = structures._pix2cluster(pix, copy.copy(sel), structures._shape2shifts(sel.shape))
 #print(sel)
 #print(new)
 #print('cluster')
@@ -57,7 +58,7 @@ cluster, new = ha._pix2cluster(pix, copy.copy(sel), ha._shape2shifts(sel.shape))
 print('testing ability to find all clusters')
 
 t0 = time.time()
-clusters = ha._structures(copy.copy(sel))
+clusters = structures._structures(copy.copy(sel))
 print(time.time()-t0)
 
 print('sanity-checking clusters')
@@ -93,7 +94,7 @@ t0 = time.time()
 sc = ha.structures(thr=thr)
 print('single-core structure identification:', time.time()-t0)
 
-num_proc = 6
+num_proc = 4
 t0 = time.time()
 mp = ha.structures(thr=thr, num_proc=num_proc, timeit=True)
 print('multiprocessing structure identification with %d procs: %f' %(num_proc, time.time()-t0))

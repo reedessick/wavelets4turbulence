@@ -186,7 +186,7 @@ class WaveletArray(object):
 
     #--------------------
 
-    def spectrum(self, index=[2], use_abs=False, correct_normalization=False):
+    def moments(self, index=[2], use_abs=False, remove_wavelet_normalization=False, central=False):
         """compute and return the moments of the detail distributions at each scale in the decomposition
     index should be an iterable corresponding to which moments you want to compute
         """
@@ -199,13 +199,23 @@ class WaveletArray(object):
         covs = []
         while self.active[0] > 1:
             self.dwt() # decompose
-            scales.append(self.scales)
-            _, m, c = moments.moments(np.abs(self.detail.flatten()) if use_abs else self.detail.flatten(), index)
+
+            samples = np.abs(self.detail.flatten()) if use_abs else self.detail.flatten()
+            s = np.array(self.scales, dtype=float)
+
+            if remove_wavelet_normalization: # estatimate structure function moments instead of detail coeffs
+                s /= 2
+                samples *= np.prod(2**1.5 / s**0.5) # account for multiple dimensions
+
+            if central:
+                _, m, c = moments.central_moments(samples, index)
+
+            else:
+                _, m, c = moments.moments(samples, index)
+
+            scales.append(s)
             moms.append(m)
             covs.append(c)
-
-        if correct_normalization:
-            raise NotImplementedError('do not know how to correct moments for wavelet normalization')
 
         return np.array(scales, dtype=float), np.array(moms, dtype=float), np.array(covs, dtype=float)
 

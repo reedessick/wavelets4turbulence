@@ -471,7 +471,7 @@ norms = aaa_imshow(
 
 # compute spectrum
 print('computing spectrum of the full flow')
-scales, mom, cov = ha.spectrum(index=indexes, use_abs=True)
+scales, mom, cov = ha.moments(index=indexes, use_abs=True, remove_wavelet_normalization=True)
 ha.idecompose() # reset the decomposition
 
 #-------------------------------------------------
@@ -502,7 +502,7 @@ aaa_imshow(
 
 # compute spectrum
 print('computing spectrum of coherent structures')
-dn_scales, dn_mom, dn_cov = ha.spectrum(index=indexes, use_abs=True)
+dn_scales, dn_mom, dn_cov = ha.moments(index=indexes, use_abs=True, remove_wavelet_normalization=True)
 ha.idecompose() # reset the decomposition
 
 #-------------------------------------------------

@@ -5,6 +5,7 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 #-------------------------------------------------
 
 import copy
+from collections import defaultdict
 
 import numpy as np
 
@@ -71,10 +72,18 @@ class WaveletArray(object):
 
     @property
     def detail(self):
-        """grab the current detail coefficients
+        """grab the current detail coefficients. Only grabs details in all dimensions
         """
         inds = self.active
         return self.array[tuple(slice(ind, 2*ind) for ind in inds)]
+
+    def coeffs(self, approx_or_detail):
+        """grab the current coefficients in various blocks of the array.
+        "approx_or_detail" should be an iterable of length ndim that specifies which block is referenced. True corresponds to approx and False corresponds to detail
+        """
+        assert len(approx_or_detail) == self.ndim, 'bad length for approx_or_detail'
+        inds = self.active
+        return self.array[tuple(slice(ind) if aod else slice(ind,2*ind) for ind, aod in zip(inds, approx_or_detail))]
 
     #--------------------
 
@@ -186,32 +195,78 @@ class WaveletArray(object):
 
     #--------------------
 
-    def moments(self, index=[2], use_abs=False, remove_wavelet_normalization=False, central=False):
-        """compute and return the moments of the detail distributions at each scale in the decomposition
-    index should be an iterable corresponding to which moments you want to compute
+    def isotropic_structure_function(self, index=[2], use_abs=False, verbose=False, Verbose=False):
+        """compute the structure function for various scales by averaging over all dimensions at each scale
         """
-        index = sorted(index)
+        verbose |= Verbose
 
-        self.idecompose() # start at the top
+        mom_dict = defaultdict(list) # use these to store the result at each scale
+        cov_dict = defaultdict(list)
+
+        scales_set = set()
+
+        # compute moments for 1D decompositions along each axis separately
+        for dim in range(self.ndim):
+            if verbose:
+                print('estimating moments for wavelet decomposition along dim=%d' % dim)
+
+            scales, mom, cov = self.structure_function(dim, index=index, use_abs=use_abs, verbose=Verbose)
+            for snd, scale in enumerate(scales):
+                scales_set.add(scale)
+                mom_dict[scale].append(mom[snd])
+                cov_dict[scale].append(cov[snd])
+
+        # now average over directions for each scale
+        if verbose:
+            print('averaging moments over dimensions at each scale')
+
+        scales = np.array(sorted(scales_set), dtype=float)
+
+        num_scales = len(scales)
+        num_index = len(index)
+
+        mom = np.empty((num_scales, num_index), dtype=float)
+        cov = np.empty((num_scales, num_index, num_index), dtype=float)
+
+        for snd, scale in enumerate(scales):
+            mom[snd,:] = np.mean(mom_dict[scale], axis=0) # average over dimensions
+            cov[snd,:] = np.sum(cov_dict[scale], axis=0) / len(cov_dict[scale])**2 # update covariance of the average
+
+        # return
+        return scales, mom, cov
+
+    #-------
+
+    def structure_function(self, dim, index=[2], use_abs=False, verbose=False):
+        """compute the structure function for various scales in a 1D decomposition along dim
+        """
+        assert (0 <= dim) and (dim < self.ndim), 'bad dimension (dim=%d) for ndim=%d' % (dim, self.ndim)
+
+        index = sorted(index)
 
         scales = []
         moms = []
         covs = []
-        while self.active[0] > 1:
-            self.dwt() # decompose
 
-            samples = np.abs(self.detail.flatten()) if use_abs else self.detail.flatten()
-            s = np.array(self.scales, dtype=float)
+        self.idecompose() # start at the top
 
-            if remove_wavelet_normalization: # estatimate structure function moments instead of detail coeffs
-                s /= 2
-                samples *= np.prod(2**1.5 / s**0.5) # account for multiple dimensions
+        approx_or_detail = [ind!=dim for ind in range(self.ndim)] # grab the detail coeffs for just this dimension
 
-            if central:
-                _, m, c = moments.central_moments(samples, index)
+        while self.active[dim] > 1: # keep going
+            self.dwt(axis=dim)
 
-            else:
-                _, m, c = moments.moments(samples, index)
+            if verbose:
+                print('computing moments for scales: %s' % self.scales)
+
+            samples = self.coeffs(approx_or_detail).flatten()
+            if use_abs:
+                samples = np.abs(samples)
+
+            # remove wavelet normalization
+            s = self.scales[dim] / 2
+            samples *= 2**1.5 / s**0.5 # correct for wavelet normalization
+
+            _, m, c = moments.moments(samples, index, central=False) # do not use central moments for structure functions
 
             scales.append(s)
             moms.append(m)

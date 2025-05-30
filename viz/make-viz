@@ -36,12 +36,12 @@ indexes = [1, 2, 3, 4, 5, 6] # for computing the spectrum
 wavelet = 'haar'
 
 path = '../data/M05MA10/Turb_hdf5_plt_cnt_0050'
-field = 'vort'
+#field = 'vort'
+field = 'mag'
 
-#max_edgelength = 512 # should be a power of 2
-max_edgelength = 128
+max_edgelength = 512 # should be a power of 2
 
-max_scale = 32 # let's just let the wavelet denoising do the heavy lifting. We can always make this cut later?
+max_scale = 256 # let's just let the wavelet denoising do the heavy lifting. We can always make this cut later?
 
 #---
 
@@ -231,7 +231,7 @@ def aaa_imshow(
             print('identifying clusters in full 3D box')
             sel = np.abs(array_dict['aaa']/norm) > thr # which pixels we consider in 3D
 
-            clusters = ha.structures(sel)
+            clusters = ha.structures(sel, num_proc=6)
             clusters.sort(key=lambda x: -len(x)) # biggest first
 
             num_clusters = len(clusters)
@@ -440,7 +440,8 @@ data = io.load([field], path=path, max_edgelength=max_edgelength, verbose=True)[
 #label = r'$\left| \vec{\omega} = \vec{\nabla} \times \vec{u} \right|$'
 
 data = data[0]
-label = r'$\omega_x$'
+#label = r'$\omega_x$'
+label = r'$B_x$'
 
 vmin = -3.0
 vmax = +3.0
@@ -471,7 +472,7 @@ norms = aaa_imshow(
 
 # compute spectrum
 print('computing spectrum of the full flow')
-scales, mom, cov = ha.moments(index=indexes, use_abs=True, remove_wavelet_normalization=True)
+scales, mom, cov = ha.isotropic_structure_function(index=indexes, use_abs=True, Verbose=True)
 ha.idecompose() # reset the decomposition
 
 #-------------------------------------------------
@@ -492,9 +493,9 @@ aaa_imshow(
     vmax=vmax,
     cmap=cmap_coherent,
     label=label,
-    orthographic=True,
+    orthographic=False,
     grand_tour=False,
-    structures=True,
+    structures=False,
     thr=thr,
 )
 
@@ -502,7 +503,7 @@ aaa_imshow(
 
 # compute spectrum
 print('computing spectrum of coherent structures')
-dn_scales, dn_mom, dn_cov = ha.moments(index=indexes, use_abs=True, remove_wavelet_normalization=True)
+dn_scales, dn_mom, dn_cov = ha.isotropic_structure_function(index=indexes, use_abs=True, Verbose=True)
 ha.idecompose() # reset the decomposition
 
 #-------------------------------------------------
@@ -518,15 +519,12 @@ ax = fig.add_axes([0.15, 0.15, 0.80, 0.80])
 for ind, index in enumerate(indexes):
 
     # full flow
-    color = ax.plot(scales[:,0], mom[:,ind]**(1/index), alpha=0.5, marker='.', label='$p=%d$'%index)[0].get_color()
-    for a, b, c in zip(scales[:,0], mom[:,ind], cov[:,ind,ind]**0.5):
-        ax.plot([a]*2, [(b-c)**(1/index), (b+c)**(1/index)], color=color, alpha=0.50)
+    color = ax.plot(scales, mom[:,ind]**(1./index), alpha=0.5, marker='.', label='$p=%d$'%index)[0].get_color()
+    for a, b, c in zip(scales, mom[:,ind], cov[:,ind,ind]**0.5):
+        ax.plot([a]*2, np.array([(b-c), (b+c)])**(1./index), color=color, alpha=0.50)
 
     # coherent structures?
-    ax.plot(dn_scales[:,0], dn_mom[:,ind]**(1/index), color=color, linestyle='dashed', alpha=0.5)
-#    for a, b, c in zip(scales[:,0], mom[:,ind], cov[:,ind,ind]**0.5):
-#        ax.plot([a]*2, [(b-c)**(1/index), (b+c)**(1/index)], color=color, alpha=0.50)
-
+    ax.plot(dn_scales, dn_mom[:,ind]**(1./index), color=color, linestyle='dashed', alpha=0.5)
 
 # decorate
 ax.set_xlabel('scale')
@@ -536,9 +534,9 @@ ax.set_yscale('log')
 ax.set_ylim(ymin=1e0, ymax=6e3)
 
 ax.set_xscale('log')
-ax.set_xticks(scales[::-1,0])
+ax.set_xticks(scales[::-1])
 ax.set_xticklabels(['%d'%_ for _ in ax.get_xticks()])
-ax.set_xlim(xmin=scales[-2,0], xmax=scales[0,0])
+ax.set_xlim(xmin=scales[-1]*1.1, xmax=scales[0]/1.1)
 
 ax.tick_params(
     left=True,

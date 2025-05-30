@@ -256,7 +256,7 @@ class WaveletArray(object):
             self.dwt(axis=dim)
 
             if verbose:
-                print('computing moments for scales: %s' % self.scales)
+                print('computing moments for scales: ' + str(self.scales))
 
             samples = self.coeffs(approx_or_detail).flatten()
             if use_abs:

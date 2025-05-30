@@ -11,7 +11,7 @@ import glob
 #-------------------------------------------------
 
 # set up arguments
-scripts = glob.glob('bin/*')
+scripts = glob.glob('bin/w4t-*')
 
 packages = find_packages()
 

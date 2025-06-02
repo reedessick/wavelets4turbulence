@@ -29,8 +29,7 @@ thr = 1.5     # this controls the part of the coherent structure used to identif
 
 #---
 
-#indexes = [1, 2, 3, 4, 5, 6] # for computing the spectrum
-indexes = [2] # for computing the spectrum
+indexes = [1, 2, 3, 4, 5, 6] # for computing the spectrum
 
 #---
 
@@ -438,12 +437,13 @@ data = io.load([field], path=path, max_edgelength=max_edgelength, verbose=True)[
 
 #---
 
-data = np.sum(data**2, axis=0)**0.5 # magnitude
-label = r'$\left| \vec{u} \right|$'
+#data = np.sum(data**2, axis=0)**0.5 # magnitude
+#label = r'$\left| \vec{u} \right|$'
 #label = r'$\left| \vec{\omega} = \vec{\nabla} \times \vec{u} \right|$'
 #label = r'$\left| \vec{B} \right|$'
 
-#data = data[0]
+data = data[0]
+label = r'$u_x$'
 #label = r'$\omega_x$'
 #label = r'$B_x$'
 
@@ -527,12 +527,12 @@ ax = fig.add_axes([0.15, 0.10, 0.80, 0.80])
 for ind, index in enumerate(indexes):
 
     # full flow
-    color = ax.plot(scales, mom[:,ind], alpha=0.5, marker='.', label='$p=%d$'%index)[0].get_color()
+    color = ax.plot(scales, mom[:,ind]**(1./index), alpha=0.5, marker='.', label='$p=%d$'%index)[0].get_color()
     for a, b, c in zip(scales, mom[:,ind], cov[:,ind,ind]**0.5):
-        ax.plot([a]*2, np.array([(b-c), (b+c)]), color=color, alpha=0.50)
+        ax.plot([a]*2, np.array([(b-c), (b+c)])**(1./index), color=color, alpha=0.50)
 
     # coherent structures?
-    ax.plot(dn_scales, dn_mom[:,ind], color=color, linestyle='dashed', alpha=0.5)
+    ax.plot(dn_scales, dn_mom[:,ind]**(1./index), color=color, linestyle='dashed', alpha=0.5)
 
 # decorate
 ax.set_xlabel('scale')

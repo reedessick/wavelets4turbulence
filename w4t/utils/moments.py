@@ -12,7 +12,7 @@ from scipy.special import comb # comb(n, k) = "n choose k" = n! / ((n-k)! k!)
 def moments(samples, index, central=False):
     """estimate moments of samples for each value in index (which should be an iterable). For example, index=[1,2] will compute the 1st and second moment of samples. Also estimates the covariance matrix between the estimators for the requested moments.
     """
-    index = np.array(sorted(index), dtype=int)
+    index = np.array(index, dtype=int)
 
     num_index = len(index)
     num_samples = len(samples)

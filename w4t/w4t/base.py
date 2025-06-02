@@ -242,15 +242,13 @@ class WaveletArray(object):
         """
         assert (0 <= dim) and (dim < self.ndim), 'bad dimension (dim=%d) for ndim=%d' % (dim, self.ndim)
 
-        index = sorted(index)
-
         scales = []
         moms = []
         covs = []
 
         self.idecompose() # start at the top
 
-        approx_or_detail = [ind!=dim for ind in range(self.ndim)] # grab the detail coeffs for just this dimension
+        approx_or_detail = np.arange(self.ndim) != dim # grab the detail coeffs for just this dimension
 
         while self.active[dim] > 1: # keep going
             self.dwt(axis=dim)
@@ -262,11 +260,13 @@ class WaveletArray(object):
             if use_abs:
                 samples = np.abs(samples)
 
-            # remove wavelet normalization
             s = self.scales[dim] / 2
-            samples *= 2**1.5 / s**0.5 # correct for wavelet normalization
 
-            _, m, c = moments.moments(samples, index, central=False) # do not use central moments for structure functions
+            _, m, c = moments.moments(
+                samples * 2**(1 - 0.5*self.levels[dim]), # correct for wavelet normalization
+                index,
+                central=False, # do not use central moments for structure functions
+            )
 
             scales.append(s)
             moms.append(m)

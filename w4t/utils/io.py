@@ -4,6 +4,7 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 #-------------------------------------------------
 
+import h5py
 import numpy as np
 
 ### non-standard libraries
@@ -20,9 +21,31 @@ DEFAULT_NUM_DIM = 3
 
 #-------------------------------------------------
 
+def write(
+        data,
+        path,
+        verbose=False,
+        Verbose=False,
+    ):
+    """write data into a standard HDF file
+    """
+    verbose |= Verbose
+
+    if verbose:
+        print('writing: '+path)
+
+    with h5py.File(path, 'w') as obj:
+        for key in data.keys():
+            if Verbose:
+                print('    writing: %s %s' % (key, str(np.shape(data[key]))))
+            obj.create_dataset(key, data=data[key])
+
+#-----------
+
 def load(
         fields,
         path=None,
+        flash_format=False,
         num_grid=DEFAULT_NUM_GRID,
         num_dim=DEFAULT_NUM_DIM,
         max_edgelength=None,
@@ -38,31 +61,60 @@ def load(
         if verbose:
             print('loading: '+path)
 
-        if Fields is None:
-            raise ImportError('could not import PLASMAtools.read_funcs.read.Fields')
+        if flash:
+            if Fields is None:
+                raise ImportError('could not import PLASMAtools.read_funcs.read.Fields')
 
-        turb = Fields(path, reformat=True)
+            turb = Fields(path, reformat=True)
+
+            for field in fields:
+                if field == 'vort':
+                    turb.read('vel')
+                    data['vel'] = turb.vel 
+                elif field == 'curr':
+                    trub.read('mag')
+                    data['mag'] = turb.mag
+                else:
+                    turb.read(field)
+                    data[field] = getattr(turb, field)
+
+            del turb
+
+        else:
+            with h5py.File(path, 'r') as obj:
+                for field in fields:
+                    if field in obj.keys():
+                        data[field] = obj[field][:]
+                    else:
+                        if field == 'vort':
+                            data['vel'] = obj['vel'][:]
+                        elif field == 'curr':
+                            data['mag'] = obj['mag'][:]
+                        else:
+                            raise RuntimeError('could not load field='+field)
 
         # read the fields
-        if ('vort' in fields) or ('curr' in fields):
+        compute_vort = ('vort' in fields) and ('vort' not in data)
+        compute_curr = ('curr' in fields) and ('curr' not in data)
+
+        if compute_vort or compute_curr:
             dvf = dv.DerivedVars()
 
-        for field in fields:
-            if field == 'vort':
-                turb.read('vel')
+            if compute_vort:
                 if Verbose:
                     print('computing vort as curl(vel)')
-                data['vort'] = dvf.vector_curl(turb.vel)
-            elif field == 'curr':
-                turb.read('mag')
+                data['vort'] = dvf.vector_curl(data['vel'])
+
+                if 'vel' not in fields:
+                    data.pop('vel')
+
+            if compute_curr:
                 if Verbose:
                     print('computing curr as curl(mag)')
-                data['curr'] = dvf.vector_curl(turb.mag)
-            else:
-                turb.read(field)
-                data[field] = getattr(turb, field) # replacement for this syntax: turb.vel
+                data['curr'] = dvf.vector_curl(data['mag'])
 
-        del turb # get rid of this object to save memory
+                if 'mag' not in fields:
+                    data.pop('mag')
 
     else: # generate random data on a big-ish 3D array
 

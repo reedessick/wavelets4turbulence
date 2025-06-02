@@ -6,4 +6,44 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 #-------------------------------------------------
 
-raise NotImplementedError
+from argparse import ArgumentParser
+
+### non-standard libraries
+from w4t.utils import io
+
+#-------------------------------------------------
+
+parser = ArgumentParser()
+
+parser.add_argument('source', type='str')
+parser.add_argument('target', type='str')
+
+parser.add_argument('fields', nargs='+', type=str)
+
+parser.add_argument('-v', '--verbose', default=False, action='store_true')
+parser.add_argument('-V', '--Verbose', default=False, action='store_true')
+
+args = parser.parse_args()
+
+args.verbose |= args.Verbose
+
+#-------------------------------------------------
+
+# load data, which may be slow
+data = io.load(
+    args.fields,
+    path=args.source,
+    verbose=args.verbose,
+    Verbose=args.Verbose,
+)
+
+#------------------------
+
+# write data, which should hopefully be quick
+
+io.write(
+    data,
+    args.target,
+    verbose=args.verbose,
+    Verbose=args.Verbose,
+)

@@ -45,3 +45,11 @@ def moments(samples, index, central=False):
 
     # return
     return index, m, c
+
+#------------------------
+
+def scaling_exponent(scales, mom, std):
+    """perform a linear fit of log(mom) as a function of log(scales) with uncertainties in mom given by stdv
+    """
+    p = np.polyfit(np.log(scales), np.log(mom), deg=deg, weights=mom/std)
+    return p[0] # return linear coefficient

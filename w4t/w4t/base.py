@@ -274,6 +274,26 @@ class WaveletArray(object):
 
         return np.array(scales, dtype=float), np.array(moms, dtype=float), np.array(covs, dtype=float)
 
+    #-------
+
+    def scaling_exponent(self, index=[2], use_abs=False, min_scale=None, max_scale=None, verbose=False, Verbose=False):
+        """compute scaling exponent for structure functions
+        """
+        # compute moments
+        scales, moms, covs = self.isotropic_structure_function(index=index, use_abs=use_abs, verbose=verbose, Verbose=Verbose)
+
+        # downselect scales before performing basic fit to extract scaling exponent
+        sel = np.ones(len(scale), dtype=bool)
+
+        if min_scale is not None:
+            sel *= (min_scale <= scales)
+
+        if max_scale is not None:
+            sel *= (scales <= max_scales)
+
+        # perform fit and return
+        return [moments.scaling_exponent(scales[sel], mom[sel,ind], 1./covs[sel,ind,ind]**0.5) for ind in range(len(index))]
+
     #--------------------
 
     def denoise(self, num_std, smooth=False, max_scale=None):

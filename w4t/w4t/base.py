@@ -341,8 +341,63 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
         """returns a list of sets of pixels corresponding to spatially separate structures at the current scale
         thr sets the threshold for considering a pixel to be "on" and therefore eligible to be included in a structure
         """
-        return structures.find_structures(
+        pixels = structures.find_structures(
             np.abs(self.approx) >= thr*np.std(self.approx.flatten()),
             num_proc=num_proc,
             timeit=timeit,
         )
+        return [Structure(pix, self.levels, self.shape) for pix in pixels]
+
+#-------------------------------------------------
+
+class Structure(object):
+    """a class representing an identified structure within a flow
+    """
+
+    def __init__(self, pixels, levels, shape):
+        self._pixels = pixels
+        self._levels = levels
+        self._shape = shape
+
+    #---
+
+    @property
+    def pixels(self):
+        return self._pixels
+
+    @property
+    def levels(self):
+        return self._levels
+
+    @property
+    def shape(self):
+        return self._shape
+
+    #---
+
+    def __len__(self):
+        return len(self.pixels)
+
+    @property
+    def bounding_box(self):
+        raise NotImplementedError
+
+    @property
+    def tuple(self):
+        return tuple(np.transpose(self.pixels)) # useful when accessing arrays
+
+    #---
+
+    def extract(self, waveletarray):
+        """extract an array with zeros everywhere except for the active pixels
+        """
+        # sanity-check input
+        assert waveletarray.shape == self.shape, 'shape mismatch'
+        waveletarray.set_levels(self.levels) # set to the appropriate level of decomposition
+
+        # extract data
+        array = np.zeros_like(waveletarray.approx, dtype=float)
+        array[self.tuple] = waveletarray.approx[self.tuple]
+
+        # return
+        return array

@@ -19,7 +19,7 @@ w4t-convert-flash \
 
 # compute structure function
 
-#echo \
+echo \
 w4t-structure-function \
     ../data/M05MA10/M05MA10_0050.hdf \
     ../data/M05MA10/M05MA10_0050-structure-function.hdf \
@@ -51,7 +51,7 @@ w4t-denoise \
 
 # compute structure function of denoised flow
 
-#echo \
+echo \
 w4t-structure-function \
     ../data/M05MA10/M05MA10_0050-denoise.hdf \
     ../data/M05MA10/M05MA10_0050-denoise-structure-function.hdf \
@@ -65,7 +65,7 @@ w4t-structure-function \
 
 # identify structures as separate sets of pixels
 
-echo \
+#echo \
 w4t-structures \
     ../data/M05MA10/M05MA10_0050-denoise.hdf \
     ../data/M05MA10/M05MA10_0050-denoise-structures.hdf \

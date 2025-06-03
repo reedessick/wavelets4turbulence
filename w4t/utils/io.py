@@ -14,6 +14,8 @@ try:
 except ImportError:
     Fields = None
 
+from w4t.w4t.base import Structure
+
 #-------------------------------------------------
 
 DEFAULT_NUM_GRID = 32
@@ -199,9 +201,14 @@ def write_structures(structures, path, verbose=False, Verbose=False, **kwargs):
 
         for ind, structure in enumerate(structures):
             key = str(ind)
+            grp = obj.create_group(key)
             if Verbose:
                 print('    writing: %s %s' % (key, len(structure)))
-            obj.create_dataset(key, data=structure)
+
+            grp.attrs.create('levels', structure.levels)
+            grp.attrs.create('shape', structure.shape)
+
+            grp.create_dataset('pixels', data=structure.pixels)
 
 #-----------
 
@@ -214,7 +221,7 @@ def load_structures(path, verbose=False):
     with h5py.File(path, 'r') as obj:
         keys = list(obj.keys())
         keys.sort(key=lambda x: int(x))
-        structures = [obj[key][:] for key in keys]
+        structures = [Structure(obj[key]['pixels'][:], obj[key].attrs['levels'], obj[key].attrs['shape']) for key in keys]
 
     return structures
 

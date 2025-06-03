@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 
-"""a simple executable to perform wavelet denoising
+"""a simple executable to identify structures
 """
 __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 #-------------------------------------------------
-
-import numpy as np
 
 from argparse import ArgumentParser
 
 ### non-standard libraries
 from w4t.utils import io
 from w4t.w4t import pywt
-from w4t.w4t.base import DEFAULT_DENOISE_THRESHOLD
+from w4t.w4t.base import DEFAULT_STRUCTURE_THRESHOLD
 
 #-------------------------------------------------
 
@@ -28,17 +26,20 @@ parser.add_argument('--component', type=int, default=None)
 parser.add_argument('-M', '--max-edgelength', default=None, type=int)
 
 parser.add_argument('-w', '--wavelet', default=pywt.DEFAULT_WAVELET, type=str)
-parser.add_argument('-t', '--threshold', default=DEFAULT_DENOISE_THRESHOLD, type=float)
-parser.add_argument('-m', '--max-scale', default=None, type=float)
-parser.add_argument('-s', '--smooth', default=False, action='store_true')
+parser.add_argument('-t', '--threshold', default=DEFAULT_STRUCTURE_THRESHOLD, type=float)
+
+parser.add_argument('-n', '--num-proc', default=1, type=int)
 
 parser.add_argument('-v', '--verbose', default=False, action='store_true')
+parser.add_argument('-V', '--Verbose', default=False, action='store_true')
 
 args = parser.parse_args()
 
+args.verbose |= args.Verbose
+
 #-------------------------------------------------
 
-# load data into a wavelet array
+# load data inot a wavelet array
 
 data, field = io.simplify(
     io.load([args.field], path=args.source, verbose=args.verbose)[args.field],
@@ -62,26 +63,32 @@ wa = pywt.PyWaveletArray(
 
 #-----------
 
-# denoise
-if args.verbose:
-    print('denoising with\n    threshold=%.6f\n    max_scale=%.3f\n    smooth=%s' % \
-        (args.threshold, args.max_scale, args.smooth))
+# identify structures
 
-wa.denoise(args.threshold, max_scale=args.max_scale, smooth=args.smooth)
+if args.verbose:
+    print('identifying structures with\n    threshold=%.6f\n    num_proc=%d' % (args.threshold, args.num_proc))
+
+structures = wa.structures(thr=args.threshold, num_proc=args.num_proc, timeit=args.verbose)
+
+if args.verbose:
+    print('identified %d structures' % len(structures))
+
+    if args.Verbose:
+        for ind, struc in enumerate(structures):
+            print('    %d : %d pixels' % (ind, len(struc)))
 
 #------------------------
 
 # save data
-wa.idecompose() # make sure we're at full resolution before we save
 
-io.write(
-    dict([(field, wa.array.reshape((1,)+wa.shape))]),
+io.write_structures(
+    structures,
     args.target,
     verbose=args.verbose,
     source=args.source,
+    field=field,
+    shape=wa.shape,
     max_edgelength=args.max_edgelength,
     wavelet=args.wavelet,
     threshold=args.threshold,
-    max_scale=args.max_scale,
-    smooth=args.smooth,
 )

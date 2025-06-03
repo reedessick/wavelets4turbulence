@@ -1,9 +1,0 @@
-#!/usr/bin/env python3
-
-"""a simple executable to compute structure functions from wavelet transform
-"""
-__author__ = "Reed Essick (reed.essick@gmail.com)"
-
-#-------------------------------------------------
-
-raise NotImplementedError

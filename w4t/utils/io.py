@@ -21,12 +21,7 @@ DEFAULT_NUM_DIM = 3
 
 #-------------------------------------------------
 
-def write(
-        data,
-        path,
-        verbose=False,
-        Verbose=False,
-    ):
+def write(data, path, verbose=False, Verbose=False, **kwargs):
     """write data into a standard HDF file
     """
     verbose |= Verbose
@@ -35,6 +30,9 @@ def write(
         print('writing: '+path)
 
     with h5py.File(path, 'w') as obj:
+        for key, val in kwargs.items():
+            obj.attrs.create(key, data=val)
+
         for key in data.keys():
             if Verbose:
                 print('    writing: %s %s' % (key, str(np.shape(data[key]))))
@@ -78,7 +76,7 @@ def load(
                     parser.read(field)
                     data[field] = getattr(parser, field)
 
-            del turb
+            del parser
 
         else:
             with h5py.File(path, 'r') as obj:
@@ -153,3 +151,102 @@ def load(
     #---
 
     return data
+
+#------------------------
+
+def simplify(data, field, component=None, max_edgelength=None, verbose=False):
+    """further extract specific components of an array and standardize truncation
+    """
+    if component is None:
+        if data.shape[0] > 1: # take the magnitude
+            if verbose:
+                print('extracting magnitude')
+            data = np.sum(data**2, axis=0)**0.5
+            field = field+"_mag"
+        else:
+            data = data[0]
+            field = field
+
+    else: # take a specific component
+        if verbose:
+            print('extracting component: %d' % component)
+        data = data[component]
+        field = "%s_%d" % (field, component)
+
+    if max_edgelength is not None:
+        if verbose:
+            print('retaining the first %d samples in each dimension' % max_edgelength)
+        data = data[tuple(slice(max_edgelength) for _ in range(len(data.shape)))]
+
+    if verbose:
+        print('    %s %s' % (field, data.shape))
+
+    return data, field
+
+#-------------------------------------------------
+
+def write_structures(structures, path, verbose=False, Verbose=False, **kwargs):
+    """write lists of pixels corresponding to separate structures to disk
+    """
+    verbose |= Verbose
+
+    if verbose:
+        print('writing structures: '+path)
+
+    with h5py.File(path, 'w') as obj:
+        for key, val in kwargs.items():
+            obj.attrs.create(key, data=val)
+
+        for ind, structure in enumerate(structures):
+            key = str(ind)
+            if Verbose:
+                print('    writing: %s %s' % (key, len(structure)))
+            obj.create_dataset(key, data=structure)
+
+#-----------
+
+def load_structures(path, verbose=False):
+    """load lists of pixels corresponding to separate structures from disk
+    """
+    if verbose:
+        print('loading structures: '+path)
+
+    with h5py.File(path, 'r') as obj:
+        keys = list(obj.keys())
+        keys.sort(key=lambda x: int(x))
+        structures = [obj[key][:] for key in keys]
+
+    return structures
+
+#-------------------------------------------------
+
+def write_structure_function(scales, index, mom, cov, path, verbose=False, **kwargs):
+    """write structure functions to disk
+    """
+    if verbose:
+        print('writing structure functions: '+path)
+
+    with h5py.File(path, 'w') as obj:
+        for key, val in kwargs.items():
+            obj.attrs.create(key, data=val)
+
+        obj.create_dataset('scales', data=scales)
+        obj.create_dataset('index', data=index)
+        obj.create_dataset('mom', data=mom)
+        obj.create_dataset('cov', data=cov)
+
+#-----------
+
+def load_structure_function(path, verbose=False):
+    """load structure functions from disk
+    """
+    if verbose:
+        print('loading structure functions: '+path)
+
+    with h5py.File(path, 'r') as obj:
+        scales = obj['scales'][:]
+        index = obj['index'][:]
+        mom = obj['mom'][:]
+        cov = obj['cov'][:]
+
+    return scales, index, mom, cov

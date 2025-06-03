@@ -10,6 +10,10 @@ from .base import WaveletArray
 
 #-------------------------------------------------
 
+DEFAULT_WAVELET = 'haar'
+
+#-------------------------------------------------
+
 class PyWaveletArray(WaveletArray):
     """an object that manages storage and wavelet decompositions of ND arrays
     """

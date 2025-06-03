@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+
+"""a simple executable to extract scaling exponents from structure functions
+"""
+__author__ = "Reed Essick (reed.essick@gmail.com)"
+
+#-------------------------------------------------
+
+from argparse import ArgumentParser
+
+### non-standard libraries
+from w4t.utils import io
+from w4t.w4t import pywt
+
+#-------------------------------------------------
+
+parser = ArgumentParser()
+
+parser.add_argument('source', type=str)
+parser.add_argument('target', type=str)
+
+parser.add_argument('-v', '--verbose', default=False, action='store_true')
+
+args = parser.parse_args()
+
+#-------------------------------------------------
+
+# load structure functions
+scales, index, mom, cov = io.load_structure_function(args.source, verbose=args.verbose)
+
+#-----------
+
+# compute scaling exponents
+
+raise NotImplementedError('load structure functions and compute scaling exponents')
+
+#-----------
+
+# save scaling exponents
+
+raise NotImplementedError

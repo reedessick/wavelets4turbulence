@@ -362,6 +362,10 @@ class Structure(object):
     #---
 
     @property
+    def ndim(self):
+        return len(self.shape)
+
+    @property
     def pixels(self):
         return self._pixels
 
@@ -380,7 +384,7 @@ class Structure(object):
 
     @property
     def bounding_box(self):
-        raise NotImplementedError
+        return np.array([(np.min(self.pixels[:,dim]), np.max(self.pixels[:,dim])) for dim in range(self.ndim)], dtype=int)
 
     @property
     def tuple(self):
@@ -401,3 +405,8 @@ class Structure(object):
 
         # return
         return array
+
+    def principle_components(self, waveletarray, index):
+        """compute the principle components of a structure with respect to the field contained in waveletarray raised to index
+        """
+        raise NotImplementedError

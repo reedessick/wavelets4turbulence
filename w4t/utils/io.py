@@ -61,22 +61,22 @@ def load(
         if verbose:
             print('loading: '+path)
 
-        if flash:
+        if flash_format:
             if Fields is None:
                 raise ImportError('could not import PLASMAtools.read_funcs.read.Fields')
 
-            turb = Fields(path, reformat=True)
+            parser = Fields(path, reformat=True)
 
             for field in fields:
                 if field == 'vort':
-                    turb.read('vel')
-                    data['vel'] = turb.vel 
+                    parser.read('vel')
+                    data['vel'] = parser.vel 
                 elif field == 'curr':
-                    trub.read('mag')
-                    data['mag'] = turb.mag
+                    parser.read('mag')
+                    data['mag'] = parser.mag
                 else:
-                    turb.read(field)
-                    data[field] = getattr(turb, field)
+                    parser.read(field)
+                    data[field] = getattr(parser, field)
 
             del turb
 

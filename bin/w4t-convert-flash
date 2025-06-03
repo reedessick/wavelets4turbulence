@@ -15,8 +15,8 @@ from w4t.utils import io
 
 parser = ArgumentParser()
 
-parser.add_argument('source', type='str')
-parser.add_argument('target', type='str')
+parser.add_argument('source', type=str)
+parser.add_argument('target', type=str)
 
 parser.add_argument('fields', nargs='+', type=str)
 
@@ -33,6 +33,7 @@ args.verbose |= args.Verbose
 data = io.load(
     args.fields,
     path=args.source,
+    flash_format=True,
     verbose=args.verbose,
     Verbose=args.Verbose,
 )

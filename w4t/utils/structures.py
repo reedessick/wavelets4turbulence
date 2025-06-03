@@ -13,13 +13,30 @@ import multiprocessing as mp
 
 def principle_components(pixels, weights=None):
     """compute the principle components of a set of pixels with respect to the measure defined by weights
+    return mean, eigvec, eigval (eigvec, eigval are in the format returned by np.linalg.eig)
     """
+    # set up weights
     if weights is None:
-        weights = np.ones(len(pixels), dtype=float)/len(pixels)
+        weights = np.ones(len(pixels), dtype=float)
+    weights = weights/np.sum(weights) # make sure this is normalized
 
-    raise NotImplementedError('''
-        mean, eigvec, eigval = structures.principle_components(self.pixels, weights=weights)
-''')
+    # compute 1st moment
+    mean = np.sum(weights*pixels, axis=0) # compute the mean position
+
+    # compute 2nd moment
+    ndim = pixels.shape[1] # the number of dimensions
+    cov = np.empty((ndim, ndim), dtype=float)
+    for row in range(ndim):
+        cov[row,row] = np.sum(weights*(pixels[:,row]-mean[row])**2)
+
+        for col in range(row):
+            cov[row,col] = cov[col,row] = np.sum(weights*(pixels[:,row]-mean[row])*(pixels[:,col]-mean[col]))
+
+    # find eigenvectors of cov to get principle directions
+    eigval, eigvec = np.linalg.eig(cov)
+
+    # return
+    return mean, eigvev, eigval
 
 #------------------------
 

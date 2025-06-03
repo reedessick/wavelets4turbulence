@@ -392,7 +392,7 @@ class Structure(object):
 
     #---
 
-    def extract(self, waveletarray):
+    def extract_as_array(self, waveletarray):
         """extract an array with zeros everywhere except for the active pixels
         """
         # sanity-check input
@@ -400,13 +400,29 @@ class Structure(object):
         waveletarray.set_levels(self.levels) # set to the appropriate level of decomposition
 
         # extract data
-        array = np.zeros_like(waveletarray.approx, dtype=float)
-        array[self.tuple] = waveletarray.approx[self.tuple]
+        array = np.zeros_like(waveletarray.approx, dtype=float) # default is zero everwhere
+        tup = self.tuple
+        array[tup] = waveletarray.approx[tup] # fill in the selected pixels
 
         # return
         return array
 
-    def principle_components(self, waveletarray, index):
+    def extract(self, waveletarray):
+        # sanity-check input
+        assert waveletarray.shape == self.shape, 'shape mismatch'
+        waveletarray.set_levels(self.levels) # set to the appropriate level of decomposition
+        return waveletarray.approx[self.tuple]
+
+    def principle_components(self, waveletarray=None, index=1):
         """compute the principle components of a structure with respect to the field contained in waveletarray raised to index
         """
-        raise NotImplementedError
+        # figure out the measure with repect to which we compute the principle components
+        if waveletarray is not None: # extract measure for principle components
+            weights = np.abs(self.extract(waveletarray))**index
+        else:
+            weights = np.ones(len(self), dtype=float)
+
+        weights /= np.sum(weights)
+
+        # compute principle components and return
+        return structures.principle_components(self.pixels, weights=weights)

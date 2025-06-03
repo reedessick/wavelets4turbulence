@@ -11,6 +11,18 @@ import multiprocessing as mp
 
 #-------------------------------------------------
 
+def principle_components(pixels, weights=None):
+    """compute the principle components of a set of pixels with respect to the measure defined by weights
+    """
+    if weights is None:
+        weights = np.ones(len(pixels), dtype=float)/len(pixels)
+
+    raise NotImplementedError('''
+        mean, eigvec, eigval = structures.principle_components(self.pixels, weights=weights)
+''')
+
+#------------------------
+
 def find_structures(sel, num_proc=1, timeit=False):
     """returns a list of sets of pixels corresponding to spatially separate structures at the current scale
     thr sets the threshold for considering a pixel to be "on" and therefore eligible to be included in a structure

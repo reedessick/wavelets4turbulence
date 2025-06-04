@@ -18,6 +18,8 @@ from w4t.utils import io
 
 parser = ArgumentParser()
 
+parser.add_argument('--title', default=None, type=str)
+
 parser.add_argument('-s', '--source', nargs=2, type=str, default=[], action='append', required=True,
     help='label and path for input data. eg: --inpath label path/to/data')
 
@@ -108,6 +110,9 @@ for key, val in data.items():
         fig=fig,
     )
 
+if args.title is not None:
+    fig.suptitle(args.title)
+
 figtmp = os.path.join(
     args.output_dir,
     os.path.basename(__file__)+'-mom%s.%s' % (args.tag, '%s'),
@@ -144,6 +149,9 @@ if not args.index: # plot things scaled by other 2nd moment
             fig=fig,
         )
 
+    if args.title is not None:
+        fig.suptitle(args.title)
+
     figtmp = os.path.join(
         args.output_dir,
         os.path.basename(__file__)+'-scaled-mom%s.%s' % (args.tag, '%s'),
@@ -177,6 +185,9 @@ if not args.index: # plot things scaled by other 2nd moment
             ncols=ncols,
             fig=fig,
         )
+
+    if args.title is not None:
+        fig.suptitle(args.title)
 
     figtmp = os.path.join(
         args.output_dir,

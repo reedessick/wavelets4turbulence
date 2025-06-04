@@ -10,8 +10,16 @@ SNAP="0050"
 
 #------------------------
 
-OUTDIR="../data/${FLOW}"
+FIELD="mag"
+COMP="0"
+
+TITLE='$B_x$'
+
 TAG="${FLOW}_${SNAP}"
+
+#---
+
+OUTDIR="../data/${FLOW}"
 
 #---
 
@@ -35,12 +43,12 @@ w4t-convert-flash \
 
 # compute structure function
 
-echo \
+#echo \
 w4t-structure-function \
     ${BASE}.hdf \
     ${BASE}-structure-function.hdf \
-    vel \
-    --component 0 \
+    ${FIELD} \
+    --component ${COMP} \
     --max-edgelength 512 \
     --index 1 2 3 4 \
     --Verbose \
@@ -50,12 +58,12 @@ w4t-structure-function \
 
 # denoise to identify coherent structures
 
-echo \
+#echo \
 w4t-denoise \
     ${BASE}.hdf \
     ${BASE}-denoise.hdf \
-    vel \
-    --component 0 \
+    ${FIELD} \
+    --component ${COMP} \
     --max-edgelength 512 \
     --wavelet haar \
     --threshold 2.0 \
@@ -67,11 +75,11 @@ w4t-denoise \
 
 # compute structure function of denoised flow
 
-echo \
+#echo \
 w4t-structure-function \
     ${BASE}-denoise.hdf \
     ${BASE}-denoise-structure-function.hdf \
-    vel_0 \
+    ${FIELD}_${COMP} \
     --max-edgelength 512 \
     --index 1 2 3 4 \
     --Verbose \
@@ -81,11 +89,11 @@ w4t-structure-function \
 
 # identify structures as separate sets of pixels
 
-echo \
+#echo \
 w4t-structures \
     ${BASE}-denoise.hdf \
     ${BASE}-denoise-structures.hdf \
-    vel_0 \
+    ${FIELD}_${COMP} \
     --wavelet haar \
     --max-edgelength 256 \
     --threshold 3.0 \
@@ -97,12 +105,12 @@ w4t-structures \
 
 # denoise to remove coherent structures
 
-echo \
+#echo \
 w4t-denoise \
     ${BASE}.hdf \
     ${BASE}-smooth.hdf \
-    vel \
-    --component 0 \
+    ${FIELD} \
+    --component ${COMP} \
     --max-edgelength 512 \
     --wavelet haar \
     --threshold 2.0 \
@@ -115,11 +123,11 @@ w4t-denoise \
 
 # compute structure function of smoothed flow
 
-echo \
+#echo \
 w4t-structure-function \
     ${BASE}-smooth.hdf \
     ${BASE}-smooth-structure-function.hdf \
-    vel_0 \
+    ${FIELD}_${COMP} \
     --max-edgelength 512 \
     --index 1 2 3 4 \
     --Verbose \
@@ -131,6 +139,7 @@ w4t-structure-function \
 
 #echo \
 w4t-plot-structure-function \
+    --title $TITLE \
     --source    'full'    ${BASE}-structure-function.hdf \
     --linestyle 'full'    'solid' \
     --marker    'full'    'o' \

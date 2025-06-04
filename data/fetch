@@ -10,12 +10,12 @@ BASEDIR="/fs/lustre/project/plasmaastro/jbeattie/turbulent_boxes/"
 SIMS=""
 
 SIMS="$SIMS M05MA01"
-#SIMS="$SIMS M05MA05"
-#SIMS="$SIMS M05MA10"
+SIMS="$SIMS M05MA05"
+SIMS="$SIMS M05MA10"
 
-#SIMS="$SIMS M10MA01"
-#SIMS="$SIMS M10MA05"
-#SIMS="$SIMS M10MA10"
+SIMS="$SIMS M10MA01"
+SIMS="$SIMS M10MA05"
+SIMS="$SIMS M10MA10"
 
 #-------------------------------------------------
 
@@ -26,9 +26,7 @@ do
 
     #---
 
-    # clean up any previous runs
-    rm -r $SIM 
-    mkdir $SIM
+    mkdir -p $SIM
 
     # iterate over snapshots, computing moments of each
     scp essick@gw.cita.utoronto.ca:$BASEDIR/$SIM/Turb_hdf5_plt_cnt_0050 $SIM

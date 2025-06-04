@@ -5,12 +5,22 @@
 
 #-------------------------------------------------
 
+FLOW="M05MA10"
+SNAP="0050"
+
+#------------------------
+
+FLASH="../data/${FLOW}/Turb_hdf5_plt_cnt_${SNAP}"
+BASE="../data/M05MA10/${FLOW}_${SNAP}"
+
+#-------------------------------------------------
+
 # convert the file format on disk to be faster to load
 
 echo \
 w4t-convert-flash \
-    ../data/M05MA10/Turb_hdf5_plt_cnt_0050 \
-    ../data/M05MA10/M05MA10_0050.hdf \
+    ${FLASH} \
+    ${BASE}.hdf \
     vel vort mag curr dens \
     --Verbose \
 || exit 1
@@ -21,8 +31,8 @@ w4t-convert-flash \
 
 echo \
 w4t-structure-function \
-    ../data/M05MA10/M05MA10_0050.hdf \
-    ../data/M05MA10/M05MA10_0050-structure-function.hdf \
+    ${BASE}.hdf \
+    ${BASE}-structure-function.hdf \
     vel \
     --component 0 \
     --max-edgelength 512 \
@@ -36,8 +46,8 @@ w4t-structure-function \
 
 echo \
 w4t-denoise \
-    ../data/M05MA10/M05MA10_0050.hdf \
-    ../data/M05MA10/M05MA10_0050-denoise.hdf \
+    ${BASE}.hdf \
+    ${BASE}-denoise.hdf \
     vel \
     --component 0 \
     --max-edgelength 512 \
@@ -53,8 +63,8 @@ w4t-denoise \
 
 echo \
 w4t-structure-function \
-    ../data/M05MA10/M05MA10_0050-denoise.hdf \
-    ../data/M05MA10/M05MA10_0050-denoise-structure-function.hdf \
+    ${BASE}-denoise.hdf \
+    ${BASE}-denoise-structure-function.hdf \
     vel_0 \
     --max-edgelength 512 \
     --index 1 2 3 4 \
@@ -65,14 +75,46 @@ w4t-structure-function \
 
 # identify structures as separate sets of pixels
 
-#echo \
+echo \
 w4t-structures \
-    ../data/M05MA10/M05MA10_0050-denoise.hdf \
-    ../data/M05MA10/M05MA10_0050-denoise-structures.hdf \
+    ${BASE}-denoise.hdf \
+    ${BASE}-denoise-structures.hdf \
     vel_0 \
     --wavelet haar \
     --max-edgelength 256 \
     --threshold 3.0 \
     --num-proc 4 \
     --verbose \
+|| exit 1
+
+#------------------------
+
+# denoise to remove coherent structures
+
+echo \
+w4t-denoise \
+    ${BASE}.hdf \
+    ${BASE}-smooth.hdf \
+    vel \
+    --component 0 \
+    --max-edgelength 512 \
+    --wavelet haar \
+    --threshold 2.0 \
+    --smooth \
+    --max-scale 256 \
+    --verbose \
+|| exit 1
+
+#-----------
+
+# compute structure function of smoothed flow
+
+echo \
+w4t-structure-function \
+    ${BASE}-smooth.hdf \
+    ${BASE}-smooth-structure-function.hdf \
+    vel_0 \
+    --max-edgelength 512 \
+    --index 1 2 3 4 \
+    --Verbose \
 || exit 1

@@ -1,0 +1,186 @@
+#!/usr/bin/env python3
+
+"""a simple plotting script to visualize structure functions
+"""
+__author__ = "Reed Essick (reed.essick@gmail.com)"
+
+#-------------------------------------------------
+
+import os
+
+from argparse import ArgumentParser
+
+### non-standard libraries
+from w4t.plot import moments as plt
+from w4t.utils import io
+
+#-------------------------------------------------
+
+parser = ArgumentParser()
+
+parser.add_argument('-s', '--source', nargs=2, type=str, default=[], action='append', required=True,
+    help='label and path for input data. eg: --inpath label path/to/data')
+
+parser.add_argument('-l', '--linestyle', nargs=2, type=str, default=[], action='append',
+    help='label and linestyle. eg: --linestyle label solid')
+parser.add_argument('-m', '--marker', nargs=2, type=str, default=[], action='append',
+    help='label and marker. eg: --marker label o')
+
+parser.add_argument('-i', '--index', default=None, type=int,
+    help='only plot this index')
+
+parser.add_argument('-r', '--rescale', default=False, action='store_true',
+    help='plot mom**(1./index) instead of just mom')
+
+parser.add_argument('-v', '--verbose', default=False, action='store_true')
+parser.add_argument('-V', '--Verbose', default=False, action='store_true')
+
+parser.add_argument('-o', '--output-dir', default='.', type=str)
+parser.add_argument('-t', '--tag', default='', type=str)
+parser.add_argument('--figtype', default=[], type=str, action='append')
+parser.add_argument('--dpi', default=None, type=float)
+
+args = parser.parse_args()
+
+args.verbose |= args.Verbose
+
+os.makedirs(args.output_dir, exist_ok=True)
+
+if args.tag:
+    args.tag = "_"+args.tag
+
+if not args.figtype:
+    args.figtype.append('png')
+
+linestyles = dict(args.linestyle)
+markers = dict(args.marker)
+
+#-------------------------------------------------
+
+# load data
+data = dict()
+
+for key, path in args.source:
+    if args.verbose:
+        print('processing: '+key)
+
+    scales, index, mom, cov = io.load_structure_function(path, verbose=args.verbose)
+
+    if args.index is not None: # make sure we have this index
+        sel = args.index == index
+        assert np.sum(sel) == 1, 'could not find index=%d' % args.index
+        index = index[sel]
+        mom = mom[:,sel]
+        cov = cov[:,sel,:][:,:,sel]
+
+    data[key] = dict(scales=scales, index=index, mom=mom, cov=cov)
+
+ncols = len(data.keys())
+
+#------------------------
+
+# make plots
+
+#-----------
+
+# basic moments
+if args.verbose:
+    print('plotting basic moments')
+
+fig = None
+for key, val in data.items():
+    if args.verbose:
+        print('    '+key)
+
+    fig = plt.moments(
+        val['scales'],
+        val['index'],
+        val['mom'],
+        val['cov'],
+        label=key,
+        rescale=args.rescale,
+        poly=None, # FIXME provide polynomial fit for moments
+        num_std=1.0, # used for error bars
+        linestyle=linestyles.get(key, 'none'),
+        marker=markers.get(key, 'o'),
+        verbose=args.Verbose,
+        ncols=ncols,
+        fig=fig,
+    )
+
+figtmp = os.path.join(
+    args.output_dir,
+    os.path.basename(__file__)+'-mom%s.%s' % (args.tag, '%s'),
+)
+plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
+plt.close(fig)
+
+#-----------
+
+if not args.index: # plot things scaled by other 2nd moment
+
+    # scaled moments
+
+    if args.verbose:
+        print('plotting scaled moments')
+
+    fig = None
+    for key, val in data.items():
+        if args.verbose:
+            print('    '+key)
+
+        fig = plt.scaled_moments(
+            val['scales'],
+            val['index'],
+            val['mom'],
+            val['cov'],
+            label=key,
+            rescale=args.rescale,
+            num_std=1.0, # used for error bars
+            linestyle=linestyles.get(key, 'none'),
+            marker=markers.get(key, 'o'),
+            verbose=args.Verbose,
+            ncols=ncols,
+            fig=fig,
+        )
+
+    figtmp = os.path.join(
+        args.output_dir,
+        os.path.basename(__file__)+'-scaled-mom%s.%s' % (args.tag, '%s'),
+    )
+    plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
+    plt.close(fig)
+
+    #-------
+
+    # extended intermittency
+
+    if args.verbose:
+        print('plotting extended intermittency')
+
+    fig = None
+    for key, val in data.items():
+        if args.verbose:
+            print('    '+key)
+
+        fig = plt.extended_intermittency(
+            val['scales'],
+            val['index'],
+            val['mom'],
+            val['cov'],
+            label=key,
+            rescale=args.rescale,
+            num_std=1.0, # used for error bars
+            linestyle=linestyles.get(key, 'none'),
+            marker=markers.get(key, 'o'),
+            verbose=args.Verbose,
+            ncols=ncols,
+            fig=fig,
+        )
+
+    figtmp = os.path.join(
+        args.output_dir,
+        os.path.basename(__file__)+'-ext-int%s.%s' % (args.tag, '%s'),
+    )
+    plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
+    plt.close(fig)

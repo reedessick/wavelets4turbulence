@@ -10,8 +10,14 @@ SNAP="0050"
 
 #------------------------
 
-FLASH="../data/${FLOW}/Turb_hdf5_plt_cnt_${SNAP}"
-BASE="../data/M05MA10/${FLOW}_${SNAP}"
+OUTDIR="../data/${FLOW}"
+TAG="${FLOW}_${SNAP}"
+
+#---
+
+FLASH="${OUTDIR}/Turb_hdf5_plt_cnt_${SNAP}"
+
+BASE="${OUTDIR}/${TAG}"
 
 #-------------------------------------------------
 
@@ -118,3 +124,25 @@ w4t-structure-function \
     --index 1 2 3 4 \
     --Verbose \
 || exit 1
+
+#-------------------------------------------------
+
+# plot the structure functions
+
+#echo \
+w4t-plot-structure-function \
+    --source    'full'    ${BASE}-structure-function.hdf \
+    --linestyle 'full'    'solid' \
+    --marker    'full'    'o' \
+    --source    'denoise' ${BASE}-denoise-structure-function.hdf \
+    --linestyle 'denoise' 'dashed' \
+    --marker    'denoise' 's' \
+    --source    'smooth'  ${BASE}-smooth-structure-function.hdf \
+    --linestyle 'smooth' 'dotted' \
+    --marker    'smooth' '^' \
+    --output-dir $OUTDIR \
+    --tag $TAG \
+    --Verbose \
+|| exit 1
+
+#    --rescale \

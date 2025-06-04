@@ -7,8 +7,15 @@
 
 BASEDIR="/fs/lustre/project/plasmaastro/jbeattie/turbulent_boxes/"
 
-SIMS=$(ls $BASEDIR/M*MA*/Turb_hdf5_plt_cnt_0050 | awk -F '/' '{print $9}') # WARNING! this is probably very fragile
-#SIMS="M05MA10" # for testing purposes
+SIMS=""
+
+SIMS="$SIMS M05MA01"
+#SIMS="$SIMS M05MA05"
+#SIMS="$SIMS M05MA10"
+
+#SIMS="$SIMS M10MA01"
+#SIMS="$SIMS M10MA05"
+#SIMS="$SIMS M10MA10"
 
 #-------------------------------------------------
 
@@ -24,7 +31,6 @@ do
     mkdir $SIM
 
     # iterate over snapshots, computing moments of each
-#    cp -v $BASEDIR/$SIM/Turb_hdf5_plt_cnt_???? $SIM
-    ln -s $BASEDIR/$SIM/Turb_hdf5_plt_cnt_???? $SIM
+    scp essick@gw.cita.utoronto.ca:$BASEDIR/$SIM/Turb_hdf5_plt_cnt_0050 $SIM
 
 done

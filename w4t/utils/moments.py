@@ -50,11 +50,8 @@ def direct_structure_function(array, dim, scale, index, verbose=False):
     # figure out the relevant indexes
     inds = np.arange(array.shape[dim]-scale)
 
-    # compute the differences with step size "scale"
-    diff = np.take(array, inds+scale, axis=dim) - np.take(array, inds, axis=dim)
-
-    # compute moments and return
-    return moments(np.abs(diff), index)
+    # compute the differences with step size "scale", take moments, and return
+    return moments(np.abs(np.take(array, inds+scale, axis=dim) - np.take(array, inds, axis=dim)), index, central=False)
 
 #-------------------------------------------------
 
@@ -91,6 +88,15 @@ def moments(samples, index, central=False):
 
             else:
                 c[i,j] = c[j,i] = 0
+
+    if np.any(np.diag(c) < 0):
+        raise RuntimeError('''\
+bad covariance matrix!
+num_samples = %d
+samples = %s
+index = %s
+mom = %s
+cov = %s''' % (num_samples, samples, str(index), str(m), str(c)))
 
     # return
     return index, m, c

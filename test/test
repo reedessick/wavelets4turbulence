@@ -67,6 +67,18 @@ do
 
     #---
 
+    echo \
+    w4t-scaling-exponent \
+        ${BASE}-structure-function.hdf \
+        ${BASE}-scaling-exponent.hdf \
+        --min-scale $MIN_SCALE \
+        --max-scale $MAX_SCALE \
+        --degree 1 \
+        --verbose \
+    || exit 1
+
+    #-------
+
 #    echo \
     w4t-structure-function \
         ${BASE}.hdf \
@@ -79,12 +91,12 @@ do
         --Verbose \
     || exit 1
 
-    #-----------
+    #---
 
-    echo \
+#    echo \
     w4t-scaling-exponent \
-        ${BASE}-structure-function.hdf \
-        ${BASE}-scaling-exponent.hdf \
+        ${BASE}-direct-structure-function.hdf \
+        ${BASE}-direct-scaling-exponent.hdf \
         --min-scale $MIN_SCALE \
         --max-scale $MAX_SCALE \
         --degree 1 \
@@ -197,6 +209,24 @@ do
     #---------------------------------------------
 
     # plot the structure functions
+
+#    echo \
+    w4t-plot-structure-function \
+        --title $TITLE \
+        --source    'wavelet'   ${BASE}-structure-function.hdf \
+        --linestyle 'wavelet'   'none' \
+        --marker    'wavelet'   'o' \
+        --scaling-poly 'wavelet' ${BASE}-scaling-exponent.hdf \
+        --source    'direct'    ${BASE}-direct-structure-function.hdf \
+        --linestyle 'direct'    'none' \
+        --marker    'direct'    '^' \
+        --scaling-poly 'direct' ${BASE}-direct-scaling-exponent.hdf \
+        --output-dir $OUTDIR \
+        --tag wavelet_vs_direct-$TAG \
+        --Verbose \
+    || exit 1
+
+    #---
 
     echo \
     w4t-plot-structure-function \

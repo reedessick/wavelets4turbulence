@@ -10,10 +10,10 @@ SNAP="0050"
 
 #------------------------
 
-FIELD="mag"
+FIELD="vel"
 COMP="0"
 
-TITLE='$B_x$'
+TITLE='$u_x$'
 
 TAG="${FLOW}_${SNAP}"
 

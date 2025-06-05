@@ -257,3 +257,35 @@ def load_structure_function(path, verbose=False):
         cov = obj['cov'][:]
 
     return scales, index, mom, cov
+
+#-------------------------------------------------
+
+def write_scaling_exponent(poly, index, degree, path, verbose=False, **kwargs):
+    """write polynomial fits to disk
+    """
+    if verbose:
+        print('writing scaling exponent: '+path)
+
+    with h5py.File(path, 'w') as obj:
+        for key, val in kwargs.items():
+            obj.attrs.create(key, data=val)
+
+        obj.attrs.create('degree', data=degree)
+
+        obj.create_dataset('index', data=index)
+        obj.create_dataset('poly', data=poly)
+
+#-----------
+
+def load_scaling_exponent(path, verbose=False):
+    if verbose:
+        print('loading scaling exponent: '+path)
+
+    with h5py.File(path, 'r') as obj:
+        m = obj.attrs['min_scale']
+        M = obj.attrs['max_scale']
+        degree = obj.attrs['degree']
+        index = obj['index'][:]
+        poly = obj['poly'][:]
+
+    return poly, index, degree, (m, M)

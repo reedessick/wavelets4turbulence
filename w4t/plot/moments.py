@@ -97,9 +97,9 @@ def moments(
 
                 ax.plot(
                     np.exp(x),
-                    np.exp(y * (1./index if rescale else 1)),
+                    np.exp(y * exp),
                     color=color,
-                    alpha=0.25,
+                    alpha=0.50,
                 )
 
     #---

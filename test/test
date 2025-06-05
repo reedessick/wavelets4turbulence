@@ -43,7 +43,7 @@ w4t-convert-flash \
 
 # compute structure function
 
-#echo \
+echo \
 w4t-structure-function \
     ${BASE}.hdf \
     ${BASE}-structure-function.hdf \
@@ -54,11 +54,23 @@ w4t-structure-function \
     --Verbose \
 || exit 1
 
+#-----------
+
+#echo \
+w4t-scaling-exponent \
+    ${BASE}-structure-function.hdf \
+    ${BASE}-scaling-exponent.hdf \
+    --min-scale 8 \
+    --max-scale 128 \
+    --degree 2 \
+    --verbose \
+|| exit 1
+
 #------------------------
 
 # denoise to identify coherent structures
 
-#echo \
+echo \
 w4t-denoise \
     ${BASE}.hdf \
     ${BASE}-denoise.hdf \
@@ -75,7 +87,7 @@ w4t-denoise \
 
 # compute structure function of denoised flow
 
-#echo \
+echo \
 w4t-structure-function \
     ${BASE}-denoise.hdf \
     ${BASE}-denoise-structure-function.hdf \
@@ -87,9 +99,21 @@ w4t-structure-function \
 
 #-----------
 
+#echo \
+w4t-scaling-exponent \
+    ${BASE}-denoise-structure-function.hdf \
+    ${BASE}-denoise-scaling-exponent.hdf \
+    --min-scale 8 \
+    --max-scale 128 \
+    --degree 2 \
+    --verbose \
+|| exit 1
+
+#-----------
+
 # identify structures as separate sets of pixels
 
-#echo \
+echo \
 w4t-structures \
     ${BASE}-denoise.hdf \
     ${BASE}-denoise-structures.hdf \
@@ -105,7 +129,7 @@ w4t-structures \
 
 # denoise to remove coherent structures
 
-#echo \
+echo \
 w4t-denoise \
     ${BASE}.hdf \
     ${BASE}-smooth.hdf \
@@ -123,7 +147,7 @@ w4t-denoise \
 
 # compute structure function of smoothed flow
 
-#echo \
+echo \
 w4t-structure-function \
     ${BASE}-smooth.hdf \
     ${BASE}-smooth-structure-function.hdf \
@@ -131,6 +155,18 @@ w4t-structure-function \
     --max-edgelength 512 \
     --index 1 2 3 4 \
     --Verbose \
+|| exit 1
+
+#-----------
+
+#echo \
+w4t-scaling-exponent \
+    ${BASE}-smooth-structure-function.hdf \
+    ${BASE}-smooth-scaling-exponent.hdf \
+    --min-scale 8 \
+    --max-scale 128 \
+    --degree 2 \
+    --verbose \
 || exit 1
 
 #-------------------------------------------------
@@ -141,14 +177,17 @@ w4t-structure-function \
 w4t-plot-structure-function \
     --title $TITLE \
     --source    'full'    ${BASE}-structure-function.hdf \
-    --linestyle 'full'    'solid' \
+    --linestyle 'full'    'none' \
     --marker    'full'    'o' \
+    --scaling-poly 'full' ${BASE}-scaling-exponent.hdf \
     --source    'denoise' ${BASE}-denoise-structure-function.hdf \
     --linestyle 'denoise' 'dashed' \
     --marker    'denoise' 's' \
+    --scaling-poly 'denoise' ${BASE}-denoise-scaling-exponent.hdf \
     --source    'smooth'  ${BASE}-smooth-structure-function.hdf \
     --linestyle 'smooth' 'dotted' \
     --marker    'smooth' '^' \
+    --scaling-poly 'smooth' ${BASE}-smooth-scaling-exponent.hdf \
     --output-dir $OUTDIR \
     --tag $TAG \
     --Verbose \

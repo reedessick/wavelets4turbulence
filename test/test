@@ -62,7 +62,7 @@ w4t-scaling-exponent \
     ${BASE}-scaling-exponent.hdf \
     --min-scale 8 \
     --max-scale 128 \
-    --degree 2 \
+    --degree 1 \
     --verbose \
 || exit 1
 
@@ -105,7 +105,7 @@ w4t-scaling-exponent \
     ${BASE}-denoise-scaling-exponent.hdf \
     --min-scale 8 \
     --max-scale 128 \
-    --degree 2 \
+    --degree 1 \
     --verbose \
 || exit 1
 
@@ -165,7 +165,7 @@ w4t-scaling-exponent \
     ${BASE}-smooth-scaling-exponent.hdf \
     --min-scale 8 \
     --max-scale 128 \
-    --degree 2 \
+    --degree 1 \
     --verbose \
 || exit 1
 

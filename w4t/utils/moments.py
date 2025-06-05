@@ -9,6 +9,55 @@ from scipy.special import comb # comb(n, k) = "n choose k" = n! / ((n-k)! k!)
 
 #-------------------------------------------------
 
+def direct_isotropic_structure_function(array, scale, index, verbose=False, Verbose=False):
+    """average over cartesian directions to estimate isotropic structure function
+    """
+    verbose |= Verbose
+
+    # iterate over dimensions
+    ndim = len(array.shape)
+
+    mom = []
+    cov = []
+    for dim in range(ndim):
+        if verbose:
+            print('estimating moments directly along dim=%d' % dim)
+
+        index, m, c = direct_structure_function(array, dim, scale, index, verbose=Verbose)
+        mom.append(m)
+        cov.append(c)
+
+    # average
+    if verbose:
+        print('averaging moments over dimensions')
+
+    mom = np.mean(mom, axis=0)
+    cov = np.sum(cov, axis=0) / ndim**2
+
+    # return
+    return index, mom, cov
+
+#------------------------
+
+def direct_structure_function(array, dim, scale, index, verbose=False):
+    """directly estimate the structure function along dimension "dim" at length "scale"
+    """
+    assert (0 <= dim) and (dim < len(array.shape)), 'bad dimension (dim=%d) for ndim=%d' % (dim, len(array.shape))
+
+    if verbose:
+        print('computing moments for scale: %d' % scale)
+
+    # figure out the relevant indexes
+    inds = np.arange(array.shape[dim]-scale)
+
+    # compute the differences with step size "scale"
+    diff = np.take(array, inds+scale, axis=dim) - np.take(array, inds, axis=dim)
+
+    # compute moments and return
+    return moments(np.abs(diff), index)
+
+#-------------------------------------------------
+
 def moments(samples, index, central=False):
     """estimate moments of samples for each value in index (which should be an iterable). For example, index=[1,2] will compute the 1st and second moment of samples. Also estimates the covariance matrix between the estimators for the requested moments.
     """

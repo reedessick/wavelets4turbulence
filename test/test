@@ -5,7 +5,6 @@
 
 #-------------------------------------------------
 
-FLOW="M05MA10"
 SNAP="0050"
 
 #------------------------
@@ -15,182 +14,210 @@ COMP="0"
 
 TITLE='$u_x$'
 
-TAG="${FLOW}_${SNAP}"
+#------------------------
 
-#---
-
-OUTDIR="../data/${FLOW}"
-
-#---
-
-FLASH="${OUTDIR}/Turb_hdf5_plt_cnt_${SNAP}"
-
-BASE="${OUTDIR}/${TAG}"
+MIN_SCALE="8"
+MAX_SCALE="64"
 
 #-------------------------------------------------
 
-# convert the file format on disk to be faster to load
+for FLOW in "M05MA01" # "M05MA05" "M05MA10" "M10MA01" "M10MA05" "M10MA10"
+do
 
-echo \
-w4t-convert-flash \
-    ${FLASH} \
-    ${BASE}.hdf \
-    vel vort mag curr dens \
-    --Verbose \
-|| exit 1
+    TAG="${FLOW}_${SNAP}"
 
-#------------------------
+    #---
 
-# compute structure function
+    OUTDIR="../data/${FLOW}"
 
-echo \
-w4t-structure-function \
-    ${BASE}.hdf \
-    ${BASE}-structure-function.hdf \
-    ${FIELD} \
-    --component ${COMP} \
-    --max-edgelength 512 \
-    --index 1 2 3 4 \
-    --Verbose \
-|| exit 1
+    #---
 
-#-----------
+    FLASH="${OUTDIR}/Turb_hdf5_plt_cnt_${SNAP}"
 
-#echo \
-w4t-scaling-exponent \
-    ${BASE}-structure-function.hdf \
-    ${BASE}-scaling-exponent.hdf \
-    --min-scale 8 \
-    --max-scale 128 \
-    --degree 1 \
-    --verbose \
-|| exit 1
+    BASE="${OUTDIR}/${TAG}"
 
-#------------------------
+    #---------------------------------------------
 
-# denoise to identify coherent structures
+    # convert the file format on disk to be faster to load
 
-echo \
-w4t-denoise \
-    ${BASE}.hdf \
-    ${BASE}-denoise.hdf \
-    ${FIELD} \
-    --component ${COMP} \
-    --max-edgelength 512 \
-    --wavelet haar \
-    --threshold 2.0 \
-    --max-scale 256 \
-    --verbose \
-|| exit 1
+    echo \
+    w4t-convert-flash \
+        ${FLASH} \
+        ${BASE}.hdf \
+        vel \
+        --Verbose \
+    || exit 1
 
-#-----------
+#        vel vort mag curr dens \
 
-# compute structure function of denoised flow
+    #------------------------
 
-echo \
-w4t-structure-function \
-    ${BASE}-denoise.hdf \
-    ${BASE}-denoise-structure-function.hdf \
-    ${FIELD}_${COMP} \
-    --max-edgelength 512 \
-    --index 1 2 3 4 \
-    --Verbose \
-|| exit 1
+    # compute structure function
 
-#-----------
+    echo \
+    w4t-structure-function \
+        ${BASE}.hdf \
+        ${BASE}-structure-function.hdf \
+        ${FIELD} \
+        --component ${COMP} \
+        --max-edgelength 512 \
+        --index 1 2 3 4 \
+        --Verbose \
+    || exit 1
 
-#echo \
-w4t-scaling-exponent \
-    ${BASE}-denoise-structure-function.hdf \
-    ${BASE}-denoise-scaling-exponent.hdf \
-    --min-scale 8 \
-    --max-scale 128 \
-    --degree 1 \
-    --verbose \
-|| exit 1
+    #---
 
-#-----------
+#    echo \
+    w4t-structure-function \
+        ${BASE}.hdf \
+        ${BASE}-direct-structure-function.hdf \
+        ${FIELD} \
+        --component ${COMP} \
+        --max-edgelength 512 \
+        --index 1 2 3 4 \
+        --direct \
+        --Verbose \
+    || exit 1
 
-# identify structures as separate sets of pixels
+    #-----------
 
-echo \
-w4t-structures \
-    ${BASE}-denoise.hdf \
-    ${BASE}-denoise-structures.hdf \
-    ${FIELD}_${COMP} \
-    --wavelet haar \
-    --max-edgelength 256 \
-    --threshold 3.0 \
-    --num-proc 4 \
-    --verbose \
-|| exit 1
+    echo \
+    w4t-scaling-exponent \
+        ${BASE}-structure-function.hdf \
+        ${BASE}-scaling-exponent.hdf \
+        --min-scale $MIN_SCALE \
+        --max-scale $MAX_SCALE \
+        --degree 1 \
+        --verbose \
+    || exit 1
 
-#------------------------
+    #------------------------
 
-# denoise to remove coherent structures
+    # denoise to identify coherent structures
 
-echo \
-w4t-denoise \
-    ${BASE}.hdf \
-    ${BASE}-smooth.hdf \
-    ${FIELD} \
-    --component ${COMP} \
-    --max-edgelength 512 \
-    --wavelet haar \
-    --threshold 2.0 \
-    --smooth \
-    --max-scale 256 \
-    --verbose \
-|| exit 1
+    echo \
+    w4t-denoise \
+        ${BASE}.hdf \
+        ${BASE}-denoise.hdf \
+        ${FIELD} \
+        --component ${COMP} \
+        --max-edgelength 512 \
+        --wavelet haar \
+        --threshold 2.0 \
+        --max-scale 256 \
+        --verbose \
+    || exit 1
 
-#-----------
+    #-----------
 
-# compute structure function of smoothed flow
+    # compute structure function of denoised flow
 
-echo \
-w4t-structure-function \
-    ${BASE}-smooth.hdf \
-    ${BASE}-smooth-structure-function.hdf \
-    ${FIELD}_${COMP} \
-    --max-edgelength 512 \
-    --index 1 2 3 4 \
-    --Verbose \
-|| exit 1
+    echo \
+    w4t-structure-function \
+        ${BASE}-denoise.hdf \
+        ${BASE}-denoise-structure-function.hdf \
+        ${FIELD}_${COMP} \
+        --max-edgelength 512 \
+        --index 1 2 3 4 \
+        --Verbose \
+    || exit 1
 
-#-----------
+    #-----------
 
-#echo \
-w4t-scaling-exponent \
-    ${BASE}-smooth-structure-function.hdf \
-    ${BASE}-smooth-scaling-exponent.hdf \
-    --min-scale 8 \
-    --max-scale 128 \
-    --degree 1 \
-    --verbose \
-|| exit 1
+    echo \
+    w4t-scaling-exponent \
+        ${BASE}-denoise-structure-function.hdf \
+        ${BASE}-denoise-scaling-exponent.hdf \
+        --min-scale $MIN_SCALE \
+        --max-scale $MAX_SCALE \
+        --degree 1 \
+        --verbose \
+    || exit 1
 
-#-------------------------------------------------
+    #-----------
 
-# plot the structure functions
+    # identify structures as separate sets of pixels
 
-#echo \
-w4t-plot-structure-function \
-    --title $TITLE \
-    --source    'full'    ${BASE}-structure-function.hdf \
-    --linestyle 'full'    'none' \
-    --marker    'full'    'o' \
-    --scaling-poly 'full' ${BASE}-scaling-exponent.hdf \
-    --source    'denoise' ${BASE}-denoise-structure-function.hdf \
-    --linestyle 'denoise' 'dashed' \
-    --marker    'denoise' 's' \
-    --scaling-poly 'denoise' ${BASE}-denoise-scaling-exponent.hdf \
-    --source    'smooth'  ${BASE}-smooth-structure-function.hdf \
-    --linestyle 'smooth' 'dotted' \
-    --marker    'smooth' '^' \
-    --scaling-poly 'smooth' ${BASE}-smooth-scaling-exponent.hdf \
-    --output-dir $OUTDIR \
-    --tag $TAG \
-    --Verbose \
-|| exit 1
+    echo \
+    w4t-structures \
+        ${BASE}-denoise.hdf \
+        ${BASE}-denoise-structures.hdf \
+        ${FIELD}_${COMP} \
+        --wavelet haar \
+        --max-edgelength 256 \
+        --threshold 3.0 \
+        --num-proc 4 \
+        --verbose \
+    || exit 1
 
-#    --rescale \
+    #------------------------
+
+    # denoise to remove coherent structures
+
+    echo \
+    w4t-denoise \
+        ${BASE}.hdf \
+        ${BASE}-smooth.hdf \
+        ${FIELD} \
+        --component ${COMP} \
+        --max-edgelength 512 \
+        --wavelet haar \
+        --threshold 2.0 \
+        --smooth \
+        --max-scale 256 \
+        --verbose \
+    || exit 1
+
+    #-----------
+
+    # compute structure function of smoothed flow
+
+    echo \
+    w4t-structure-function \
+        ${BASE}-smooth.hdf \
+        ${BASE}-smooth-structure-function.hdf \
+        ${FIELD}_${COMP} \
+        --max-edgelength 512 \
+        --index 1 2 3 4 \
+        --Verbose \
+    || exit 1
+
+    #-----------
+
+    echo \
+    w4t-scaling-exponent \
+        ${BASE}-smooth-structure-function.hdf \
+        ${BASE}-smooth-scaling-exponent.hdf \
+        --min-scale $MIN_SCALE \
+        --max-scale $MAX_SCALE \
+        --degree 1 \
+        --verbose \
+    || exit 1
+
+    #---------------------------------------------
+
+    # plot the structure functions
+
+    echo \
+    w4t-plot-structure-function \
+        --title $TITLE \
+        --source    'full'    ${BASE}-structure-function.hdf \
+        --linestyle 'full'    'none' \
+        --marker    'full'    'o' \
+        --scaling-poly 'full' ${BASE}-scaling-exponent.hdf \
+        --source    'denoise' ${BASE}-denoise-structure-function.hdf \
+        --linestyle 'denoise' 'dashed' \
+        --marker    'denoise' 's' \
+        --scaling-poly 'denoise' ${BASE}-denoise-scaling-exponent.hdf \
+        --source    'smooth'  ${BASE}-smooth-structure-function.hdf \
+        --linestyle 'smooth' 'dotted' \
+        --marker    'smooth' '^' \
+        --scaling-poly 'smooth' ${BASE}-smooth-scaling-exponent.hdf \
+        --output-dir $OUTDIR \
+        --tag $TAG \
+        --Verbose \
+    || exit 1
+
+#        --rescale \
+
+done

@@ -6,10 +6,13 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 #-------------------------------------------------
 
+import numpy as np
+
 from argparse import ArgumentParser
 
 ### non-standard libraries
 from w4t.utils import io
+from w4t.utils import moments
 from w4t.w4t import pywt
 
 #-------------------------------------------------
@@ -26,6 +29,12 @@ parser.add_argument('-M', '--max-edgelength', default=None, type=int)
 
 parser.add_argument('-w', '--wavelet', default=pywt.DEFAULT_WAVELET, type=str)
 parser.add_argument('-i', '--index', nargs='+', type=float)
+
+parser.add_argument('-d', '--direct', default=False, action='store_true',
+    help='if supplied, compute the structure functions "directly" rather than relying on wavelet decomposition')
+parser.add_argument('--direct-scales', nargs='+', type=int, default=None,
+    help='compute the structure function at these scales directly. If not supplied, will choose diadic scales based on \
+size of data') 
 
 parser.add_argument('-v', '--verbose', default=False, action='store_true')
 parser.add_argument('-V', '--Verbose', default=False, action='store_true')
@@ -50,24 +59,47 @@ data, field = io.simplify(
 
 #------------------------
 
-# instantiate wavelet object
+if args.direct:
 
-if args.verbose:
-    print('decomposing with wavelet=%s' % args.wavelet)
+    if args.verbose:
+        print('computing structure function directly without wavelet decomposition')
 
-wa = pywt.PyWaveletArray(
-    data,
-    args.wavelet,
-)
+    if args.direct_scales is not None:
+        scales = np.array(sorted(args.direct_scales), dtype=int)
+    else:
+        max_scale = np.min(data.shape)
+        scale = 1
+        scales = []
+        while scale < max_scale:
+            scales.append(scale)
+            scale *= 2
+        scales = np.array(scales, dtype=int)
 
-#-----------
+    mom = []
+    cov = []
+    for scale in scales:
+        _, m, c = moments.direct_isotropic_structure_function(data, scale, args.index, verbose=args.verbose, Verbose=args.Verbose)
+        mom.append(m)
+        cov.append(c)
 
-# compute structure functions
+    mom = np.array(mom, dtype=float)
+    cov = np.array(cov, dtype=float)
 
-if args.verbose:
-    print('computing structure functions')
+else:
 
-scales, mom, cov = wa.isotropic_structure_function(index=args.index, use_abs=True, verbose=args.verbose, Verbose=args.Verbose)
+    # instantiate wavelet object
+
+    if args.verbose:
+        print('decomposing with wavelet=%s' % args.wavelet)
+
+    wa = pywt.PyWaveletArray(data, args.wavelet)
+
+    # compute structure functions
+
+    if args.verbose:
+        print('computing structure functions')
+
+    scales, mom, cov = wa.isotropic_structure_function(index=args.index, use_abs=True, verbose=args.verbose, Verbose=args.Verbose)
 
 #------------------------
 

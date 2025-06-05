@@ -76,15 +76,8 @@ def moments(samples, index, central=False):
     for i in range(num_index):
         for j in range(i+1):
 
-            ### compute the second moment
-            # compute second moments carefully to try to avoid overflows
             if np.any(samples!=samples[0]): # there is more than 1 unique value
-                log_samples = (index[i]+index[j]) * np.log(samples[samples>0]) # only include non-zero samples
-                max_samples = np.max(log_samples)
-                m2 = np.exp(np.log(np.sum(np.exp(log_samples-max_samples))) + max_samples - np.log(num_samples))
-
-                # now assemble the variances
-                c[i,j] = c[j,i] = (m2 - m[i]*m[j]) / num_samples
+                c[i,j] = c[j,i] = np.sum((samples**index[i]-m[i]) * (samples**index[j]-m[j])) / (num_samples-1)
 
             else:
                 c[i,j] = c[j,i] = 0

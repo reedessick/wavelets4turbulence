@@ -9,19 +9,22 @@ SNAP="0050"
 
 #------------------------
 
-FIELD="vel"
 COMP="0"
 
-TITLE='$u_x$'
+#FIELD="vel"
+#TITLE='$u_x$'
+
+FIELD="mag"
+TITLE='$B_x$'
 
 #------------------------
 
-MIN_SCALE="8"
+MIN_SCALE="5"
 MAX_SCALE="128"
 
 #-------------------------------------------------
 
-for FLOW in "M05MA01" # "M05MA05" "M05MA10" "M10MA01" "M10MA05" "M10MA10"
+for FLOW in "M05MA01" "M05MA05" "M05MA10" "M10MA01" "M10MA05" "M10MA10"
 do
 
     TAG="${FLOW}_${SNAP}"
@@ -44,7 +47,7 @@ do
     w4t-convert-flash \
         ${FLASH} \
         ${BASE}.hdf \
-        vel \
+        vel mag \
         --Verbose \
     || exit 1
 
@@ -196,7 +199,7 @@ do
 
     #-----------
 
-    echo \
+#    echo \
     w4t-scaling-exponent \
         ${BASE}-smooth-structure-function.hdf \
         ${BASE}-smooth-scaling-exponent.hdf \
@@ -216,11 +219,9 @@ do
         --source    'wavelet'   ${BASE}-structure-function.hdf \
         --linestyle 'wavelet'   'none' \
         --marker    'wavelet'   'o' \
-        --scaling-poly 'wavelet' ${BASE}-scaling-exponent.hdf \
         --source    'direct'    ${BASE}-direct-structure-function.hdf \
         --linestyle 'direct'    'none' \
         --marker    'direct'    '^' \
-        --scaling-poly 'direct' ${BASE}-direct-scaling-exponent.hdf \
         --output-dir $OUTDIR \
         --tag wavelet_vs_direct-$TAG \
         --Verbose \

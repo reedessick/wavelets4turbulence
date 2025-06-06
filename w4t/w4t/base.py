@@ -271,6 +271,7 @@ class WaveletArray(object):
                 samples * 2**(1 - 0.5*self.levels[dim]), # correct for wavelet normalization
                 index,
                 central=False, # do not use central moments for structure functions
+                verbose=verbose,
             )
 
             scales.append(s)

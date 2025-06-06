@@ -51,11 +51,16 @@ def direct_structure_function(array, dim, scale, index, verbose=False):
     inds = np.arange(array.shape[dim]-scale)
 
     # compute the differences with step size "scale", take moments, and return
-    return moments(np.abs(np.take(array, inds+scale, axis=dim) - np.take(array, inds, axis=dim)), index, central=False)
+    return moments(
+        np.abs(np.take(array, inds+scale, axis=dim) - np.take(array, inds, axis=dim)).flatten(),
+        index,
+        central=False,
+        verbose=verbose,
+    )
 
 #-------------------------------------------------
 
-def moments(samples, index, central=False):
+def moments(samples, index, central=False, verbose=False):
     """estimate moments of samples for each value in index (which should be an iterable). For example, index=[1,2] will compute the 1st and second moment of samples. Also estimates the covariance matrix between the estimators for the requested moments.
     """
     index = np.array(index, dtype=int)
@@ -64,12 +69,10 @@ def moments(samples, index, central=False):
     num_samples = len(samples)
 
     if central: # compute central moments; uncertainty estimates do not include uncertainty in the mean
-        mean = np.mean(samples)
-    else:
-        mean = 0
+        samples = samples - np.mean(samples)
 
     # compute point estimates
-    m = np.array([np.sum((samples-mean)**ind)/num_samples for ind in index], dtype=float)
+    m = np.array([np.sum(samples**ind)/num_samples for ind in index], dtype=float)
 
     # compute covariance matrix
     c = np.empty((num_index, num_index), dtype=float)
@@ -77,7 +80,7 @@ def moments(samples, index, central=False):
         for j in range(i+1):
 
             if np.any(samples!=samples[0]): # there is more than 1 unique value
-                c[i,j] = c[j,i] = np.sum((samples**index[i]-m[i]) * (samples**index[j]-m[j])) / (num_samples-1)
+                c[i,j] = c[j,i] = np.sum((samples**index[i]-m[i]) * (samples**index[j]-m[j])) / (num_samples-1) / num_samples
 
             else:
                 c[i,j] = c[j,i] = 0
@@ -90,6 +93,11 @@ samples = %s
 index = %s
 mom = %s
 cov = %s''' % (num_samples, samples, str(index), str(m), str(c)))
+
+    if verbose:
+        print('    index :', index)
+        print('    mom   :', m)
+        print('    std   :', np.diag(c)**0.5)
 
     # return
     return index, m, c

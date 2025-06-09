@@ -292,7 +292,7 @@ def load_scaling_exponent(path, verbose=False):
 
 #-------------------------------------------------
 
-def write_scaling_exponent_samples(posterior, prior, scales, index, path, verbose=False, **kwargs):
+def write_structure_function_ansatz_samples(posterior, prior, scales, index, path, verbose=False, **kwargs):
     """write posterior samples for structure function ansatz to disk
     """
     if verbose:
@@ -313,16 +313,13 @@ def write_scaling_exponent_samples(posterior, prior, scales, index, path, verbos
 
 #-----------
 
-def load_scaling_exponent_samples(path, verbose=False):
+def load_structure_function_ansatz_samples(path, verbose=False):
     """load posterior samples for structure function ansatz from disk
     """
     if verbose:
         print('loading scaling exponent samples: '+path)
 
     with h5py.File(path, 'r') as obj:
-        for key, val in kwargs.items():
-            obj.attrs.create(key, data=val)
-
         index = obj['index'][:]
         scales = obj['scales'][:]
 

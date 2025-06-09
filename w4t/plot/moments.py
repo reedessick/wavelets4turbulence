@@ -6,6 +6,8 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 from .plot import *
 
+from w4t.utils.infer import structure_function_ansatz
+
 #-------------------------------------------------
 
 TICK_PARAMS = dict(
@@ -308,3 +310,13 @@ def extended_intermittency(
     #---
 
     return fig
+
+#-------------------------------------------------
+
+def structure_function_ansatz_samples(scales, index, mom, cov, samples, verbose=False):
+    """make a simple plot of structure function ansatz
+    """
+
+    raise NotImplementedError('''
+    y = structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh)
+''')

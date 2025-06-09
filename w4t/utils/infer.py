@@ -8,15 +8,19 @@ import numpy as np
 
 #------------------------
 
-import jax
-from jax import random
-from jax import numpy as jnp
+try:
+    import jax
+    from jax import random
+    from jax import numpy as jnp
 
-import numpyro
-import numpyro.distributions as dist
-from numpyro.infer import (MCMC, NUTS)
+    import numpyro
+    import numpyro.distributions as dist
+    from numpyro.infer import (MCMC, NUTS)
 
-numpyro.enable_x64() # improve default numerical precision
+    numpyro.enable_x64() # improve default numerical precision
+
+except ImportError:
+    numpyro = None
 
 #-------------------------------------------------
 
@@ -35,7 +39,7 @@ def structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh):
 
 #------------------------
 
-def scaling_exponents(
+def sample_structure_function_ansatz(
         scales,
         mom,
         std,
@@ -46,6 +50,9 @@ def scaling_exponents(
     ):
     """sample for parameters of a simple model for structure function scaling
     """
+    if numpyro is None:
+        raise NotImplementedError('could not import numpyro!')
+
     if verbose:
         print('defining model')
 

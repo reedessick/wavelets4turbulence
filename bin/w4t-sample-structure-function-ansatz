@@ -59,7 +59,7 @@ for ind, index in enumerate(indexes):
     if args.verbose:
         print('\n>>> fitting ansatz for index=%d\n' % index)
 
-    posterior[index], prior[index] = infer.scaling_exponents(
+    posterior[index], prior[index] = infer.sample_structure_function_ansatz(
         scales[sel],
         mom[sel,ind],
         cov[sel,ind,ind]**0.5,
@@ -72,11 +72,11 @@ for ind, index in enumerate(indexes):
 #-----------
 
 # save scaling exponents
-io.write_scaling_exponent_samples(
+io.write_structure_function_ansatz_samples(
     posterior,
     prior,
     scales,
-    index,
+    indexes,
     args.target,
     verbose=args.verbose,
     source=args.source,

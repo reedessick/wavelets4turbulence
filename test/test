@@ -258,13 +258,22 @@ do
     #---------------------------------------------
 
 #    echo \
-    python -i \
-    $(which w4t-sample-scaling-exponent) \
+    w4t-sample-structure-function-ansatz \
         ${BASE}-${FIELD}_${COMP}-structure-function.hdf \
-        ${BASE}-${FIELD}_${COMP}-sample-scaling-exponent.hdf \
+        ${BASE}-${FIELD}_${COMP}-sample-structure-function-ansatz.hdf \
         --num-warmup $NUM_WARMUP \
         --num-samples $NUM_SAMPLES \
         --seed $SEED \
+        --verbose \
+    || exit 1
+
+
+#    echo \
+    w4t-plot-structure-function-ansatz \
+        ${BASE}-${FIELD}_${COMP}-structure-function.hdf \
+        ${BASE}-${FIELD}_${COMP}-sample-structure-function-ansatz.hdf \
+        --output-dir $OUTDIR \
+        --tag ${FIELD}_${COMP}-$TAG \
         --verbose \
     || exit 1
 

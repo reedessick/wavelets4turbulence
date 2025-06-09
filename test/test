@@ -24,7 +24,7 @@ MAX_SCALE="128"
 
 #-------------------------------------------------
 
-for FLOW in "M05MA01" "M05MA05" "M05MA10" "M10MA01" "M10MA05" "M10MA10"
+for FLOW in "M05MA01" # "M05MA05" "M05MA10" "M10MA01" "M10MA05" "M10MA10"
 do
 
     TAG="${FLOW}_${SNAP}"

@@ -234,8 +234,7 @@ class WaveletArray(object):
         cov = np.empty((num_scales, num_index, num_index), dtype=float)
 
         for snd, scale in enumerate(scales):
-            mom[snd,:] = np.mean(mom_dict[scale], axis=0) # average over dimensions
-            cov[snd,:] = np.sum(cov_dict[scale], axis=0) / len(cov_dict[scale])**2 # update covariance of the average
+            mom[snd,:], cov[snd,:] = moments.average_moments(mom_dict[scale], cov_dict[scale])
 
         # return
         return scales, mom, cov

@@ -31,8 +31,7 @@ def direct_isotropic_structure_function(array, scale, index, verbose=False, Verb
     if verbose:
         print('averaging moments over dimensions')
 
-    mom = np.mean(mom, axis=0)
-    cov = np.sum(cov, axis=0) / ndim**2
+    mom, cov = average_moments(mom, cov)
 
     # return
     return index, mom, cov
@@ -57,6 +56,18 @@ def direct_structure_function(array, dim, scale, index, verbose=False):
         central=False,
         verbose=verbose,
     )
+
+#-------------------------------------------------
+
+def average_moments(mom, cov):
+    """average moments and update covariance
+    """
+    # average individual measurement undertainties and add the variance between estimates
+    cov = np.mean(cov, axis=0) / len(mom) + np.cov(np.transpose(mom)) # take covariance between means
+    # take the average of the means
+    mom = np.mean(mom, axis=0)
+
+    return mom, cov
 
 #-------------------------------------------------
 

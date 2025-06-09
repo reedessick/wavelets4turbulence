@@ -327,7 +327,7 @@ def structure_function_ansatz_samples(scales, indexes, mom, cov, samples, verbos
     for ind, index in enumerate(indexes):
         color = 'C%d' % ind
 
-        ax.plot(scales, mom[:,ind], color=color, marker='o', linestyle='none', markerfacecolor='none')
+        ax.plot(scales, mom[:,ind], color=color, marker='o', linestyle='none', markerfacecolor='none', label='$p=%d$'%ind)
 
         std = cov[:,ind,ind]**0.5
         for snd, scale in enumerate(scales):
@@ -361,6 +361,12 @@ def structure_function_ansatz_samples(scales, indexes, mom, cov, samples, verbos
     ax.set_ylabel('$\left<\left|d_{x,s}\\right|^p\\right>_x$')
 
     ax.set_ylim(ylim)
+
+    ax.grid(True, which='both')
+    ax.legend(loc='best')
+
+    ax.tick_params(**TICK_PARAMS)
+    plt.subplots_adjust(**SUBPLOTS_ADJUST)
 
     #---
 

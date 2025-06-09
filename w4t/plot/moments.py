@@ -313,10 +313,55 @@ def extended_intermittency(
 
 #-------------------------------------------------
 
-def structure_function_ansatz_samples(scales, index, mom, cov, samples, verbose=False):
+def structure_function_ansatz_samples(scales, indexes, mom, cov, samples, verbose=False):
     """make a simple plot of structure function ansatz
     """
+    fig = plt.figure()
 
-    raise NotImplementedError('''
-    y = structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh)
-''')
+    ax = fig.gca()
+
+    #---
+
+    # plot the original data
+
+    for ind, index in enumerate(indexes):
+        color = 'C%d' % ind
+
+        ax.plot(scales, mom[:,ind], color=color, marker='o', linestyle='none', markerfacecolor='none')
+
+        std = cov[:,ind,ind]**0.5
+        for snd, scale in enumerate(scales):
+            ax.plot([scale]*2, mom[snd,ind]+std[snd]*np.array([+1,-1]), color=color)
+
+    ax.set_yscale('log')
+    ylim = ax.get_ylim()
+
+    #---
+
+    # plot the inferred ansatz
+
+    for ind, index in enumerate(indexes):
+        color = 'C%d' % ind
+
+        samp = samples[index]
+        alpha = max(0.01, 1./len(samp['amp']))
+
+        for amp, xi, sl, bl, nl, sh, bh, nh in zip(*[samp[key] for key in ['amp', 'xi', 'sl', 'bl', 'nl', 'sh', 'bh', 'nh']]):
+            ax.plot(scales, structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh), color=color, alpha=alpha)
+
+    #---
+
+    ax.set_xlabel('scale')
+    ax.set_xscale('log')
+    ax.set_xlim(xmin=scales[-1]*1.1, xmax=scales[0]/1.1)
+    ax.set_xticks([], minor=True)
+    ax.set_xticks(scales)
+    ax.set_xticklabels(['%d'%_ for _ in ax.get_xticks()])
+
+    ax.set_ylabel('$\left<\left|d_{x,s}\\right|^p\\right>_x$')
+
+    ax.set_ylim(ylim)
+
+    #---
+
+    return fig

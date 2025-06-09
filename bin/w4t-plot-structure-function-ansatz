@@ -21,6 +21,8 @@ parser = ArgumentParser()
 parser.add_argument('structure_function', type=str)
 parser.add_argument('samples', type=str)
 
+parser.add_argument('--max-num-samples', default=None, type=int)
+
 parser.add_argument('-v', '--verbose', default=False, action='store_true')
 
 parser.add_argument('-o', '--output-dir', default='.', type=str)
@@ -45,6 +47,12 @@ scales, index, mom, cov = io.load_structure_function(args.structure_function, ve
 
 # load samples
 posterior, prior, _, _ = io.load_structure_function_ansatz_samples(args.samples, verbose=args.verbose)
+
+if args.max_num_samples is not None:
+    for data in [posterior, prior]:
+        for ind in data.keys():
+            for key, val in data[ind].items():
+                data[ind][key] = val[-args.max_num_samples:]
 
 #------------------------
 

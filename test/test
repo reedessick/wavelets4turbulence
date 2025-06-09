@@ -61,7 +61,7 @@ do
 
     # compute structure function
 
-    echo \
+#    echo \
     w4t-structure-function \
         ${BASE}.hdf \
         ${BASE}-${FIELD}_${COMP}-structure-function.hdf \
@@ -86,7 +86,7 @@ do
 
     #-------
 
-    echo \
+#    echo \
     w4t-structure-function \
         ${BASE}.hdf \
         ${BASE}-${FIELD}_${COMP}-direct-structure-function.hdf \
@@ -217,7 +217,7 @@ do
 
     # plot the structure functions
 
-    echo \
+#    echo \
     w4t-plot-structure-function \
         --title "$FLOW $SNAP $TITLE" \
         --source    'wavelet'   ${BASE}-${FIELD}_${COMP}-structure-function.hdf \
@@ -272,6 +272,7 @@ do
     w4t-plot-structure-function-ansatz \
         ${BASE}-${FIELD}_${COMP}-structure-function.hdf \
         ${BASE}-${FIELD}_${COMP}-sample-structure-function-ansatz.hdf \
+        --max-num-samples 100 \
         --output-dir $OUTDIR \
         --tag ${FIELD}_${COMP}-$TAG \
         --verbose \

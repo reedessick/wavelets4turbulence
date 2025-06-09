@@ -289,3 +289,48 @@ def load_scaling_exponent(path, verbose=False):
         poly = obj['poly'][:]
 
     return poly, index, degree, (m, M)
+
+#-------------------------------------------------
+
+def write_scaling_exponent_samples(posterior, prior, scales, index, path, verbose=False, **kwargs):
+    """write posterior samples for structure function ansatz to disk
+    """
+    if verbose:
+        print('writing scaling exponent samples: '+path)
+
+    with h5py.File(path, 'w') as obj:
+        for key, val in kwargs.items():
+            obj.attrs.create(key, data=val)
+
+        obj.create_dataset('index', data=index)
+        obj.create_dataset('scales', data=scales)
+
+        for label, data in [('posterior', posterior), ('prior', prior)]:
+            for ind, val in data.items():
+                grp = obj.create_group('%s_%d' % (label, ind))
+                for key, val in val.items():
+                    grp.create_dataset(key, data=val)
+
+#-----------
+
+def load_scaling_exponent_samples(path, verbose=False):
+    """load posterior samples for structure function ansatz from disk
+    """
+    if verbose:
+        print('loading scaling exponent samples: '+path)
+
+    with h5py.File(path, 'r') as obj:
+        for key, val in kwargs.items():
+            obj.attrs.create(key, data=val)
+
+        index = obj['index'][:]
+        scales = obj['scales'][:]
+
+        posterior = dict()
+        prior = dict()
+        for ind in index:
+            for label, data in [('posterior', posterior), ('prior', prior)]:
+                key = '%s_%d' % (label, ind)
+                data[ind] = dict((k, obj[key][k][:]) for k in obj[key].keys())
+
+    return posterior, prior, scales, index

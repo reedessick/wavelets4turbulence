@@ -19,6 +19,10 @@ TITLE='$u_x$'
 
 #------------------------
 
+NUM_WARMUP=1000
+NUM_SAMPLES=10000
+SEED=1
+
 MIN_SCALE="5"
 MAX_SCALE="128"
 
@@ -57,7 +61,7 @@ do
 
     # compute structure function
 
-#    echo \
+    echo \
     w4t-structure-function \
         ${BASE}.hdf \
         ${BASE}-${FIELD}_${COMP}-structure-function.hdf \
@@ -70,7 +74,7 @@ do
 
     #---
 
-#    echo \
+    echo \
     w4t-scaling-exponent \
         ${BASE}-${FIELD}_${COMP}-structure-function.hdf \
         ${BASE}-${FIELD}_${COMP}-scaling-exponent.hdf \
@@ -82,7 +86,7 @@ do
 
     #-------
 
-#    echo \
+    echo \
     w4t-structure-function \
         ${BASE}.hdf \
         ${BASE}-${FIELD}_${COMP}-direct-structure-function.hdf \
@@ -96,7 +100,7 @@ do
 
     #---
 
-#    echo \
+    echo \
     w4t-scaling-exponent \
         ${BASE}-${FIELD}_${COMP}-direct-structure-function.hdf \
         ${BASE}-${FIELD}_${COMP}-direct-scaling-exponent.hdf \
@@ -110,7 +114,7 @@ do
 
     # denoise to identify coherent structures
 
-#    echo \
+    echo \
     w4t-denoise \
         ${BASE}.hdf \
         ${BASE}-${FIELD}_${COMP}-denoise.hdf \
@@ -127,7 +131,7 @@ do
 
     # compute structure function of denoised flow
 
-#    echo \
+    echo \
     w4t-structure-function \
         ${BASE}-${FIELD}_${COMP}-denoise.hdf \
         ${BASE}-${FIELD}_${COMP}-denoise-structure-function.hdf \
@@ -139,7 +143,7 @@ do
 
     #-----------
 
-#    echo \
+    echo \
     w4t-scaling-exponent \
         ${BASE}-${FIELD}_${COMP}-denoise-structure-function.hdf \
         ${BASE}-${FIELD}_${COMP}-denoise-scaling-exponent.hdf \
@@ -169,7 +173,7 @@ do
 
     # denoise to remove coherent structures
 
-#    echo \
+    echo \
     w4t-denoise \
         ${BASE}.hdf \
         ${BASE}-${FIELD}_${COMP}-smooth.hdf \
@@ -187,7 +191,7 @@ do
 
     # compute structure function of smoothed flow
 
-#    echo \
+    echo \
     w4t-structure-function \
         ${BASE}-${FIELD}_${COMP}-smooth.hdf \
         ${BASE}-${FIELD}_${COMP}-smooth-structure-function.hdf \
@@ -199,7 +203,7 @@ do
 
     #-----------
 
-#    echo \
+    echo \
     w4t-scaling-exponent \
         ${BASE}-${FIELD}_${COMP}-smooth-structure-function.hdf \
         ${BASE}-${FIELD}_${COMP}-smooth-scaling-exponent.hdf \
@@ -213,7 +217,7 @@ do
 
     # plot the structure functions
 
-#    echo \
+    echo \
     w4t-plot-structure-function \
         --title "$FLOW $SNAP $TITLE" \
         --source    'wavelet'   ${BASE}-${FIELD}_${COMP}-structure-function.hdf \
@@ -229,7 +233,7 @@ do
 
     #---
 
-#    echo \
+    echo \
     w4t-plot-structure-function \
         --title "$FLOW $SNAP $TITLE" \
         --source       'full'    ${BASE}-${FIELD}_${COMP}-structure-function.hdf \
@@ -250,5 +254,18 @@ do
     || exit 1
 
 #        --rescale \
+
+    #---------------------------------------------
+
+#    echo \
+    python -i \
+    $(which w4t-sample-scaling-exponent) \
+        ${BASE}-${FIELD}_${COMP}-structure-function.hdf \
+        ${BASE}-${FIELD}_${COMP}-sample-scaling-exponent.hdf \
+        --num-warmup $NUM_WARMUP \
+        --num-samples $NUM_SAMPLES \
+        --seed $SEED \
+        --verbose \
+    || exit 1
 
 done

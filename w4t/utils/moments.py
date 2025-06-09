@@ -63,7 +63,7 @@ def average_moments(mom, cov):
     """average moments and update covariance
     """
     # average individual measurement undertainties and add the variance between estimates
-    cov = np.mean(cov, axis=0) / len(mom) + np.cov(np.transpose(mom)) # take covariance between means
+    cov = (np.mean(cov, axis=0) + np.cov(np.transpose(mom))) / len(mom)
     # take the average of the means
     mom = np.mean(mom, axis=0)
 

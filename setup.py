@@ -21,6 +21,8 @@ requires = [
     'scipy',
     'matplotlib',
     'PyWavelets',
+    'numpyro',
+    'jax',
 ]
 
 #------------------------

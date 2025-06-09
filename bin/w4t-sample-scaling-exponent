@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+
+"""a simple executable to extract scaling exponents from structure functions
+"""
+__author__ = "Reed Essick (reed.essick@gmail.com)"
+
+#-------------------------------------------------
+
+import numpy as np
+
+from argparse import ArgumentParser
+
+### non-standard libraries
+from w4t.utils import io
+from w4t.utils import infer
+
+#-------------------------------------------------
+
+parser = ArgumentParser()
+
+parser.add_argument('source', type=str)
+parser.add_argument('target', type=str)
+
+parser.add_argument('-m', '--min-scale', default=0.0, type=float,
+    help='only include scales > min_scale within the fit')
+parser.add_argument('-M', '--max-scale', default=np.inf, type=float,
+    help='only include scales < max_scale within the fit')
+
+parser.add_argument('--num-warmup', default=infer.DEFAULT_NUM_WARMUP, type=int)
+parser.add_argument('--num-samples', default=infer.DEFAULT_NUM_SAMPLES, type=int)
+
+parser.add_argument('--seed', default=infer.DEFAULT_SEED, type=int)
+
+parser.add_argument('-v', '--verbose', default=False, action='store_true')
+
+args = parser.parse_args()
+
+#-------------------------------------------------
+
+# load structure functions
+scales, indexes, mom, cov = io.load_structure_function(args.source, verbose=args.verbose)
+
+#-----------
+
+# compute scaling exponents
+
+min_scale = max(args.min_scale, np.min(scales))
+max_scale = min(args.max_scale, np.max(scales))
+
+if args.verbose:
+    print('computing scaling exponent with scales between %.3f - %.3f' % \
+        (min_scale, max_scale))
+
+sel = (min_scale <= scales) * (scales <= max_scale)
+
+posterior = dict()
+prior = dict()
+for ind, index in enumerate(indexes):
+    if args.verbose:
+        print('\n>>> fitting ansatz for index=%d\n' % index)
+
+    posterior[index], prior[index] = infer.scaling_exponents(
+        scales[sel],
+        mom[sel,ind],
+        cov[sel,ind,ind]**0.5,
+        num_warmup=args.num_warmup,
+        num_samples=args.num_samples,
+        seed=args.seed,
+        verbose=args.verbose,
+    )
+
+#-----------
+
+# save scaling exponents
+io.write_scaling_exponent_samples(
+    posterior,
+    prior,
+    scales,
+    index,
+    args.target,
+    verbose=args.verbose,
+    source=args.source,
+    min_scale=min_scale,
+    max_scale=max_scale,
+    num_warmup=args.num_warmup,
+    num_sapmles=args.num_samples,
+    seed=args.seed,
+)

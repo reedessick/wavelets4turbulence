@@ -39,25 +39,9 @@ do
 
     #---
 
-    FLASH="${OUTDIR}/Turb_hdf5_plt_cnt_${SNAP}"
-
     BASE="${OUTDIR}/${TAG}"
 
     #---------------------------------------------
-
-    # convert the file format on disk to be faster to load
-
-    echo \
-    w4t-convert-flash \
-        ${FLASH} \
-        ${BASE}.hdf \
-        vel mag \
-        --Verbose \
-    || exit 1
-
-#        vel vort mag curr dens \
-
-    #------------------------
 
     # compute structure function
 
@@ -257,7 +241,7 @@ do
 
     #---------------------------------------------
 
-#    echo \
+    echo \
     w4t-sample-structure-function-ansatz \
         ${BASE}-${FIELD}_${COMP}-structure-function.hdf \
         ${BASE}-${FIELD}_${COMP}-sample-structure-function-ansatz.hdf \
@@ -268,7 +252,7 @@ do
         --verbose \
     || exit 1
 
-#    echo \
+    echo \
     w4t-plot-structure-function-ansatz \
         ${BASE}-${FIELD}_${COMP}-structure-function.hdf \
         ${BASE}-${FIELD}_${COMP}-sample-structure-function-ansatz.hdf \
@@ -280,7 +264,7 @@ do
 
     #---
 
-#    echo \
+    echo \
     w4t-sample-structure-function-ansatz \
         ${BASE}-${FIELD}_${COMP}-direct-structure-function.hdf \
         ${BASE}-${FIELD}_${COMP}-direct-sample-structure-function-ansatz.hdf \
@@ -291,7 +275,7 @@ do
         --verbose \
     || exit 1
 
-#    echo \
+    echo \
     w4t-plot-structure-function-ansatz \
         ${BASE}-${FIELD}_${COMP}-direct-structure-function.hdf \
         ${BASE}-${FIELD}_${COMP}-direct-sample-structure-function-ansatz.hdf \

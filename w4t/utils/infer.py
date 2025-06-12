@@ -56,19 +56,19 @@ def sample_structure_function_ansatz(
     if verbose:
         print('defining model')
 
-    s0_loc = np.mean(np.log(scales))
-    s0_scale = np.log(np.max(scales)/np.min(scales)) * 0.5
+#    s0_loc = np.mean(np.log(scales))
+#    s0_scale = np.log(np.max(scales)/np.min(scales)) * 0.5
 
     def model(obs):
         # draw from prior
         amp = numpyro.sample("amp", dist.LogNormal(-10, 5.0))
         xi = numpyro.sample("xi", dist.Normal(0.0, 3.0))
 
-        sl = numpyro.sample("sl", dist.LogNormal(s0_loc, s0_scale))
+        sl = numpyro.sample("sl", dist.LogUniform(2, 16)) # might be fragile!
         bl = numpyro.sample("bl", dist.Normal(0.0, 3.0))
         nl = numpyro.sample("nl", dist.Exponential(1.0))
 
-        sh = numpyro.sample("sh", dist.LogNormal(s0_loc, s0_scale))
+        sh = numpyro.sample("sh", dist.LogUniform(32, 256)) # might be fragile!
         bh = numpyro.sample("bh", dist.Normal(0.0, 3.0))
         nh = numpyro.sample("nh", dist.Exponential(1.0))
 

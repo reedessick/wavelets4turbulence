@@ -257,7 +257,7 @@ do
 
     #---------------------------------------------
 
-    echo \
+#    echo \
     w4t-sample-structure-function-ansatz \
         ${BASE}-${FIELD}_${COMP}-structure-function.hdf \
         ${BASE}-${FIELD}_${COMP}-sample-structure-function-ansatz.hdf \
@@ -268,7 +268,7 @@ do
         --verbose \
     || exit 1
 
-    echo \
+#    echo \
     w4t-plot-structure-function-ansatz \
         ${BASE}-${FIELD}_${COMP}-structure-function.hdf \
         ${BASE}-${FIELD}_${COMP}-sample-structure-function-ansatz.hdf \
@@ -297,7 +297,7 @@ do
         ${BASE}-${FIELD}_${COMP}-direct-sample-structure-function-ansatz.hdf \
         --max-num-samples 100 \
         --output-dir $OUTDIR \
-        --tag ${FIELD}_${COMP}-$TAG \
+        --tag ${FIELD}_${COMP}-${TAG}-direct \
         --verbose \
     || exit 1
 

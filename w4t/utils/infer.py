@@ -39,6 +39,37 @@ def structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh):
 
 #------------------------
 
+def sample_prior(
+        mean_logamp=-10.0,
+        stdv_logamp=5.0,
+        mean_xi=0.0,
+        stdv_xi=3.0,
+        min_sl=2.0,
+        max_sl=16.0,
+        mean_bl=0.0,
+        stdv_bl=3.0,
+        rate_nl=1.0,
+        min_sh=32.0,
+        max_sh=256.0,
+        mean_bh=0.0,
+        stdv_bh=3.0,
+        rate_nh=1.0,
+    ):
+    amp = numpyro.sample("amp", dist.LogNormal(mean_logamp, stdv_logamp))
+    xi = numpyro.sample("xi", dist.Normal(mean_xi, stdv_xi))
+
+    sl = numpyro.sample("sl", dist.LogUniform(min_sl, max_sl))
+    bl = numpyro.sample("bl", dist.Normal(mean_bl, stdv_bl))
+    nl = numpyro.sample("nl", dist.Exponential(rate_nl))
+
+    sh = numpyro.sample("sh", dist.LogUniform(min_sh, max_sh))
+    bh = numpyro.sample("bh", dist.Normal(mean_bh, stdv_bh))
+    nh = numpyro.sample("nh", dist.Exponential(rate_nh))
+
+    return amp, xi, sl, bl, nl, sh, bh, nh
+
+#---
+
 def sample_structure_function_ansatz(
         scales,
         mom,
@@ -47,6 +78,7 @@ def sample_structure_function_ansatz(
         num_samples=DEFAULT_NUM_SAMPLES,
         seed=DEFAULT_SEED,
         verbose=False,
+        **prior_kwargs
     ):
     """sample for parameters of a simple model for structure function scaling
     """
@@ -56,25 +88,14 @@ def sample_structure_function_ansatz(
     if verbose:
         print('defining model')
 
-#    s0_loc = np.mean(np.log(scales))
-#    s0_scale = np.log(np.max(scales)/np.min(scales)) * 0.5
-
     def model(obs):
         # draw from prior
-        amp = numpyro.sample("amp", dist.LogNormal(-10, 5.0))
-        xi = numpyro.sample("xi", dist.Normal(0.0, 3.0))
-
-        sl = numpyro.sample("sl", dist.LogUniform(2, 16)) # might be fragile!
-        bl = numpyro.sample("bl", dist.Normal(0.0, 3.0))
-        nl = numpyro.sample("nl", dist.Exponential(1.0))
-
-        sh = numpyro.sample("sh", dist.LogUniform(32, 256)) # might be fragile!
-        bh = numpyro.sample("bh", dist.Normal(0.0, 3.0))
-        nh = numpyro.sample("nh", dist.Exponential(1.0))
+        amp, xi, sl, bl, nl, sh, bh, nh = sample_prior(**prior_kwargs)
 
         # compute expected value
         sf = numpyro.deterministic('structure_function', structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh))
 
+        # compare to observed data
         numpyro.sample('mom', dist.Normal(sf, std), obs=obs)
 
     #---

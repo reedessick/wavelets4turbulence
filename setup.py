@@ -38,5 +38,5 @@ setup(
     license = None,
     scripts = scripts,
     packages = packages,
-    requires = requires,
+    install_requires = requires,
 )

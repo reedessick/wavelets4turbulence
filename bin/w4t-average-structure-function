@@ -37,7 +37,7 @@ cov = [cov]
 
 for path in args.source[1:]:
     # load new data
-    s, i, m, c = io.load_structure_function(path, verbose=argbs.verbose)
+    s, i, m, c = io.load_structure_function(path, verbose=args.verbose)
 
     # sanity check
     assert (len(scales) == len(s)) and np.all(scales == s), 'mismatch in scales'
@@ -52,7 +52,15 @@ for path in args.source[1:]:
 if args.verbose:
     print('averaging moments over %d observations' % len(mom))
 
-mom, cov = moments.average_moments(mom, cov)
+ave_mom = []
+ave_cov = []
+for snd in range(len(scales)):
+    m, c = moments.average_moments([_[snd] for _ in mom], [_[snd] for _ in cov])
+    ave_mom.append(m)
+    ave_cov.append(c)
+
+ave_mom = np.array(ave_mom, dtype=float)
+ave_cov = np.array(ave_cov, dtype=float)
 
 #-------------------------------------------------
 
@@ -61,8 +69,8 @@ mom, cov = moments.average_moments(mom, cov)
 io.write_structure_function(
     scales,
     index,
-    mom,
-    cov,
+    ave_mom,
+    ave_cov,
     args.target,
     verbose=args.verbose,
     source=args.source,

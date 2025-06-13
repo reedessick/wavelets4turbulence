@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+
+"""a simple script to average estimates of structure functions
+"""
+__author__ = "Reed Essick (reed.essick@gmail.com)"
+
+#-------------------------------------------------
+
+import numpy as np
+
+from argparse import ArgumentParser
+
+### non-standard libraries
+from w4t.utils import io
+from w4t.utils import moments
+
+#-------------------------------------------------
+
+parser = ArgumentParser()
+
+parser.add_argument('source', nargs='+', type=str)
+parser.add_argument('target', type=str)
+
+parser.add_argument('-v', '--verbose', default=False, action='store_true')
+
+args = parser.parse_args()
+
+assert len(args.source) > 1, 'must specify at least 2 source to average'
+
+#-------------------------------------------------
+
+# load data
+scales, index, mom, cov = io.load_structure_function(args.source[0], verbose=args.verbose)
+
+mom = [mom] # start lists
+cov = [cov]
+
+for path in args.source[1:]:
+    # load new data
+    s, i, m, c = io.load_structure_function(path, verbose=argbs.verbose)
+
+    # sanity check
+    assert (len(scales) == len(s)) and np.all(scales == s), 'mismatch in scales'
+    assert (len(index) == len(i)) and np.all(index == i), 'mismatch in index'
+
+    # add moments and covariances to lists
+    mom.append(m)
+    cov.append(c)
+
+#------------------------
+
+if args.verbose:
+    print('averaging moments over %d observations' % len(mom))
+
+mom, cov = moments.average_moments(mom, cov)
+
+#-------------------------------------------------
+
+# write structure functions to disk
+
+io.write_structure_function(
+    scales,
+    index,
+    mom,
+    cov,
+    args.target,
+    verbose=args.verbose,
+    source=args.source,
+)

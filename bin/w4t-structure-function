@@ -115,5 +115,6 @@ io.write_structure_function(
     source=args.source,
     field=field,
     max_edgelength=args.max_edgelength,
+    direct=args.direct,
     wavelet=args.wavelet,
 )

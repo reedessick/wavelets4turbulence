@@ -33,9 +33,9 @@ DEFAULT_NUM_SAMPLES = 1000
 
 def structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh):
     """
-    SF(s, p) = <d_{x,s}^p>_x = amp * s**xi * (1 + (sl/s)**nl)**bl * (1 + (s/sh)**nh)**bh
+    SF(s, p) = <d_{x,s}^p>_x = amp * s**xi * (1 + (sl/s)**nl)**(bl/nl) * (1 + (s/sh)**nh)**(bh/nh)
     """
-    return amp * scales**xi * (1 + (sl/scales)**nl)**bl * (1 + (scales/sh)**nh)**bh
+    return amp * scales**xi * (1 + (sl/scales)**nl)**(bl/nl) * (1 + (scales/sh)**nh)**(bh/nh)
 
 #------------------------
 

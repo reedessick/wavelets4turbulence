@@ -1,0 +1,113 @@
+#!/usr/bin/env python3
+
+"""a simple script to visualize distributions of samples
+"""
+__author__ = "Reed Essick (reed.essick@gmail.com)"
+
+#-------------------------------------------------
+
+import os
+
+import h5py
+import numpy as np
+
+from argparse import ArgumentParser
+
+### non-standard libraries
+from w4t.plot import utils as plt
+
+import corner
+
+#-------------------------------------------------
+
+parser = ArgumentParser()
+
+parser.add_argument('samples', type=str)
+parser.add_argument('-f', '--fields', default=None, nargs='+', type=str)
+
+parser.add_argument('--log', default=[], type=str, action='append',
+    help='take the natural log of these fields before plotting')
+parser.add_argument('--exp', default=[], type=str, action='append',
+    help='exponentiate these fields before plotting')
+
+parser.add_argument('--root', default=None, type=str,
+    help='read samples from this group within samples')
+
+parser.add_argument('--title', default=None, type=str)
+
+parser.add_argument('-v', '--verbose', default=False, action='store_true')
+
+parser.add_argument('-o', '--output-dir', default='.', type=str)
+parser.add_argument('-t', '--tag', default='', type=str)
+parser.add_argument('--figtype', default=[], type=str, action='append')
+parser.add_argument('--dpi', default=None, type=float)
+
+args = parser.parse_args()
+
+os.makedirs(args.output_dir, exist_ok=True)
+
+if args.tag:
+    args.tag = "_"+args.tag
+
+if not args.figtype:
+    args.figtype.append('png')
+
+#-------------------------------------------------
+
+# load data
+if args.verbose:
+    print('loading samples: '+args.samples)
+
+with h5py.File(args.samples, 'r') as obj:
+    if args.root is not None:
+        grp = obj[args.root]
+    else:
+        grp = obj
+
+    samples = dict()
+    for key in grp.keys():
+        if (not args.fields) or (key in args.fields):
+            val = grp[key][:]
+            if len(val.shape) == 1:
+                samples[key] = val
+            elif len(val.shape) == 2:
+                for ind in range(val.shape[1]):
+                    samples['%s_%d'%(key, ind)] = val[:,ind]
+            else:
+                raise RuntimeError('do not know how to parse dataset with shape=%s' % str(val.shape))
+
+#---
+
+for key in args.log:
+    if key in samples:
+        samples['log_'+key] = np.log(samples.pop(key))
+
+#---
+
+for key in args.exp:
+    if key in samples:
+        samples['exp_'+key] = np.log(samples.pop(key))
+
+#---
+
+fields = list(samples.keys())
+
+#------------------------
+
+if args.verbose:
+    print('plotting corner\n    %s' % ('\n    '.join(fields)))
+
+fig = corner.corner(
+    np.transpose([samples[key] for key in fields]),
+    labels=fields,
+)
+
+if args.title is not None:
+    fig.suptitle(args.title)
+
+figtmp = os.path.join(
+    args.output_dir,
+    os.path.basename(__file__)+args.tag+'.%s',
+)
+plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
+plt.close(fig)

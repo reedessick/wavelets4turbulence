@@ -88,38 +88,33 @@ def sample_structure_function_ansatz(
     if verbose:
         print('defining model')
 
-    def model(obs):
+    def sample_posterior(obs):
         # draw from prior
         amp, xi, sl, bl, nl, sh, bh, nh = sample_prior(**prior_kwargs)
 
         # compute expected value
-        sf = numpyro.deterministic('structure_function', structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh))
+        sf = structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh)
 
         # compare to observed data
         numpyro.sample('mom', dist.Normal(sf, std), obs=obs)
 
     #---
 
-    # instantiate the sampler
-    if verbose:
-        print('instantiating sampler')
-
-    mcmc = MCMC(NUTS(model), num_warmup=num_warmup, num_samples=num_samples)
-
-    # run the sample
+    # run the sampler
 
     if verbose:
         print('running sampler for prior with seed=%d for %d warmup and %d samples' % (seed, num_warmup, num_samples))
 
-    mcmc.run(random.PRNGKey(seed), None)
+    mcmc = MCMC(NUTS(sample_prior), num_warmup=num_warmup, num_samples=num_samples)
+    mcmc.run(random.PRNGKey(seed))
     prior = mcmc.get_samples()
 
-    # record the likelihood of each sample
-
-    if verbose:
-        print('computing likelihood at samples')
-
-    prior.update(numpyro.infer.log_likelihood(model, prior, None))
+#    # record the likelihood of each sample
+#
+#    if verbose:
+#        print('computing likelihood at samples')
+#
+#    prior.update(numpyro.infer.log_likelihood(sample_prior, prior, None))
 
     if verbose:
         mcmc.print_summary(exclude_deterministic=False)
@@ -129,6 +124,7 @@ def sample_structure_function_ansatz(
     if verbose:
         print('running sampler for posterior with seed=%d for %d warmup and %d samples' % (seed, num_warmup, num_samples))
 
+    mcmc = MCMC(NUTS(sample_posterior), num_warmup=num_warmup, num_samples=num_samples)
     mcmc.run(random.PRNGKey(seed), mom)
     posterior = mcmc.get_samples()
 
@@ -137,7 +133,7 @@ def sample_structure_function_ansatz(
     if verbose:
         print('computing likelihood at samples')
 
-    posterior.update(numpyro.infer.log_likelihood(model, posterior, mom))
+    posterior.update(numpyro.infer.log_likelihood(sample_posterior, posterior, mom))
 
     if verbose:
         mcmc.print_summary(exclude_deterministic=False)

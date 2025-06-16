@@ -20,6 +20,7 @@ requires = [
     'numpy',
     'scipy',
     'matplotlib',
+    'corner',
     'PyWavelets',
     'numpyro',
     'jax',

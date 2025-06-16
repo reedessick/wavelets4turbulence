@@ -60,6 +60,8 @@ if args.verbose:
 
 with h5py.File(args.samples, 'r') as obj:
     if args.root is not None:
+        if args.verbose:
+            print('    loading: '+args.root)
         grp = obj[args.root]
     else:
         grp = obj

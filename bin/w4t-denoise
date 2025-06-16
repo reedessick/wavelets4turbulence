@@ -55,10 +55,7 @@ data, field = io.simplify(
 if args.verbose:
     print('decomposing with wavelet=%s' % args.wavelet)
 
-wa = pywt.PyWaveletArray(
-    data,
-    args.wavelet,
-)
+wa = pywt.PyWaveletArray(data, args.wavelet)
 
 #-----------
 

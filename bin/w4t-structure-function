@@ -30,6 +30,11 @@ parser.add_argument('-M', '--max-edgelength', default=None, type=int)
 parser.add_argument('-w', '--wavelet', default=pywt.DEFAULT_WAVELET, type=str)
 parser.add_argument('-i', '--index', nargs='+', type=float)
 
+parser.add_argument('-t', '--threshold', default=None, type=float,
+    help='if supplied, denoise using this threshold before computing structure function')
+parser.add_argument('-m', '--max-scale', default=None, type=float)
+parser.add_argument('-s', '--smooth', default=False, action='store_true')
+
 parser.add_argument('-d', '--direct', default=False, action='store_true',
     help='if supplied, compute the structure functions "directly" rather than relying on wavelet decomposition')
 parser.add_argument('--direct-scales', nargs='+', type=int, default=None,
@@ -56,6 +61,18 @@ data, field = io.simplify(
     max_edgelength=args.max_edgelength,
     verbose=args.verbose,
 )
+
+#------------------------
+
+if args.threshold is not None: # denoise before computing structure function
+    if args.verbose:
+        print('denoising with\n    wavelet=%s\n    threshold=%.6f\n    max_scale=%.3f\n    smooth=%s' % \
+            (args.wavelet, args.threshold, args.max_scale, args.smooth))
+
+    wa = pywt.PyWaveletArray(data, args.wavelet)
+    wa.denoise(args.threshold, max_scale=args.max_scale, smooth=args.smooth)
+    wa.idecompose() # make sure we're at full resolution before we save
+    data = wa.array
 
 #------------------------
 

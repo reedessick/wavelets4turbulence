@@ -369,7 +369,9 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
             return dim3.plot(self.approx, **kwargs)
 
         else:
-            raise RuntimeError('do not know how to plot wavelet coefficinets for ndim=%d' % self.ndim)
+            raise RuntimeError('do not know how to plot approx for ndim=%d' % self.ndim)
+
+    #---
 
     def plot_coeff(self, **kwargs):
         """make plots of wavelet coefficients
@@ -386,6 +388,25 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
         else:
             raise RuntimeError('do not know how to plot wavelet coefficients for ndim=%d' % self.ndim)
 
+    #-------
+
+    def hist(self, **kwargs):
+        """make a histogram of approx coefficients
+        """
+        if self.ndim == 1:
+            return dim1.hist(self.approx, **kwargs)
+
+        elif self.ndim == 2:
+            return dim2.hist(self.approx, **kwargs)
+
+        elif self.ndim == 3:
+            return dim3.hist(self.approx, **kwargs)
+
+        else:
+            raise RuntimeError('do not know how histogram approx for ndim=%d' % self.ndim)
+
+    #---
+
     def hist_coeff(self, **kwargs):
         """make histograms of wavelet coefficients
         """
@@ -400,6 +421,8 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
         else:
             raise RuntimeError('do not know how to make histograms of wavelet coefficients for ndim=%d' % self.ndim)
+
+    #-------
 
     def scalogram(self):
         """make a scalogram of the data
@@ -472,7 +495,7 @@ class Structure(object):
         waveletarray.set_levels(self.levels) # set to the appropriate level of decomposition
         return waveletarray.approx[self.tuple]
 
-    #---
+    #-------
 
     def principle_components(self, waveletarray=None, index=1):
         """compute the principle components of a structure with respect to the field contained in waveletarray raised to index
@@ -488,9 +511,43 @@ class Structure(object):
         # compute principle components and return
         return structures.principle_components(self.pixels, weights=weights)
 
-    #---
+    #--------------------
 
-    def plot(self, waveletarray, zoom=False):
-        """make a plot of the structure
+    def plot(self, waveletarray, zoom=False, **kwargs):
+        """make a plot of approx coefficients
         """
-        raise NotImplementedError
+        array = self.extract_as_array(waveletarray)
+        if zoom:
+            raise NotImplementedError('array size to only include bounding box')
+
+        if self.ndim == 1:
+            return dim1.plot(array, **kwargs)
+
+        elif self.ndim == 2:
+            return dim2.plot(array, **kwargs)
+
+        elif self.ndim == 3:
+            return dim3.plot(array, **kwargs)
+
+        else:
+            raise RuntimeError('do not know how to plot approx for ndim=%d' % self.ndim)
+
+    #-------
+
+    def hist(self, waveletarray, **kwargs):
+        """make a histogram of approx coefficients
+        """
+        array = self.extract(waveletarray)
+
+        if self.ndim == 1:
+            return dim1.hist(array, **kwargs)
+
+        elif self.ndim == 2:
+            return dim2.hist(array, **kwargs)
+
+        elif self.ndim == 3:
+            return dim3.hist(array, **kwargs)
+
+        else:
+            raise RuntimeError('do not know how histogram approx for ndim=%d' % self.ndim)
+

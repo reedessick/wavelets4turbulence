@@ -4,6 +4,8 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 #-------------------------------------------------
 
+import numpy as np
+
 from w4t.plot.plot import plt
 
 from .flow import hist as _hist
@@ -30,7 +32,7 @@ SCALOGRAM_CMAP = 'Reds'
 
 #-------------------------------------------------
 
-def _plot(ax, data, grid=False, **kwargs):
+def _plot(ax, data, symmetric_ylim=False, grid=False, **kwargs):
     dx = 0.5/len(data)
     ax.plot(dx + np.arange(len(data))/len(data), data, **kwargs)
 
@@ -40,9 +42,13 @@ def _plot(ax, data, grid=False, **kwargs):
     ax.tick_params(**TICK_PARAMS)
     ax.grid(grid, which='both')
 
+    if symmetric_ylim:
+        ylim = np.max(np.abs(ax.get_ylim()))
+        ax.set_ylim(ymin=-ylim, ymax=+ylim)
+
     return ax
 
-#-----------
+#---
 
 def plot(approx, **kwags):
     """plot 1D data
@@ -52,7 +58,7 @@ def plot(approx, **kwags):
     plt.subplots_adjust(**SUBPLOTS_ADJUST)
     return fig
 
-#------------------------
+#-----------
 
 def plot_coeff(approx, detail, **kwargs):
     """plot 1D data from a decomposed array
@@ -61,23 +67,18 @@ def plot_coeff(approx, detail, **kwargs):
 
     #---
 
-    for ind, data in enumerate([approx, detail]):
+    for ind, (label, data) in enumerate([('approx', approx), ('detail', detail)]):
 
         if np.prod(data.shape) == 0: # no data
             continue
 
-        ax = _plt(plt.subplot(1,2,ind+1), data, **kwargs)
+        ax = _plt(plt.subplot(1,2,ind+1), data, symmetric_ylim=(ind>0), **kwargs)
 
-        if ind == 0:
-            ax.set_ylabel('approx')
+        ax.set_ylabel(label)
 
-        elif ind == 1:
-            ax.set_ylabel('detail')
+        if ind == 1:
             ax.yaxis.tick_right()
             ax.yaxis.set_label_position('right')
-
-            ylim = np.max(np.abs(ax.get_ylim()))
-            ax.set_ylim(ymin=-ylim, ymax=+ylim)
 
     #---
 
@@ -88,6 +89,16 @@ def plot_coeff(approx, detail, **kwargs):
     return fig
 
 #------------------------
+
+def hist(approx, **kwargs):
+    """histogram 1D data
+    """
+    fig = plt.figure(figsize=FIGSIZE)
+    _hist(plt.subplot(1,1,1), approx, **kwargs)
+    plt.subplots_adjust(**SUBPLOTS_ADJUST)
+    return fig
+
+#-----------
 
 def hist_coeff(approx, detail, **kwargs):
     """plot histograms of coefficients from a 1D decomposed array

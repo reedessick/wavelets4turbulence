@@ -1,25 +1,20 @@
-"utils for plotting 3D data
+"""utils for plotting 3D data
 """
 __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 #-------------------------------------------------
 
-from w4t.plot..plot import *
+import numpy as np
+
+from w4t.plot.plot import plt
+
+from .flow import hist as _hist
 
 #-------------------------------------------------
 
 FIGSIZE = (5.0, 8.0)
 
 #---
-
-HIST_TICK_PARAMS = dict(
-    left=True,
-    right=True,
-    top=True,
-    bottom=True,
-    direction='in',
-    which='both',
-)
 
 SCATTER_TICK_PARAMS = dict(
     left=True,
@@ -43,15 +38,6 @@ SUBPLOTS_ADJUST = dict(
 
 #---
 
-GROUPS = [
-    [(2, 'aaa')],
-    [(4, 'daa'), (5, 'ada'), (6, 'aad')],
-    [(7, 'add'), (8, 'dad'), (9, 'dda')],
-    [(11, 'ddd')],
-]
-
-#---
-
 CMAP = 'RdGy'
 
 LOG_POS_CMAP = 'YlOrRd'
@@ -59,56 +45,103 @@ LOG_NEG_CMAP = 'YlGnBu'
 
 #-------------------------------------------------
 
-'''
+def _plot(ax, data, grid=False, **kwargs):
+    """plot a visualization of the flow
+    """
+    raise NotImplementedError
 
-def hist(array_dict, grid=False, **kwargs):
-    """plot histograms of coefficients from a Haar decomposed 2D array (assumed to be square)
+#---
+
+def plot(approx, **kwargs):
+    """plot a visualization of the flow
+    """
+    fig = plt.figure(figsize=FIGSIZE)
+    _plot(plt.subplot(1,1,1), approx, **kwargs)
+    plt.subplots_adjust(**SUBPLOTS_ADJUST)
+    return fig
+
+#-----------
+
+def plot_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, **kwargs):
+    """plot visualization of wavelet coefficients
     """
     fig = plt.figure(figsize=FIGSIZE)
 
     #---
 
-    for group in GROUPS:
+    for group in [
+            [( 2, 'approx-approx-approx', aaa)],
+            [( 4, 'detail-approx-approx', daa), (5, 'approx-detail-approx', ada), (6, 'approx-approx-detail', aad)],
+            [( 7, 'approx-detail-detail', add), (8, 'detail-approx-detail', dad), (9, 'detail-detail-approx', dda)],
+            [(11, 'detail-detail-detail', ddd)],
+        ]:
 
         _ymin = +np.inf
         _ymax = -np.inf
         text = []
 
-        for ind, nickname in group:
-            data = array_dict[nickname]
+        for ind, label, data in group:
 
             num = np.prod(data.shape)
             if num == 0: # no data
                 continue
 
-            ax = plt.subplot(4,3,ind)
+            ax = _plt(plt.subplot(4,3,ind), data, **kwargs)
 
-            data = np.ravel(data)
+            ax.set_title(label)
 
-            if nickname == 'aaa':
-                xmin = np.min(data)
-                xmax = np.max(data)
-            else:
-                xlim = np.max(np.abs(data))
-                xmin = -xlim
-                xmax = +xlim
+    #---
 
-            bins = np.linspace(xmin, xmax, min(1000, max(10, int(num**0.5))))
+    plt.subplots_adjust(**SUBPLOTS_ADJUST)
 
-            ax.hist(data, bins=bins, **kwargs)
+    #---
 
-            ax.set_xlim(xmin=xmin, xmax=xmax)
+    return fig
 
-            ax.tick_params(**HIST_TICK_PARAMS)
-            ax.grid(grid, which='both')
+#------------------------
+
+def hist(approx, **kwargs):
+    """histogram approx
+    """
+    fig = plt.figure(figsize=FIGSIZE)
+    _hist(plt.subplot(1,1,1), approx, **kwargs)
+    plt.subplots_adjust(**SUBPLOTS_ADJUST)
+    return fig
+
+#-----------
+
+def hist_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, **kwargs):
+    """histogram wavelet coefficients
+    """
+    fig = plt.figure(figsize=FIGSIZE)
+
+    #---
+
+    for group in [
+            [( 2, 'approx-approx-approx', aaa)],
+            [( 4, 'detail-approx-approx', daa), (5, 'approx-detail-approx', ada), (6, 'approx-approx-detail', aad)],
+            [( 7, 'approx-detail-detail', add), (8, 'detail-approx-detail', dad), (9, 'detail-detail-approx', dda)],
+            [(11, 'detail-detail-detail', ddd)],
+        ]:
+
+        _ymin = +np.inf
+        _ymax = -np.inf
+        text = []
+
+        for ind, label, data in group:
+
+            num = np.prod(data.shape)
+            if num == 0: # no data
+                continue
+
+            ax = _hist(plt.subplot(4,3,ind), data, symmetric_xlim=(ind!=0), **kwargs)
 
             ymin, ymax = ax.get_ylim()
 
             _ymin = min(_ymin, ymin)
             _ymax = max(_ymax, ymax)
 
-            text.append((ax, xmin + 0.01*(xmax-xmin), '%d samples' % num, 'left', 'top'))
-            text.append((ax, xmax - 0.01*(xmax-xmin), nickname, 'right', 'top'))
+            text.append((ax, xmin + 0.01*(xmax-xmin), '%s\n%d samples' % (label, num), 'left', 'top'))
 
         y = ymax / (ymax/ymin)**0.01
         for ax, x, text, ha, va in text:
@@ -123,8 +156,6 @@ def hist(array_dict, grid=False, **kwargs):
     #---
 
     return fig
-
-'''
 
 #-------------------------------------------------
 
@@ -481,7 +512,7 @@ def aaa_imshow(
                             # save
                             plt.save(
                                 fig,
-                                (figtmp%scales + '_cluster-%03d-%s-%03d'%(cnd,x,xnd))+'.%s',
+                                t (figtmp%scales + '_cluster-%03d-%s-%03d'%(cnd,x,xnd))+'.%s',
                                 ['png'],
                                 dpi=dpi,
                                 verbose=True,

@@ -268,7 +268,7 @@ def grand_tour(array, title=None, verbose=False, figtmp="grand_tour", figtype=["
     for dim in range(2): # iterate over each dimension, making overlaid 1D plot for each
         fig = plt.figure(figsize=DIM1_FIGSIZE)
 
-        ax = fig.add_axes([0.10, 0.12, 0.80, 0.80]) # scalogram
+        ax = fig.add_axes([0.12, 0.12, 0.78, 0.80]) # scalogram
         cb = fig.add_axes([0.91, 0.12, 0.01, 0.80]) # colorbar
 
         for ind in range(shape[dim]): # iterate over slice

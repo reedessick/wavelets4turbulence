@@ -9,7 +9,10 @@ import numpy as np
 from w4t.plot.plot import plt
 
 from .flow import hist as _hist
+
 from .dim2 import _plot as _dim2_plot
+from .dim2 import FIGSIZE as DIM2_FIGSIZE
+from .dim2 import SUBPLOTS_ADJUST as DIM2_SUBPLOTS_ADJUST
 
 #-------------------------------------------------
 
@@ -190,134 +193,29 @@ def hist_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, **kwargs):
 
 #-------------------------------------------------
 
-'''
+def grand_tour(array, verbose=False, figtmp="grand_tour", figtype=["png"], dpi=None, **kwargs):
+    """make a sequence of plots showing the behavior of the function as we slice through the data
+    """
+    shape = array.shape
+    assert len(shape) == 3, 'bad number of dimensions!'
 
-USE the following within "slice" and "grand_tour" logic?
+    figtmp = figtmp + '-%06d-%06d'
 
-def aaa_imshow(
-        ha,
-        figtmp,
-        norms=None,
-        cmap='Reds',
-        vmin=-2.0,
-        vmax=2.0,
-        label='',
-        thr=0.0,
-        structures=False,
-        grand_tour=False,
-        orthographic=False,
-    ):
-    print('iterating over scales')
+    for dim in range(3): # iterate over each dimension, making overlaid 1D plot for each
+        for ind in range(shape[dim]): # iterate over slices
+            fig = plt.figure(DIM2_FIGSIZE)
+            ax = plt.subplot(1,1,1)
 
-    compute_norms = norms is None
-    if compute_norms:
-        norms = []
+            ax = _dim2_plot(
+                ax,
+                np.take(data, ind, axis=dim), # should be a 2D array
+                **kwargs
+            )
 
-    ha.idecompose() # reset the decomposition
+            ax.set_title('dim=%d\nind=%d' % (dim, ind))
 
-    ind = 0
-    while ha.active[0] > 1:
-        scales = '-'.join('%03d'%_ for _ in ha.scales)
+            plt.subplots_adjust(**DIM2_SUBPLOTS_ADJUST)
 
-        print('processing: '+scales)
-
-        title = label # + '\nscale : ' + scales
-
-        n0, n1, n2 = ha.active
-
-        array_dict = dict()
-
-        array_dict['aaa'] = ha.array[:n0, :n1, :n2]
-
-        # get normalization
-        if compute_norms:
-            norm = np.std(array_dict['aaa'])
-            norms.append(norm)
-        else:
-            norm = norms[ind]
-
-        # approximate the mid-plane
-        plane = 0.5*(array_dict['aaa'][:,:,n2//2] + array_dict['aaa'][:,:,n2//2-1]) / norm
-
-        # plot the mid-plane
-        fig = plt.plt.figure(figsize=(5,5))
-        ax = fig.add_axes([0.05, 0.01, 0.90, 0.90])
-
-        ax.imshow(
-            plane,
-            cmap=cmap,
-            vmax=vmax,
-            vmin=vmin,
-            origin='lower',
-            extent=(0, 1, 0, 1),
-        )
-
-        # decorate
-        fig.suptitle(title, fontsize=10)
-
-        ax.set_xticks([]) # remove any ticks
-        ax.set_yticks([])
-
-        # save
-        plt.save(fig, (figtmp%scales)+'.%s', ['png'], dpi=dpi, verbose=True)
-        plt.close(fig)
-
-        #---
-
-        # plot a histogram of values within plane
-
-        fig = plt.plt.figure()
-        ax = fig.gca()
-
-        _, bins, _ = ax.hist(np.abs(plane.flatten()), bins=max(100, int(0.5*(n0*n1)**0.5)), histtype='step', density=True)
-        ax.hist(np.abs(plane.flatten()), bins=bins, histtype='step', density=True, cumulative=True)
-
-        ylim = ax.get_ylim()
-        ax.plot([thr]*2, ylim, color='k', alpha=0.5)
-        ax.set_ylim(ylim)
-
-        ax.set_xlabel('abs(pixel coefficient)')
-
-        # save
-        plt.save(fig, (figtmp%scales+'_hist')+'.%s', ['png'], dpi=dpi, verbose=True)
-        plt.close(fig)
-
-        #---
-
-        if grand_tour: # plot every plane separately
-            print('plotting grand tour')
-            for axis, (n, x) in enumerate([(n0, 'x'), (n1, 'y'), (n2, 'z')]):
-                for xnd in range(n):
-                    plane = np.take(array_dict['aaa'], xnd, axis=axis) / norm
-
-                    fig = plt.plt.figure(figsize=(5,5))
-                    ax = fig.add_axes([0.05, 0.01, 0.90, 0.90])
-
-                    ax.imshow(
-                        plane,
-                        cmap=cmap,
-                        vmax=vmax,
-                        vmin=vmin,
-                        origin='lower',
-                        extent=(0, 1, 0, 1),
-                    )
-
-                    # decorate
-                    fig.suptitle(title + '\n$%s=%d$'%(x,xnd), fontsize=10)
-
-                    ax.set_xticks([]) # remove any ticks
-                    ax.set_yticks([])
-
-                    # save
-                    plt.save(fig, (figtmp%scales)+('-%s-%03d'%(x,xnd))+'.%s', ['png'], dpi=dpi, verbose=True)
-                    plt.close(fig)
-
-        #---
-
-        del array_dict
-
-        ha.dwt() # decompose
-        ind += 1
-
-    return norms
-'''
+            # save figure
+            plt.save(fig, (figtmp % (dim, ind)) + '.%s', figtype, verbose=verbose, dpi=dpi)
+            plt.close(fig)

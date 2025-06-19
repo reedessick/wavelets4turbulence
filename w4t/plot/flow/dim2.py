@@ -10,6 +10,10 @@ from w4t.plot.plot import plt
 
 from .flow import hist as _hist
 
+from .dim1 import _plot as _dim1_plot
+from .dim1 import FIGSIZE as DIM1_FIGSIZE
+from .dim1 import SUBPLOTS_ADJUST as DIM1_SUBPLOTS_ADJUST
+
 #-------------------------------------------------
 
 FIGSIZE = (5.0, 5.0)
@@ -217,3 +221,39 @@ def hist_coeff(aa, ad, da, dd, **kwargs):
     #---
 
     return fig
+
+#-------------------------------------------------
+
+def grand_tour(array, verbose=False, figtmp="grand_tour", figtype=["png"], dpi=None, **kwargs):
+    """make a sequence of plots showing the behavior of the function as we slice through the data
+    """
+    shape = array.shape
+    assert len(shape) == 2, 'bad number of dimensions!'
+
+    figtmp = figtmp + '-%06d'
+    alpha = 0.50
+
+    for dim in range(2): # iterate over each dimension, making overlaid 1D plot for each
+        fig = plt.figure(DIM1_FIGSIZE)
+        ax = plt.subplot(1,1,1)
+
+        for ind in range(shape[dim]): # iterate over slices
+
+            color = 'k' # FIXME! set this based on ind?
+
+            ax = _dim1_plot(
+                ax,
+                np.take(data, ind, axis=dim), # should be a 1D array
+                symmetric_ylim=True,
+                color=color,
+                alpha=alpha,
+                **kwargs
+            )
+
+        ax.set_title('dim=%d' % dim)
+
+        plt.subplots_adjust(**DIM1_SUBPLOTS_ADJUST)
+
+        # save figure
+        plt.save(fig, (figtmp % dim) + '.%s', figtype, verbose=verbose, dpi=dpi)
+        plt.close(fig)

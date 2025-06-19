@@ -15,7 +15,7 @@ import numpy as np
 from w4t.utils import moments
 from w4t.utils import structures
 
-from w4t.plot.flow import (dim1, dim2, dim3)
+from w4t.plot import flow
 
 #-------------------------------------------------
 
@@ -359,65 +359,51 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
     def plot(self, **kwargs):
         """make a plot of approx coefficients
         """
-        if self.ndim == 1:
-            return dim1.plot(self.approx, **kwargs)
-
-        elif self.ndim == 2:
-            return dim2.plot(self.approx, **kwargs)
-
-        elif self.ndim == 3:
-            return dim3.plot(self.approx, **kwargs)
-
-        else:
-            raise RuntimeError('do not know how to plot approx for ndim=%d' % self.ndim)
+        return flow.plot(self.approx, **kwargs)
 
     #---
-
-    def plot_coeff(self, **kwargs):
-        """make plots of wavelet coefficients
-        """
-        if self.ndim == 1:
-            return dim1.plot_coeff(self.approx, self.detail, **kwargs)
-
-        elif self.ndim == 2:
-            raise NotImplementedError('return dim2.plot_coeff(self.approx, self.detail, **kwargs)')
-
-        elif self.ndim == 3:
-            raise NotImplementedError('return dim3.plot_coeff(self.approx, self.detail, **kwargs)')
-
-        else:
-            raise RuntimeError('do not know how to plot wavelet coefficients for ndim=%d' % self.ndim)
-
-    #-------
 
     def hist(self, **kwargs):
         """make a histogram of approx coefficients
         """
+        return flow.hist(self.approx, **kwargs)
+
+    #-------
+
+    def plot_coeff(self, **kwargs):
+        """make plots of wavelet coefficients
+        """
+
+        ### FIXME! can we standardize the way we pass arguments to be independent of dimension?
+
         if self.ndim == 1:
-            return dim1.hist(self.approx, **kwargs)
+            return flow.dim1.plot_coeff(self.approx, self.detail, **kwargs)
 
         elif self.ndim == 2:
-            return dim2.hist(self.approx, **kwargs)
+            raise NotImplementedError('return flow.dim2.plot_coeff(self.approx, self.detail, **kwargs)')
 
         elif self.ndim == 3:
-            return dim3.hist(self.approx, **kwargs)
+            raise NotImplementedError('return flow.dim3.plot_coeff(self.approx, self.detail, **kwargs)')
 
         else:
-            raise RuntimeError('do not know how histogram approx for ndim=%d' % self.ndim)
+            raise RuntimeError('do not know how to plot wavelet coefficients for ndim=%d' % self.ndim)
 
     #---
 
     def hist_coeff(self, **kwargs):
         """make histograms of wavelet coefficients
         """
+
+        ### FIXME! can we standardize the way we pass arguments to be independent of dimension?
+
         if self.ndim == 1:
-            return dim1.hist(self.approx, self.detail, **kwargs)
+            return flow.dim1.hist(self.approx, self.detail, **kwargs)
 
         elif self.ndim == 2:
-            raise NotImplementedError('return dim2.hist(self.approx, self.detail, **kwargs)')
+            raise NotImplementedError('return flow.dim2.hist(self.approx, self.detail, **kwargs)')
 
         elif self.ndim == 3:
-            raise NotImplementedError('return dim3.hist(self.approx, self.detail, **kwargs)'
+            raise NotImplementedError('return flow.dim3.hist(self.approx, self.detail, **kwargs)'
 
         else:
             raise RuntimeError('do not know how to make histograms of wavelet coefficients for ndim=%d' % self.ndim)
@@ -427,8 +413,7 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
     def scalogram(self):
         """make a scalogram of the data
         """
-        assert self.ndim == 1, 'can only make a scalogram of 1D data'
-        raise NotImplementedError
+        return flow.dim1.scalogram(self)
 
 #-------------------------------------------------
 

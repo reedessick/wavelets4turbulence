@@ -6,7 +6,7 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 import numpy as np
 
-from w4t.plot.plot import plt
+from w4t.plot.plot import (plt, save, close)
 
 from .flow import hist as _hist
 
@@ -191,7 +191,7 @@ def hist_coeff(aa, ad, da, dd, **kwargs):
     #---
 
     for ind, (label, data) in enumerate([
-            ('approx-approx', aa)
+            ('approx-approx', aa),
             ('approx-detail', ad),
             ('detail-approx', da),
             ('detail-detail', dd),
@@ -224,17 +224,17 @@ def hist_coeff(aa, ad, da, dd, **kwargs):
 
 #-------------------------------------------------
 
-def grand_tour(array, verbose=False, figtmp="grand_tour", figtype=["png"], dpi=None, **kwargs):
+def grand_tour(array, title=None, verbose=False, figtmp="grand_tour", figtype=["png"], dpi=None, **kwargs):
     """make a sequence of plots showing the behavior of the function as we slice through the data
     """
     shape = array.shape
     assert len(shape) == 2, 'bad number of dimensions!'
 
-    figtmp = figtmp + '-%06d'
-    alpha = 0.50
+    figtmp = figtmp + '-dim%d'
+    alpha = 0.10
 
     for dim in range(2): # iterate over each dimension, making overlaid 1D plot for each
-        fig = plt.figure(DIM1_FIGSIZE)
+        fig = plt.figure(figsize=DIM1_FIGSIZE)
         ax = plt.subplot(1,1,1)
 
         for ind in range(shape[dim]): # iterate over slices
@@ -243,8 +243,9 @@ def grand_tour(array, verbose=False, figtmp="grand_tour", figtype=["png"], dpi=N
 
             ax = _dim1_plot(
                 ax,
-                np.take(data, ind, axis=dim), # should be a 1D array
-                symmetric_ylim=True,
+                np.take(array, ind, axis=dim), # should be a 1D array
+#                symmetric_ylim=True,
+                ylabel=title,
                 color=color,
                 alpha=alpha,
                 **kwargs
@@ -255,5 +256,5 @@ def grand_tour(array, verbose=False, figtmp="grand_tour", figtype=["png"], dpi=N
         plt.subplots_adjust(**DIM1_SUBPLOTS_ADJUST)
 
         # save figure
-        plt.save(fig, (figtmp % dim) + '.%s', figtype, verbose=verbose, dpi=dpi)
-        plt.close(fig)
+        save(fig, (figtmp % dim) + '.%s', figtype, verbose=verbose, dpi=dpi)
+        close(fig)

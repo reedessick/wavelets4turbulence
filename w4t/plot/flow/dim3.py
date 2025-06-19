@@ -6,7 +6,7 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 import numpy as np
 
-from w4t.plot.plot import plt
+from w4t.plot.plot import (plt, save, close)
 
 from .flow import hist as _hist
 
@@ -203,7 +203,7 @@ def grand_tour(array, verbose=False, figtmp="grand_tour", figtype=["png"], dpi=N
 
     for dim in range(3): # iterate over each dimension, making overlaid 1D plot for each
         for ind in range(shape[dim]): # iterate over slices
-            fig = plt.figure(DIM2_FIGSIZE)
+            fig = plt.figure(figsize=DIM2_FIGSIZE)
             ax = plt.subplot(1,1,1)
 
             ax = _dim2_plot(
@@ -217,5 +217,5 @@ def grand_tour(array, verbose=False, figtmp="grand_tour", figtype=["png"], dpi=N
             plt.subplots_adjust(**DIM2_SUBPLOTS_ADJUST)
 
             # save figure
-            plt.save(fig, (figtmp % (dim, ind)) + '.%s', figtype, verbose=verbose, dpi=dpi)
-            plt.close(fig)
+            save(fig, (figtmp % (dim, ind)) + '.%s', figtype, verbose=verbose, dpi=dpi)
+            close(fig)

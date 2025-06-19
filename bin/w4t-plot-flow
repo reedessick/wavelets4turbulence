@@ -129,7 +129,8 @@ for command in args.command:
 
         if args.levels is not None:
             if args.verbose:
-                print('decomposing data with\n    wavelet=%s\n    levels=%s' % (args.wavelet, str(args.levels)))
+                print('    decomposing data with\n        wavelet=%s\n        levels=%s' % \
+                    (args.wavelet, str(args.levels)))
             arg.set_levels(args.levels)
 
     else:

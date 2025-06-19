@@ -4,6 +4,8 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 #-------------------------------------------------
 
+from abc import ABC
+
 import copy
 from collections import defaultdict
 
@@ -13,6 +15,8 @@ import numpy as np
 from w4t.utils import moments
 from w4t.utils import structures
 
+from w4t.plot.flow import (dim1, dim2, dim3)
+
 #-------------------------------------------------
 
 DEFAULT_DENOISE_THRESHOLD = 1.0
@@ -20,7 +24,7 @@ DEFAULT_STRUCTURE_THRESHOLD = 1.0
 
 #-------------------------------------------------
 
-class WaveletArray(object):
+class WaveletArray(ABC):
     """an object that manages storage and wavelet decompositions of ND arrays
     """
 
@@ -92,6 +96,7 @@ class WaveletArray(object):
 
     #--------------------
 
+    @abstractmethod
     def _dwtn(self, axis):
         raise NotImplementedError('children need to overwrite this')
 
@@ -123,6 +128,7 @@ class WaveletArray(object):
 
     #---
 
+    @abstractmethod
     def _idwtn(self, a, d, axis):
         raise NotImplementedError('children need to overwrite this')
 
@@ -348,6 +354,59 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
         )
         return [Structure(pix, self.levels, self.shape) for pix in pixels]
 
+    #--------------------
+
+    def plot(self, **kwargs):
+        """make a plot of approx coefficients
+        """
+        if self.ndim == 1:
+            return dim1.plot(self.approx, **kwargs)
+
+        elif self.ndim == 2:
+            return dim2.plot(self.approx, **kwargs)
+
+        elif self.ndim == 3:
+            return dim3.plot(self.approx, **kwargs)
+
+        else:
+            raise RuntimeError('do not know how to plot wavelet coefficinets for ndim=%d' % self.ndim)
+
+    def plot_coeff(self, **kwargs):
+        """make plots of wavelet coefficients
+        """
+        if self.ndim == 1:
+            return dim1.plot_coeff(self.approx, self.detail, **kwargs)
+
+        elif self.ndim == 2:
+            raise NotImplementedError('return dim2.plot_coeff(self.approx, self.detail, **kwargs)')
+
+        elif self.ndim == 3:
+            raise NotImplementedError('return dim3.plot_coeff(self.approx, self.detail, **kwargs)')
+
+        else:
+            raise RuntimeError('do not know how to plot wavelet coefficients for ndim=%d' % self.ndim)
+
+    def hist_coeff(self, **kwargs):
+        """make histograms of wavelet coefficients
+        """
+        if self.ndim == 1:
+            return dim1.hist(self.approx, self.detail, **kwargs)
+
+        elif self.ndim == 2:
+            raise NotImplementedError('return dim2.hist(self.approx, self.detail, **kwargs)')
+
+        elif self.ndim == 3:
+            raise NotImplementedError('return dim3.hist(self.approx, self.detail, **kwargs)'
+
+        else:
+            raise RuntimeError('do not know how to make histograms of wavelet coefficients for ndim=%d' % self.ndim)
+
+    def scalogram(self):
+        """make a scalogram of the data
+        """
+        assert self.ndim == 1, 'can only make a scalogram of 1D data'
+        raise NotImplementedError
+
 #-------------------------------------------------
 
 class Structure(object):
@@ -413,6 +472,8 @@ class Structure(object):
         waveletarray.set_levels(self.levels) # set to the appropriate level of decomposition
         return waveletarray.approx[self.tuple]
 
+    #---
+
     def principle_components(self, waveletarray=None, index=1):
         """compute the principle components of a structure with respect to the field contained in waveletarray raised to index
         """
@@ -426,3 +487,10 @@ class Structure(object):
 
         # compute principle components and return
         return structures.principle_components(self.pixels, weights=weights)
+
+    #---
+
+    def plot(self, waveletarray, zoom=False):
+        """make a plot of the structure
+        """
+        raise NotImplementedError

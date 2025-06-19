@@ -1,25 +1,17 @@
-"""utils for plotting the Haar decomposition of planar (2D) data
+"""a module that houses logic about plotting 1D data
 """
 __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 #-------------------------------------------------
 
-from .plot import *
+from w4t.plot.plot import plt
+
+from .flow import hist as _hist
+from .flow import TICK_PARAMS
 
 #-------------------------------------------------
 
 FIGSIZE = (5.0, 3.0)
-
-#---
-
-TICK_PARAMS = dict(
-    left=True,
-    right=True,
-    top=True,
-    bottom=True,
-    direction='in',
-    which='both',
-)
 
 #---
 
@@ -34,31 +26,50 @@ SUBPLOTS_ADJUST = dict(
 
 #---
 
-SCALOGRAM_CMAP = 'RdBu'
+SCALOGRAM_CMAP = 'Reds'
 
 #-------------------------------------------------
 
-def plot(a, d, **kwargs):
-    """plot 1D data from a Haar decomposed 2D array (assumed to be square)
+def _plot(ax, data, grid=False, **kwargs):
+    dx = 0.5/len(data)
+    ax.plot(dx + np.arange(len(data))/len(data), data, **kwargs)
+
+    ax.set_xlim(xmin=0, xmax=1)
+    ax.set_xticks(ax.get_xticks()[1:-1])
+
+    ax.tick_params(**TICK_PARAMS)
+    ax.grid(grid, which='both')
+
+    return ax
+
+#-----------
+
+def plot(approx, **kwags):
+    """plot 1D data
+    """
+    fig = plt.figure(figsize=FIGSIZE)
+    _plot(plt.subplot(1,1,1), approx, **kwargs)
+    plt.subplots_adjust(**SUBPLOTS_ADJUST)
+    return fig
+
+#------------------------
+
+def plot_coeff(approx, detail, **kwargs):
+    """plot 1D data from a decomposed array
     """
     fig = plt.figure(figsize=FIGSIZE)
 
     #---
 
-    for ind, data in enumerate([a, d]):
+    for ind, data in enumerate([approx, detail]):
 
         if np.prod(data.shape) == 0: # no data
             continue
 
-        ax = plt.subplot(1,2,ind+1)
-
-        dx = 0.5/len(data)
-        ax.plot(dx + np.arange(len(data))/len(data), data, **kwargs)
-        ax.set_xlim(xmin=0, xmax=1)
-        ax.set_xticks(ax.get_xticks()[1:-1])
+        ax = _plt(plt.subplot(1,2,ind+1), data, **kwargs)
 
         if ind == 0:
-            ax.set_ylabel('approximant')
+            ax.set_ylabel('approx')
 
         elif ind == 1:
             ax.set_ylabel('detail')
@@ -67,8 +78,6 @@ def plot(a, d, **kwargs):
 
             ylim = np.max(np.abs(ax.get_ylim()))
             ax.set_ylim(ymin=-ylim, ymax=+ylim)
-
-        ax.tick_params(**TICK_PARAMS)
 
     #---
 
@@ -80,26 +89,20 @@ def plot(a, d, **kwargs):
 
 #------------------------
 
-def hist(a, d, grid=False, **kwargs):
-    """plot histograms of coefficients from a Haar decomposed 2D array (assumed to be square)
+def hist_coeff(approx, detail, **kwargs):
+    """plot histograms of coefficients from a 1D decomposed array
     """
     fig = plt.figure(figsize=FIGSIZE)
 
     #---
 
-    for ind, data in enumerate([a, d]):
+    for ind, data in enumerate([approx, detail]):
 
         num = np.prod(data.shape)
         if num == 0: # no data
             continue
 
-        ax = plt.subplot(1,2,ind+1)
-
-        data = np.ravel(data)
-        xlim = np.max(np.abs(data))
-        bins = np.linspace(-xlim, +xlim, min(1000, max(10, int(num**0.5))))
-
-        ax.hist(data, bins=bins, **kwargs)
+        ax = _hist(plt.subplot(1,2,ind+1), data, **kwargs)
 
         if ind == 0:
             ax.set_xlabel('approximant')
@@ -111,9 +114,6 @@ def hist(a, d, grid=False, **kwargs):
 
             xlim = np.max(np.abs(ax.get_xlim()))
             ax.set_xlim(xmin=-xlim, xmax=+xlim)
-
-        ax.tick_params(**TICK_PARAMS)
-        ax.grid(grid, which='both')
 
         xmin, xmax = ax.get_xlim()
         ymin, ymax = ax.get_ylim()
@@ -130,9 +130,11 @@ def hist(a, d, grid=False, **kwargs):
 
 #-------------------------------------------------
 
-def scalogram(ha):
-    """plot a scalogram of 1D Haar decomposition
+def scalogram(waveletarray):
+    """plot a scalogram of 1D WaveletArray
     """
+    assert waveletarray.ndim == 1, 'can only plot scalogram of 1D WaveletArray'
+
     fig = plt.figure()
 
     ax1 = fig.add_axes([0.10, 0.10, 0.80, 0.70]) # scalogram
@@ -141,34 +143,34 @@ def scalogram(ha):
 
     #---
 
-    ha.decompose()
+    waveletarray.decompose()
 
-    if ha.active[0] == 1: # ignore the lowest order
-        ha.idwt()
+    if waveletarray.active[0] == 1: # ignore the lowest order
+        waveletarray.idwt()
 
     X = []
     Y = []
     Z = []
     scales = []
 
-    while ha.scales[0] > 1:
-        scales.append(ha.scales[0])
+    while waveletarray.scales[0] > 1:
+        scales.append(waveletarray.scales[0])
 
-        xs = np.arange(ha.active[0], dtype=float) / ha.active[0]
+        xs = np.arange(waveletarray.active[0], dtype=float) / waveletarray.active[0]
         xs += 0.5*(xs[1]-xs[0])
 
         # add to arrays for scatter points
         X.append(xs)
-        Y.append(ha.scales[0]*np.ones(ha.active[0]))
+        Y.append(waveletarray.scales[0]*np.ones(waveletarray.active[0]))
 
-        detail = np.array(ha.detail[:]) # make a copy to avoid the fact that ha will edit this in-place
+        detail = np.array(waveletarray.detail[:]) # make a copy to avoid the fact that ha will edit this in-place
         s = np.std(detail)
         if s > 0:
             detail /= s # only scale this if there is some variation
         Z.append( detail )
 
         # iterate
-        ha.idwt()
+        waveletarray.idwt()
 
     # plot the scalogram as a scatter
     vlim = np.max([np.max(np.abs(z)) for z in Z])
@@ -225,7 +227,7 @@ def scalogram(ha):
 
     # plot raw data
 
-    ax3.plot(np.arange(len(ha.array))/len(ha.array), ha.array, )
+    ax3.plot(np.arange(len(waveletarray.array))/len(waveletarray.array), waveletarray.array, )
 
     ax3.set_xlim(ax1.get_xlim())
     plt.setp(ax3.get_xticklabels(), visible=False)

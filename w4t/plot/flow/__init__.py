@@ -35,8 +35,8 @@ def plot_coeff(waveletarray, **kwargs):
     elif waveletarray.ndim == 2:
         foo = dim2.plot_coeff
 
-    elif waveletarray.ndim == 2:
-        foo = dim2.plot_coeff
+    elif waveletarray.ndim == 3:
+        foo = dim3.plot_coeff
 
     else:
         raise RuntimeError('do not know how to plot wavelet coefficients for ndim=%d' % waveletarray.ndim)
@@ -72,8 +72,8 @@ def hist_coeff(waveletarray, **kwargs):
     elif waveletarray.ndim == 2:
         foo = dim2.hist_coeff
 
-    elif waveletarray.ndim == 2:
-        foo = dim2.hist_coeff
+    elif waveletarray.ndim == 3:
+        foo = dim3.hist_coeff
 
     else:
         raise RuntimeError('do not know how to plot wavelet coefficients for ndim=%d' % waveletarray.ndim)

@@ -16,7 +16,7 @@ from .dim2 import SUBPLOTS_ADJUST as DIM2_SUBPLOTS_ADJUST
 
 #-------------------------------------------------
 
-FIGSIZE = (5.0, 8.0)
+FIGSIZE = (5.0, 5.0)
 
 #---
 
@@ -32,11 +32,11 @@ _TICK_PARAMS = dict(
 #---
 
 SUBPLOTS_ADJUST = dict(
-    left=0.05,
-    right=0.95,
-    bottom=0.03,
-    top=0.93,
-    hspace=0.10,
+    left=0.10,
+    right=0.90,
+    bottom=0.10,
+    top=0.90,
+    hspace=0.03,
     wspace=0.03,
 )
 
@@ -54,11 +54,11 @@ def _plot(ax11, ax12, ax22, data, grid=False, **kwargs):
     """
     assert len(np.shape(data)) == 3, 'data must be 3-dimensional'
  
-    for ax, dim, xlabel, ylabel, transpose in [
-            (ax11, 1, None, 'z', False),
+    for ind, (ax, dim, xlabel, ylabel, transpose) in enumerate([
+            (ax11, 1, 'x', 'z', False),
             (ax12, 2, 'x', 'y', False),
-            (ax22, 0, 'z', None, True),
-        ]:
+            (ax22, 0, 'z', 'y', True),
+        ]):
         d = np.mean(data, axis=dim) # average along one dimension
         if transpose: # make sure we have the correct orientation of axes (x-axis is index 0, y-axis is index 1)
             d = np.transpose(d)
@@ -68,13 +68,21 @@ def _plot(ax11, ax12, ax22, data, grid=False, **kwargs):
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
 
+        if ind == 0:
+            ax.xaxis.tick_top()
+            ax.xaxis.set_label_position('top')
+
+        elif ind == 2:
+            ax.yaxis.tick_right()
+            ax.yaxis.set_label_position('right')
+
     #---
 
-    return ax
+    return ax11, ax12, ax22
 
 #---
 
-def plot(approx, **kwargs):
+def plot(approx, title=None, **kwargs):
     """plot a visualization of the flow
     """
     fig = plt.figure(figsize=FIGSIZE)
@@ -86,6 +94,10 @@ def plot(approx, **kwargs):
         **kwargs
     )
     plt.subplots_adjust(**SUBPLOTS_ADJUST)
+
+    if title:
+        fig.text(0.75, 0.75, title, ha='center', va='center')
+
     return fig
 
 #-----------
@@ -108,13 +120,13 @@ def plot_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, **kwargs):
         _ymax = -np.inf
         text = []
 
-        for col, label, data in enumerate(group):
+        for col, (label, data) in enumerate(group):
 
             num = np.prod(data.shape)
             if num == 0: # no data
                 continue
 
-            ax = _plt(
+            ax11, ax12, ax22 = _plot(
                 plt.subplot(8,6,row*6 + col + 1),
                 plt.subplot(8,6,(row+1)*6 + col + 1),
                 plt.subplot(8,6,(row+1)*6 + col + 2),
@@ -122,7 +134,8 @@ def plot_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, **kwargs):
                 **kwargs
             )
 
-            ax.set_title(label)
+            ax11.set_title(label)
+            fig.text(col/3, 1-0.125-row/4, label, ha='center', va='center')
 
     #---
 

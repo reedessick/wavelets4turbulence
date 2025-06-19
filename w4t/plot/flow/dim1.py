@@ -9,13 +9,21 @@ import numpy as np
 from w4t.plot.plot import plt
 
 from .flow import hist as _hist
-from .flow import TICK_PARAMS
 
 #-------------------------------------------------
 
 FIGSIZE = (5.0, 3.0)
 
 #---
+
+TICK_PARAMS = dict(
+    left=True,
+    right=True,
+    top=True,
+    bottom=True,
+    which='both',
+    direction='in',
+)
 
 SUBPLOTS_ADJUST = dict(
     left=0.10,
@@ -37,7 +45,7 @@ def _plot(ax, data, symmetric_ylim=False, grid=False, xlabel=None, ylabel=None, 
     ax.plot(dx + np.arange(len(data))/len(data), data, **kwargs)
 
     ax.set_xlim(xmin=0, xmax=1)
-    ax.set_xticks(ax.get_xticks()[1:-1])
+#    ax.set_xticks(ax.get_xticks()[1:-1])
 
     ax.tick_params(**TICK_PARAMS)
     ax.grid(grid, which='both')

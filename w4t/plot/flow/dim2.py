@@ -9,10 +9,10 @@ import numpy as np
 from w4t.plot.plot import (plt, save, close)
 
 from .flow import hist as _hist
+from .flow import TICK_PARAMS as COLORBAR_TICK_PARAMS
 
 from .dim1 import _plot as _dim1_plot
 from .dim1 import FIGSIZE as DIM1_FIGSIZE
-from .dim1 import SUBPLOTS_ADJUST as DIM1_SUBPLOTS_ADJUST
 
 #-------------------------------------------------
 
@@ -32,9 +32,9 @@ IMSHOW_TICK_PARAMS = dict(
 #---
 
 SUBPLOTS_ADJUST = dict(
-    left=0.075,
-    right=0.925,
-    bottom=0.05,
+    left=0.10,
+    right=0.90,
+    bottom=0.10,
     top=0.90,
     hspace=0.03,
     wspace=0.03,
@@ -42,7 +42,7 @@ SUBPLOTS_ADJUST = dict(
 
 #------------------------
 
-CMAP = 'RdGy'
+CMAP = 'cividis'
 
 LOG_POS_CMAP = 'YlOrRd'
 LOG_NEG_CMAP = 'YlGnBu'
@@ -119,24 +119,24 @@ def _plot(
 
 #---
 
-def plot(approx, **kwargs):
+def plot(approx, title=None, **kwargs):
     """plot a visualization of the flow
     """
     fig = plt.figure(figsize=FIGSIZE)
-    _plot(plt.subplot(1,1,1), approx, **kwargs)
+    _plot(plt.subplot(1,1,1), approx, title=title, **kwargs)
     plt.subplots_adjust(**SUBPLOTS_ADJUST)
     return fig
 
 #-----------
 
-def plot_coeff(aa, ad, da, dd, **kwargs):
+def plot_coeff(aa, ad, da, dd, title=None, **kwargs):
     """plot visualization of wavelet coefficients
     """
     fig = plt.figure(figsize=FIGSIZE)
 
     #---
 
-    for ind, data in enumerate([aa, ad, da, dd]):
+    for ind, data in enumerate([aa, da, ad, dd]):
 
         if np.prod(data.shape) == 0: # no data
             continue
@@ -165,6 +165,11 @@ def plot_coeff(aa, ad, da, dd, **kwargs):
 
     #---
 
+    if title:
+        fig.suptitle(title)
+
+    #---
+
     plt.subplots_adjust(**SUBPLOTS_ADJUST)
 
     #---
@@ -173,17 +178,17 @@ def plot_coeff(aa, ad, da, dd, **kwargs):
 
 #------------------------
 
-def hist(approx, **kwargs):
+def hist(approx, title=None, **kwargs):
     """histogram 1D data
     """
     fig = plt.figure(figsize=FIGSIZE)
-    _hist(plt.subplot(1,1,1), approx, **kwargs)
+    _hist(plt.subplot(1,1,1), approx, xlabel=title, **kwargs)
     plt.subplots_adjust(**SUBPLOTS_ADJUST)
     return fig
 
 #-----------
 
-def hist_coeff(aa, ad, da, dd, **kwargs):
+def hist_coeff(aa, ad, da, dd, title=None, **kwargs):
     """histogram wavelet coefficients
     """
     fig = plt.figure(figsize=FIGSIZE)
@@ -192,8 +197,8 @@ def hist_coeff(aa, ad, da, dd, **kwargs):
 
     for ind, (label, data) in enumerate([
             ('approx-approx', aa),
-            ('approx-detail', ad),
             ('detail-approx', da),
+            ('approx-detail', ad),
             ('detail-detail', dd),
         ]):
 
@@ -206,13 +211,20 @@ def hist_coeff(aa, ad, da, dd, **kwargs):
         if ind < 2: # top row
             ax.xaxis.tick_top()
 
-        if ind%2 == 0: # right column
+        if ind%2 == 1: # right column
             ax.yaxis.tick_right()
+            ax.yaxis.set_label_position('right')
 
         xmin, xmax = ax.get_xlim()
         ymin, ymax = ax.get_ylim()
 
-        ax.text(xmin + 0.01*(xmax-xmin), ymax / (ymax/ymin)**0.01, '%s\n%d samples' % (label, num), ha='left', va='top')
+        ax.text(xmin + 0.01*(xmax-xmin), ymax / (ymax/ymin)**0.01, label, ha='left', va='top')
+        ax.text(xmax - 0.01*(xmax-xmin), ymax / (ymax/ymin)**0.01, '%d samples' % num, ha='right', va='top')
+
+    #---
+
+    if title:
+        fig.suptitle(title)
 
     #---
 
@@ -233,13 +245,17 @@ def grand_tour(array, title=None, verbose=False, figtmp="grand_tour", figtype=["
     figtmp = figtmp + '-dim%d'
     alpha = 0.10
 
+    cmap = plt.get_cmap(CMAP)
+
     for dim in range(2): # iterate over each dimension, making overlaid 1D plot for each
         fig = plt.figure(figsize=DIM1_FIGSIZE)
-        ax = plt.subplot(1,1,1)
 
-        for ind in range(shape[dim]): # iterate over slices
+        ax = fig.add_axes([0.10, 0.12, 0.80, 0.80]) # scalogram
+        cb = fig.add_axes([0.91, 0.12, 0.01, 0.80]) # colorbar
 
-            color = 'k' # FIXME! set this based on ind?
+        for ind in range(shape[dim]): # iterate over slice
+
+            color = cmap((ind+0.5)/shape[dim])
 
             ax = _dim1_plot(
                 ax,
@@ -251,9 +267,24 @@ def grand_tour(array, title=None, verbose=False, figtmp="grand_tour", figtype=["
                 **kwargs
             )
 
-        ax.set_title('dim=%d' % dim)
+        ax.set_xlabel('dim=%d' % ((dim+1)%2))
 
-        plt.subplots_adjust(**DIM1_SUBPLOTS_ADJUST)
+        # add colorbar
+
+        gradient = np.linspace(0, 1, 256)
+        gradient = np.transpose(np.vstack((gradient, gradient)))
+
+        cb.imshow(gradient, aspect='auto', cmap=CMAP, origin='lower', extent=(0,1,0,1))
+
+        cb.set_xticks([])
+
+        cb.set_ylim(ymin=0, ymax=1)
+
+        cb.set_ylabel('dim=%d' % dim)
+        cb.yaxis.tick_right()
+        cb.yaxis.set_label_position('right')
+
+        cb.tick_params(**COLORBAR_TICK_PARAMS)
 
         # save figure
         save(fig, (figtmp % dim) + '.%s', figtype, verbose=verbose, dpi=dpi)

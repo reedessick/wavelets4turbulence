@@ -6,7 +6,7 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 import numpy as np
 
-from .base import WaveletArray
+from .w4t import WaveletArray
 
 #-------------------------------------------------
 

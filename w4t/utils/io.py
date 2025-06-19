@@ -14,7 +14,7 @@ try:
 except ImportError:
     Fields = None
 
-from w4t.w4t.base import Structure
+from w4t.w4t.w4t import Structure
 
 #-------------------------------------------------
 

@@ -6,7 +6,7 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 import pywt
 
-from .base import WaveletArray
+from .w4t import WaveletArray
 
 #-------------------------------------------------
 

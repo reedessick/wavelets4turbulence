@@ -24,6 +24,25 @@ def plot(array, **kwargs):
     else:
         raise RuntimeError('do not know how to plot approx for ndim=%d' % ndim)
 
+#-----------
+
+def plot_coeff(waveletarray, **kwargs):
+    """a simple routing function that controls workflow based on data dimensionality
+    """
+    if waveletarray.ndim == 1:
+        foo = dim1.plot_coeff
+
+    elif waveletarray.ndim == 2:
+        foo = dim2.plot_coeff
+
+    elif waveletarray.ndim == 2:
+        foo = dim2.plot_coeff
+
+    else:
+        raise RuntimeError('do not know how to plot wavelet coefficients for ndim=%d' % self.ndim)
+
+    return foo(*waveletarray.coeffset, **kwargs)
+
 #------------------------
 
 def hist(array, **kwargs):
@@ -41,6 +60,25 @@ def hist(array, **kwargs):
 
     else:
         raise RuntimeError('do not know how histogram approx for ndim=%d' % ndim)
+
+#-----------
+
+def hist_coeff(waveletarray, **kwargs):
+    """a simple routing function that controls workflow based on data dimensionality
+    """
+    if waveletarray.ndim == 1:
+        foo = dim1.hist_coeff
+
+    elif waveletarray.ndim == 2:
+        foo = dim2.hist_coeff
+
+    elif waveletarray.ndim == 2:
+        foo = dim2.hist_coeff
+
+    else:
+        raise RuntimeError('do not know how to plot wavelet coefficients for ndim=%d' % self.ndim)
+
+    return foo(*waveletarray.coeffset, **kwargs)
 
 #------------------------
 

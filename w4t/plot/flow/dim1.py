@@ -18,8 +18,8 @@ FIGSIZE = (5.0, 3.0)
 #---
 
 SUBPLOTS_ADJUST = dict(
-    left=0.12,
-    right=0.88,
+    left=0.10,
+    right=0.90,
     bottom=0.15,
     top=0.875,
     hspace=0.03,
@@ -32,7 +32,7 @@ SCALOGRAM_CMAP = 'Reds'
 
 #-------------------------------------------------
 
-def _plot(ax, data, symmetric_ylim=False, grid=False, **kwargs):
+def _plot(ax, data, symmetric_ylim=False, grid=False, xlabel=None, ylabel=None, title=None, **kwargs):
     dx = 0.5/len(data)
     ax.plot(dx + np.arange(len(data))/len(data), data, **kwargs)
 
@@ -46,21 +46,28 @@ def _plot(ax, data, symmetric_ylim=False, grid=False, **kwargs):
         ylim = np.max(np.abs(ax.get_ylim()))
         ax.set_ylim(ymin=-ylim, ymax=+ylim)
 
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+    if title:
+        ax.set_title(title)
+
     return ax
 
 #---
 
-def plot(approx, **kwags):
+def plot(approx, title=None, **kwargs):
     """plot 1D data
     """
     fig = plt.figure(figsize=FIGSIZE)
-    _plot(plt.subplot(1,1,1), approx, **kwargs)
+    _plot(plt.subplot(1,1,1), approx, ylabel=title, **kwargs)
     plt.subplots_adjust(**SUBPLOTS_ADJUST)
     return fig
 
 #-----------
 
-def plot_coeff(approx, detail, **kwargs):
+def plot_coeff(approx, detail, title=None, **kwargs):
     """plot 1D data from a decomposed array
     """
     fig = plt.figure(figsize=FIGSIZE)
@@ -72,13 +79,18 @@ def plot_coeff(approx, detail, **kwargs):
         if np.prod(data.shape) == 0: # no data
             continue
 
-        ax = _plt(plt.subplot(1,2,ind+1), data, symmetric_ylim=(ind>0), **kwargs)
+        ax = _plot(plt.subplot(1,2,ind+1), data, symmetric_ylim=(ind>0), **kwargs)
 
         ax.set_ylabel(label)
 
         if ind == 1:
             ax.yaxis.tick_right()
             ax.yaxis.set_label_position('right')
+
+    #---
+
+    if title:
+        fig.suptitle(title)
 
     #---
 
@@ -90,36 +102,34 @@ def plot_coeff(approx, detail, **kwargs):
 
 #------------------------
 
-def hist(approx, **kwargs):
+def hist(approx, title=None, **kwargs):
     """histogram 1D data
     """
     fig = plt.figure(figsize=FIGSIZE)
-    _hist(plt.subplot(1,1,1), approx, **kwargs)
+    _hist(plt.subplot(1,1,1), approx, xlabel=title, **kwargs)
     plt.subplots_adjust(**SUBPLOTS_ADJUST)
     return fig
 
 #-----------
 
-def hist_coeff(approx, detail, **kwargs):
+def hist_coeff(approx, detail, title=None, **kwargs):
     """plot histograms of coefficients from a 1D decomposed array
     """
     fig = plt.figure(figsize=FIGSIZE)
 
     #---
 
-    for ind, data in enumerate([approx, detail]):
+    for ind, (label, data) in enumerate([('approx', approx), ('detail', detail)]):
 
         num = np.prod(data.shape)
         if num == 0: # no data
             continue
 
-        ax = _hist(plt.subplot(1,2,ind+1), data, **kwargs)
+        ax = _hist(plt.subplot(1,2,ind+1), data, symmetric_xlim=(ind!=0), **kwargs)
 
-        if ind == 0:
-            ax.set_xlabel('approximant')
+        ax.set_xlabel(label)
 
-        else:
-            ax.set_xlabel('detail')
+        if ind:
             ax.yaxis.tick_right()
             ax.yaxis.set_label_position('right')
 
@@ -133,6 +143,11 @@ def hist_coeff(approx, detail, **kwargs):
 
     #---
 
+    if title:
+        fig.suptitle(title)
+
+    #---
+
     plt.subplots_adjust(**SUBPLOTS_ADJUST)
 
     #---
@@ -141,7 +156,7 @@ def hist_coeff(approx, detail, **kwargs):
 
 #-------------------------------------------------
 
-def scalogram(waveletarray):
+def scalogram(waveletarray, **kwargs):
     """plot a scalogram of 1D WaveletArray
     """
     assert waveletarray.ndim == 1, 'can only plot scalogram of 1D WaveletArray'
@@ -203,7 +218,10 @@ def scalogram(waveletarray):
     # decorate spectogram
 
     ax1.set_yscale('log')
-    ax1.set_ylim(ymin=np.min(scales)/2**0.5, ymax=np.max(scales)*2**0.5)
+    ax1.set_ylim(
+        ymin=np.max(scales)*2**0.5,
+        ymax=np.min(scales)/2**0.5,
+    )
 
     ax1.set_yticks(scales, minor=False)
     ax1.set_yticks([], minor=True)

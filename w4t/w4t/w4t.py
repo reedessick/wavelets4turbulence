@@ -4,7 +4,7 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 #-------------------------------------------------
 
-from abc import ABC
+from abc import (ABC, abstractmethod)
 
 import copy
 from collections import defaultdict
@@ -93,6 +93,37 @@ class WaveletArray(ABC):
         assert len(approx_or_detail) == self.ndim, 'bad length for approx_or_detail'
         inds = self.active
         return self.array[tuple(slice(ind) if aod else slice(ind,2*ind) for ind, aod in zip(inds, approx_or_detail))]
+
+    @property
+    def coeffset(self):
+        """grab the set of most-relevant approximant and detail coefficients given the current level of decomposition
+        """
+        # FIXME? can we this in a way that extends to an arbitrary number of dimensions?
+        if self.ndim == 1:
+            return self.approx, self.detail
+
+        elif self.ndim == 2:
+            return (
+                self.approx,
+                self.coeffs([True, False]), # ad
+                self.coeffs([False, True]), # da
+                self.detail,
+            )
+
+        elif self.ndim == 3:
+            return (
+                self.approx,
+                self.coeffs([True, True, False]), # aad
+                self.coeffs([True, False, True]), # ada
+                self.coeffs([False, True, True]), # daa
+                self.coeffs([True, False, False]), # add
+                self.coeffs([False, True, False]), # dad
+                self.coeffs([False, False, True]), # dda
+                self.detail,
+            )
+
+        else:
+            raise RuntimeError('do not know how to retrieve coeffset for ndim=%d' % self.ndim)
 
     #--------------------
 
@@ -373,40 +404,14 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
     def plot_coeff(self, **kwargs):
         """make plots of wavelet coefficients
         """
-
-        ### FIXME! can we standardize the way we pass arguments to be independent of dimension?
-
-        if self.ndim == 1:
-            return flow.dim1.plot_coeff(self.approx, self.detail, **kwargs)
-
-        elif self.ndim == 2:
-            raise NotImplementedError('return flow.dim2.plot_coeff(self.approx, self.detail, **kwargs)')
-
-        elif self.ndim == 3:
-            raise NotImplementedError('return flow.dim3.plot_coeff(self.approx, self.detail, **kwargs)')
-
-        else:
-            raise RuntimeError('do not know how to plot wavelet coefficients for ndim=%d' % self.ndim)
+        return flow.plot_coeff(self, **kwargs)
 
     #---
 
     def hist_coeff(self, **kwargs):
         """make histograms of wavelet coefficients
         """
-
-        ### FIXME! can we standardize the way we pass arguments to be independent of dimension?
-
-        if self.ndim == 1:
-            return flow.dim1.hist(self.approx, self.detail, **kwargs)
-
-        elif self.ndim == 2:
-            raise NotImplementedError('return flow.dim2.hist(self.approx, self.detail, **kwargs)')
-
-        elif self.ndim == 3:
-            raise NotImplementedError('return flow.dim3.hist(self.approx, self.detail, **kwargs)'
-
-        else:
-            raise RuntimeError('do not know how to make histograms of wavelet coefficients for ndim=%d' % self.ndim)
+        return flow.hist_coeff(self, **kwargs)
 
     #-------
 
@@ -505,34 +510,12 @@ class Structure(object):
         if zoom:
             raise NotImplementedError('array size to only include bounding box')
 
-        if self.ndim == 1:
-            return dim1.plot(array, **kwargs)
-
-        elif self.ndim == 2:
-            return dim2.plot(array, **kwargs)
-
-        elif self.ndim == 3:
-            return dim3.plot(array, **kwargs)
-
-        else:
-            raise RuntimeError('do not know how to plot approx for ndim=%d' % self.ndim)
+        return flow.plot(array, **kwargs)
 
     #-------
 
     def hist(self, waveletarray, **kwargs):
         """make a histogram of approx coefficients
         """
-        array = self.extract(waveletarray)
-
-        if self.ndim == 1:
-            return dim1.hist(array, **kwargs)
-
-        elif self.ndim == 2:
-            return dim2.hist(array, **kwargs)
-
-        elif self.ndim == 3:
-            return dim3.hist(array, **kwargs)
-
-        else:
-            raise RuntimeError('do not know how histogram approx for ndim=%d' % self.ndim)
+        return flow.hist(self.extract(waveletarray), **kwargs)
 

@@ -12,22 +12,13 @@ from .flow import hist as _hist
 
 from .dim2 import _plot as _dim2_plot
 from .dim2 import FIGSIZE as DIM2_FIGSIZE
+from .dim2 import IMSHOW_TICK_PARAMS as DIM2_TICKPARAMS
 from .dim2 import SUBPLOTS_ADJUST as DIM2_SUBPLOTS_ADJUST
 
 #-------------------------------------------------
 
 FIGSIZE = (5.0, 5.0)
-
-#---
-
-_TICK_PARAMS = dict(
-    left=True,
-    right=True,
-    top=True,
-    bottom=True,
-    which='both',
-    direction='in',
-)
+BIG_FIGSIZE = (10.0, 12.0)
 
 #---
 
@@ -40,6 +31,15 @@ SUBPLOTS_ADJUST = dict(
     wspace=0.03,
 )
 
+BIG_SUBPLOTS_ADJUST = dict(
+    left=0.05,
+    right=0.95,
+    bottom=0.05,
+    top=0.95,
+    hspace=0.10,
+    wspace=0.10,
+)
+
 #---
 
 CMAP = 'RdGy'
@@ -49,7 +49,7 @@ LOG_NEG_CMAP = 'YlGnBu'
 
 #-------------------------------------------------
 
-def _plot(ax11, ax12, ax22, data, grid=False, **kwargs):
+def _plot(ax11, ax12, ax22, data, grid=False, labels=True, **kwargs):
     """plot a visualization of the flow
     """
     assert len(np.shape(data)) == 3, 'data must be 3-dimensional'
@@ -65,9 +65,6 @@ def _plot(ax11, ax12, ax22, data, grid=False, **kwargs):
 
         ax = _dim2_plot(ax, d)
 
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(ylabel)
-
         if ind == 0:
             ax.xaxis.tick_top()
             ax.xaxis.set_label_position('top')
@@ -75,6 +72,15 @@ def _plot(ax11, ax12, ax22, data, grid=False, **kwargs):
         elif ind == 2:
             ax.yaxis.tick_right()
             ax.yaxis.set_label_position('right')
+
+        if labels:
+            ax.set_xlabel(xlabel)
+            ax.set_ylabel(ylabel)
+        else:
+            plt.setp(ax.get_xticklabels(), visible=False)
+            plt.setp(ax.get_yticklabels(), visible=False)
+
+        ax.tick_params(**DIM2_TICKPARAMS)
 
     #---
 
@@ -96,16 +102,16 @@ def plot(approx, title=None, **kwargs):
     plt.subplots_adjust(**SUBPLOTS_ADJUST)
 
     if title:
-        fig.text(0.75, 0.75, title, ha='center', va='center')
+        fig.text(0.70, 0.70, title, ha='center', va='center')
 
     return fig
 
 #-----------
 
-def plot_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, **kwargs):
+def plot_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, title=None, **kwargs):
     """plot visualization of wavelet coefficients
     """
-    fig = plt.figure(figsize=FIGSIZE)
+    fig = plt.figure(figsize=BIG_FIGSIZE)
 
     #---
 
@@ -127,19 +133,31 @@ def plot_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, **kwargs):
                 continue
 
             ax11, ax12, ax22 = _plot(
-                plt.subplot(8,6,row*6 + col + 1),
-                plt.subplot(8,6,(row+1)*6 + col + 1),
-                plt.subplot(8,6,(row+1)*6 + col + 2),
+                plt.subplot(8, 6, 2*row*6 + 2*col + 1),
+                plt.subplot(8, 6, (2*row+1)*6 + 2*col + 1),
+                plt.subplot(8, 6, (2*row+1)*6 + 2*col + 2),
                 data,
+                labels=False,
                 **kwargs
             )
 
-            ax11.set_title(label)
-            fig.text(col/3, 1-0.125-row/4, label, ha='center', va='center')
+#            ax11.set_title(label)
+            fig.text(
+                BIG_SUBPLOTS_ADJUST['left'] + (col+0.75)*(BIG_SUBPLOTS_ADJUST['right']-BIG_SUBPLOTS_ADJUST['left'])/3,
+                BIG_SUBPLOTS_ADJUST['top'] - (row+0.25)*(BIG_SUBPLOTS_ADJUST['top']-BIG_SUBPLOTS_ADJUST['bottom'])/4,
+                label,
+                ha='center',
+                va='center',
+            )
 
     #---
 
-    plt.subplots_adjust(**SUBPLOTS_ADJUST)
+    if title:
+        fig.suptitle(title)
+
+    #---
+
+    plt.subplots_adjust(**BIG_SUBPLOTS_ADJUST)
 
     #---
 
@@ -147,20 +165,20 @@ def plot_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, **kwargs):
 
 #------------------------
 
-def hist(approx, **kwargs):
+def hist(approx, title=None, **kwargs):
     """histogram approx
     """
     fig = plt.figure(figsize=FIGSIZE)
-    _hist(plt.subplot(1,1,1), approx, **kwargs)
+    _hist(plt.subplot(1,1,1), approx, xlabel=title, **kwargs)
     plt.subplots_adjust(**SUBPLOTS_ADJUST)
     return fig
 
 #-----------
 
-def hist_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, **kwargs):
+def hist_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, title=None, **kwargs):
     """histogram wavelet coefficients
     """
-    fig = plt.figure(figsize=FIGSIZE)
+    fig = plt.figure(figsize=BIG_FIGSIZE)
 
     #---
 
@@ -181,24 +199,38 @@ def hist_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, **kwargs):
             if num == 0: # no data
                 continue
 
-            ax = _hist(plt.subplot(4,3,row*3+col+1), data, symmetric_xlim=(ind!=0), **kwargs)
+            ax = _hist(plt.subplot(4,3,row*3+col+1), data, symmetric_xlim=(row!=0), **kwargs)
 
+            if col == 1:
+                ax.set_ylabel('')
+                plt.setp(ax.get_yticklabels(), visible=False)
+
+            elif col == 2:
+                ax.yaxis.tick_right()
+                ax.yaxis.set_label_position('right')
+
+            xmin, xmax = ax.get_xlim()
             ymin, ymax = ax.get_ylim()
 
             _ymin = min(_ymin, ymin)
             _ymax = max(_ymax, ymax)
 
-            text.append((ax, xmin + 0.01*(xmax-xmin), '%s\n%d samples' % (label, num), 'left', 'top'))
+            text.append((ax, xmin + 0.02*(xmax-xmin), label, 'left', 'top'))
+            text.append((ax, xmax - 0.02*(xmax-xmin), '%d samples' % num, 'right', 'top'))
 
-        y = ymax / (ymax/ymin)**0.01
+        y = ymax / (ymax/ymin)**0.02
         for ax, x, text, ha, va in text:
             ax.set_ylim(_ymin, _ymax)
-            plt.setp(ax.get_yticklabels(), visible=False)
             ax.text(x, y, text, ha=ha, va=va)
 
     #---
 
-    plt.subplots_adjust(**SUBPLOTS_ADJUST)
+    if title:
+        fig.suptitle(title)
+
+    #---
+
+    plt.subplots_adjust(**BIG_SUBPLOTS_ADJUST)
 
     #---
 
@@ -206,26 +238,34 @@ def hist_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, **kwargs):
 
 #-------------------------------------------------
 
-def grand_tour(array, verbose=False, figtmp="grand_tour", figtype=["png"], dpi=None, **kwargs):
+def grand_tour(array, increment=1, title=None, verbose=False, figtmp="grand_tour", figtype=["png"], dpi=None, **kwargs):
     """make a sequence of plots showing the behavior of the function as we slice through the data
     """
     shape = array.shape
     assert len(shape) == 3, 'bad number of dimensions!'
 
-    figtmp = figtmp + '-%06d-%06d'
+    figtmp = figtmp + '-dim%d-ind%06d'
 
     for dim in range(3): # iterate over each dimension, making overlaid 1D plot for each
-        for ind in range(shape[dim]): # iterate over slices
+        for ind in range(0, shape[dim], increment): # iterate over slices
+            if verbose:
+                print('dim = %d    ind = %d/%d' % (dim, ind, shape[dim]))
+
             fig = plt.figure(figsize=DIM2_FIGSIZE)
             ax = plt.subplot(1,1,1)
 
             ax = _dim2_plot(
                 ax,
-                np.take(data, ind, axis=dim), # should be a 2D array
+                np.take(array, ind, axis=dim), # should be a 2D array
+                xlabel=None, # FIXME!
+                ylabel=None,
                 **kwargs
             )
 
-            ax.set_title('dim=%d\nind=%d' % (dim, ind))
+            label = 'dim=%d\nind=%06d' % (dim, ind)
+            if title:
+                label = '%s\n%s' % (title, label)
+            ax.set_title(label)
 
             plt.subplots_adjust(**DIM2_SUBPLOTS_ADJUST)
 

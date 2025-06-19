@@ -59,6 +59,9 @@ parser.add_argument('--levels', nargs='*', type=int, default=None,
 parser.add_argument('-w', '--wavelet', default=pywt.DEFAULT_WAVELET, type=str,
     help='if plotting using a command that requires a WaveletArray, use this wavelet')
 
+parser.add_argument('--increment', default=1, type=int,
+    help='determines the index spacing used when picking slices for grand_tour')
+
 #---
 
 parser.add_argument('-v', '--verbose', default=False, action='store_true')
@@ -137,7 +140,9 @@ for command in args.command:
         arg = data
 
     kwargs = dict()
+
     if command == 'grand_tour':
+        kwargs['increment'] = args.increment
         kwargs['verbose'] = args.verbose
         kwargs['dpi'] = args.dpi
         kwargs['figtype'] = args.figtype

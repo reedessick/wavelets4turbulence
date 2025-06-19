@@ -34,8 +34,8 @@ IMSHOW_TICK_PARAMS = dict(
 SUBPLOTS_ADJUST = dict(
     left=0.10,
     right=0.90,
-    bottom=0.10,
-    top=0.90,
+    bottom=0.07,
+    top=0.87,
     hspace=0.03,
     wspace=0.03,
 )
@@ -254,7 +254,7 @@ def hist_coeff(aa, ad, da, dd, title=None, **kwargs):
 
 #-------------------------------------------------
 
-def grand_tour(array, title=None, verbose=False, figtmp="grand_tour", figtype=["png"], dpi=None, **kwargs):
+def grand_tour(array, increment=1, title=None, verbose=False, figtmp="grand_tour", figtype=["png"], dpi=None, **kwargs):
     """make a sequence of plots showing the behavior of the function as we slice through the data
     """
     shape = array.shape
@@ -271,7 +271,7 @@ def grand_tour(array, title=None, verbose=False, figtmp="grand_tour", figtype=["
         ax = fig.add_axes([0.12, 0.12, 0.78, 0.80]) # scalogram
         cb = fig.add_axes([0.91, 0.12, 0.01, 0.80]) # colorbar
 
-        for ind in range(shape[dim]): # iterate over slice
+        for ind in range(0, shape[dim], increment): # iterate over slice
 
             color = cmap((ind+0.5)/shape[dim])
 

@@ -60,6 +60,9 @@ def _plot(
         ymax=None,
         vmin=None,
         vmax=None,
+        xlabel=None,
+        ylabel=None,
+        title=None,
         **kwargs
     ):
     """imshow a 2D array
@@ -77,6 +80,7 @@ def _plot(
             cmap=LOG_POS_CMAP,
             vmin=vmin,
             vmax=vmax,
+            aspect='auto',
             origin='lower',
             extent=(0, 1, 0, 1),
         )
@@ -87,6 +91,7 @@ def _plot(
             cmap=LOG_NEG_CMAP,
             vmin=vmin,
             vmax=vmax,
+            aspect='auto',
             origin='lower',
             extent=(0, 1, 0, 1),
         )
@@ -97,21 +102,30 @@ def _plot(
             vmin=vmin,
             vmax=vmax,
             cmap=CMAP,
+            aspect='auto',
             origin='lower',
             extent=(0, 1, 0, 1),
         )
 
+    if xlabel:
+        ax.set_xlabel(xlabel)
     if xmin is not None:
         ax.set_xlim(xmin=xmin)
     if xmax is not None:
         ax.set_xlim(xmax=xmax)
+
+    if ylabel:
+        ax.set_ylabel(ylabel)
     if ymin is not None:
         ax.set_ylim(ymin=ymin)
     if ymax is not None:
         ax.set_ylim(ymax=ymax)
 
-    plt.setp(ax.get_xticklabels(), visible=False)
-    plt.setp(ax.get_yticklabels(), visible=False)
+    if title:
+        ax.set_title(title)
+
+    ax.set_xticks(ax.get_xticks()[1:-1])
+    ax.set_yticks(ax.get_yticks()[1:-1])
 
     ax.tick_params(**IMSHOW_TICK_PARAMS)
 
@@ -145,13 +159,16 @@ def plot_coeff(aa, ad, da, dd, title=None, **kwargs):
 
         if ind == 0:
             ax.set_xlabel('approximant')
+            ax.xaxis.tick_top()
             ax.xaxis.set_label_position('top')
             ax.set_ylabel('approximant')
 
         elif ind == 1:
             ax.set_xlabel('detail')
+            ax.xaxis.tick_top()
             ax.xaxis.set_label_position('top')
             ax.set_ylabel('approximant')
+            ax.yaxis.tick_right()
             ax.yaxis.set_label_position('right')
 
         elif ind == 2:
@@ -161,6 +178,7 @@ def plot_coeff(aa, ad, da, dd, title=None, **kwargs):
         else:
             ax.set_xlabel('detail')
             ax.set_ylabel('detail')
+            ax.yaxis.tick_right()
             ax.yaxis.set_label_position('right')
 
     #---

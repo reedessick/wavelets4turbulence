@@ -38,8 +38,7 @@ SUBPLOTS_ADJUST = dict(
 
 #------------------------
 
-APPROX_CMAP = 'RdGy'
-DETAIL_CMAP = 'PuOr'
+CMAP = 'RdGy'
 
 LOG_POS_CMAP = 'YlOrRd'
 LOG_NEG_CMAP = 'YlGnBu'
@@ -55,6 +54,8 @@ def _plot(
         xmax=None,
         ymin=None,
         ymax=None,
+        vmin=None,
+        vmax=None,
         **kwargs
     ):
     """imshow a 2D array
@@ -87,18 +88,11 @@ def _plot(
         )
 
     else:
-        if ind > 0: # make scales symmetric for details
-            vlim = np.max(np.abs(data))
-            vmin = -vlim
-            vmax = +vlim
-        else:
-            vmin = vmax = None
-
         ax.imshow(
             np.transpose(data),
             vmin=vmin,
             vmax=vmax,
-            cmap=cmap,
+            cmap=CMAP,
             origin='lower',
             extent=(0, 1, 0, 1),
         )
@@ -138,12 +132,7 @@ def plot_coeff(aa, ad, da, dd, **kwargs):
 
     #---
 
-    for ind, (data, cmap) in enumerate([
-            (aa, APPROX_CMAP),
-            (ad, DETAIL_CMAP),
-            (da, DETAIL_CMAP),
-            (dd, DETAIL_CMAP),
-        ]):
+    for ind, data in enumerate([aa, ad, da, dd]):
 
         if np.prod(data.shape) == 0: # no data
             continue

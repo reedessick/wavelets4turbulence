@@ -9,6 +9,7 @@ import numpy as np
 from w4t.plot.plot import plt
 
 from .flow import hist as _hist
+from .dim2 import _plot as _dim2_plot
 
 #-------------------------------------------------
 
@@ -16,7 +17,7 @@ FIGSIZE = (5.0, 8.0)
 
 #---
 
-SCATTER_TICK_PARAMS = dict(
+_TICK_PARAMS = dict(
     left=True,
     right=True,
     top=True,
@@ -45,10 +46,28 @@ LOG_NEG_CMAP = 'YlGnBu'
 
 #-------------------------------------------------
 
-def _plot(ax, data, grid=False, **kwargs):
+def _plot(ax11, ax12, ax22, data, grid=False, **kwargs):
     """plot a visualization of the flow
     """
-    raise NotImplementedError
+    assert len(np.shape(data)) == 3, 'data must be 3-dimensional'
+ 
+    for ax, dim, xlabel, ylabel, transpose in [
+            (ax11, 1, None, 'z', False),
+            (ax12, 2, 'x', 'y', False),
+            (ax22, 0, 'z', None, True),
+        ]:
+        d = np.mean(data, axis=dim) # average along one dimension
+        if transpose: # make sure we have the correct orientation of axes (x-axis is index 0, y-axis is index 1)
+            d = np.transpose(d)
+
+        ax = _dim2_plot(ax, d)
+
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+
+    #---
+
+    return ax
 
 #---
 
@@ -56,7 +75,13 @@ def plot(approx, **kwargs):
     """plot a visualization of the flow
     """
     fig = plt.figure(figsize=FIGSIZE)
-    _plot(plt.subplot(1,1,1), approx, **kwargs)
+    _plot(
+        plt.subplot(2,2,1),
+        plt.subplot(2,2,3),
+        plt.subplot(2,2,4),
+        approx,
+        **kwargs
+    )
     plt.subplots_adjust(**SUBPLOTS_ADJUST)
     return fig
 
@@ -69,24 +94,30 @@ def plot_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, **kwargs):
 
     #---
 
-    for group in [
-            [( 2, 'approx-approx-approx', aaa)],
-            [( 4, 'detail-approx-approx', daa), (5, 'approx-detail-approx', ada), (6, 'approx-approx-detail', aad)],
-            [( 7, 'approx-detail-detail', add), (8, 'detail-approx-detail', dad), (9, 'detail-detail-approx', dda)],
-            [(11, 'detail-detail-detail', ddd)],
-        ]:
+    for row, group in enumerate([
+            [('approx-approx-approx', aaa)],
+            [('detail-approx-approx', daa), ('approx-detail-approx', ada), ('approx-approx-detail', aad)],
+            [('approx-detail-detail', add), ('detail-approx-detail', dad), ('detail-detail-approx', dda)],
+            [('detail-detail-detail', ddd)],
+        ]):
 
         _ymin = +np.inf
         _ymax = -np.inf
         text = []
 
-        for ind, label, data in group:
+        for col, label, data in enumerate(group):
 
             num = np.prod(data.shape)
             if num == 0: # no data
                 continue
 
-            ax = _plt(plt.subplot(4,3,ind), data, **kwargs)
+            ax = _plt(
+                plt.subplot(8,6,row*6 + col + 1),
+                plt.subplot(8,6,(row+1)*6 + col + 1),
+                plt.subplot(8,6,(row+1)*6 + col + 2),
+                data,
+                **kwargs
+            )
 
             ax.set_title(label)
 
@@ -117,24 +148,24 @@ def hist_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, **kwargs):
 
     #---
 
-    for group in [
-            [( 2, 'approx-approx-approx', aaa)],
-            [( 4, 'detail-approx-approx', daa), (5, 'approx-detail-approx', ada), (6, 'approx-approx-detail', aad)],
-            [( 7, 'approx-detail-detail', add), (8, 'detail-approx-detail', dad), (9, 'detail-detail-approx', dda)],
-            [(11, 'detail-detail-detail', ddd)],
-        ]:
+    for row, group in enumerate([
+            [('approx-approx-approx', aaa)],
+            [('detail-approx-approx', daa), ('approx-detail-approx', ada), ('approx-approx-detail', aad)],
+            [('approx-detail-detail', add), ('detail-approx-detail', dad), ('detail-detail-approx', dda)],
+            [('detail-detail-detail', ddd)],
+        ]):
 
         _ymin = +np.inf
         _ymax = -np.inf
         text = []
 
-        for ind, label, data in group:
+        for col, (label, data) in enumerate(group):
 
             num = np.prod(data.shape)
             if num == 0: # no data
                 continue
 
-            ax = _hist(plt.subplot(4,3,ind), data, symmetric_xlim=(ind!=0), **kwargs)
+            ax = _hist(plt.subplot(4,3,row*3+col+1), data, symmetric_xlim=(ind!=0), **kwargs)
 
             ymin, ymax = ax.get_ylim()
 
@@ -160,6 +191,8 @@ def hist_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, **kwargs):
 #-------------------------------------------------
 
 '''
+
+USE the following within "slice" and "grand_tour" logic?
 
 def aaa_imshow(
         ha,
@@ -278,249 +311,6 @@ def aaa_imshow(
                     # save
                     plt.save(fig, (figtmp%scales)+('-%s-%03d'%(x,xnd))+'.%s', ['png'], dpi=dpi, verbose=True)
                     plt.close(fig)
-
-        #---
-
-        if orthographic and (ha.ndim==3):
-            print('plotting orthographic views')
-            levels = copy.copy(ha.levels) # make a copy so we can reset
-
-            fig = plt.plt.figure(figsize=(10,10))
-
-            for ax, axis, xlabel, ylabel in [
-                    (plt.plt.subplot(2,2,1), 1, None, 'z'),
-                    (plt.plt.subplot(2,2,3), 2, 'y', 'x'),
-                    (plt.plt.subplot(2,2,4), 0, 'z', None),
-                ]:
-                ha.decompose(axis=axis) # collapse along one axis
-                a = np.take(ha.approx, 0, axis=axis)
-                vlim = np.max(np.abs(a))
-
-                ax.imshow(
-                    a,
-                    cmap=cmap,
-                    vmax=+vlim,
-                    vmin=-vlim,
-                    origin='lower',
-                    extent=(0, 1, 0, 1),
-                )
-
-                ax.set_xticks([]) # remove any ticks
-                ax.set_yticks([])
-
-                ax.set_xlabel(xlabel)
-                ax.set_ylabel(ylabel)
-
-                ha.set_levels(levels)
-
-            # decorate
-            fig.suptitle(title, fontsize=10)
-
-            plt.plt.subplots_adjust(
-                left=0.05,
-                right=0.95,
-                bottom=0.05,
-                top=0.95,
-                hspace=0.01,
-                wspace=0.01,
-            )
-
-            # save
-            plt.save(fig, (figtmp%scales)+'-ortho'+'.%s', ['png'], dpi=dpi, verbose=True)
-            plt.close(fig)
-
-        #---
-
-        if structures: # identify structures and make separate plots for each
-#            print('identifying clusters in 2D midplane')
-#            sel = np.abs(plane) > thr # which pixels we consider in 2D
-
-            print('identifying clusters in full 3D box')
-            sel = np.abs(array_dict['aaa']/norm) > thr # which pixels we consider in 3D
-
-            clusters = ha.structures(sel, num_proc=6)
-            clusters.sort(key=lambda x: -len(x)) # biggest first
-
-            num_clusters = len(clusters)
-            print('    found %d clusters' % num_clusters)
-
-            ect = 0.5*(sel[:,:,n2//2].astype(int) + sel[:,:,n2//2-1].astype(int)) # just the midplane
-
-            for cnd, cluster in enumerate(clusters):
-                num_pix = len(cluster)
-                sys.stdout.write('\r    cluster : %d / %d (len = %d / %d)' % (cnd, num_clusters, num_pix, n0*n1*n2))
-                sys.stdout.flush()
-
-#                a = np.zeros((n0, n1), dtype=float) # 2D representation
-                a = np.zeros((n0, n1, n2), dtype=float) # 3D representation
-                a[:] = np.nan
-
-                cluster = tuple(np.transpose(cluster)) # make this so an array can understand it
-#                a[cluster] = plane[cluster] # 2D
-                a[cluster] = array_dict['aaa'][cluster] / norm # 3D
-
-                plane = np.where( # deal with nans in neighboring planes
-                    np.isnan(a[:,:,n2//2]),
-                    np.where(
-                        np.isnan(a[:,:,n2//2-1]),
-                        np.nan,
-                        a[:,:,n2//2-1],
-                    ),
-                    np.where(
-                        np.isnan(a[:,:,n2//2-1]),
-                        a[:,:,n2//2],
-                        0.5*(a[:,:,n2//2] + a[:,:,n2//2-1]),
-                    ),
-                )
-
-                if np.all(np.isnan(plane)):
-                    sys.stdout.write('\r    nothing to show!')
-
-                else:
-                    sys.stdout.write('\r    plotting!\n')
-
-                    fig = plt.plt.figure(figsize=(5,5))
-                    ax = fig.add_axes([0.05, 0.01, 0.90, 0.90])
-
-                    # plot the overall set of pixels selected
-                    ax.imshow(
-                        ect,
-                        cmap='Greys',
-                        vmax=1,
-                        vmin=0,
-                        origin='lower',
-                        extent=(0, 1, 0, 1),
-                    )
-
-                    # plot only this cluster
-                    ax.imshow(
-                        plane,
-                        cmap=cmap,
-                        vmax=vmax,
-                        vmin=vmin,
-                        origin='lower',
-                        extent=(0, 1, 0, 1),
-                    )
-
-                    # decorate
-                    fig.suptitle('cluster %d (%d pixels)' % (cnd, num_pix), fontsize=10)
-
-                    ax.set_xticks([]) # remove any ticks
-                    ax.set_yticks([])
-
-                    # save
-                    plt.save(fig, (figtmp%scales + '_cluster-%03d'%cnd)+'.%s', ['png'], dpi=dpi, verbose=True)
-                    plt.close(fig)
-
-                #---
-
-                if orthographic and (ha.ndim==3) and (num_pix > 100):
-                    print('plotting orthographic views')
-
-                    _ha = pywt.PyWaveletArray(np.where(np.isnan(a), 0.0, a), wavelet)
-                    levels = copy.copy(_ha.levels) # make a copy so we can reset
-
-                    fig = plt.plt.figure(figsize=(10,10))
-
-                    for ax_ind, axis, xlabel, ylabel, trans in [
-                            (1, 1, 'x', 'z', True),
-                            (3, 2, 'x', 'y', True),
-                            (4, 0, 'z', 'y', False),
-                        ]:
-                        ax = plt.plt.subplot(2,2,ax_ind)
-                        _ha.decompose(axis=axis) # collapse along one axis
-
-                        b = np.take(_ha.approx, 0, axis=axis)
-                        if trans:
-                            b = np.transpose(b)
-                        vlim = np.max(np.abs(b))
-
-                        ax.imshow(
-                            b,
-                            cmap=cmap,
-                            vmax=+vlim,
-                            vmin=-vlim,
-                            origin='lower',
-                            extent=(0, 1, 0, 1),
-                        )
-
-                        ax.set_xticks([]) # remove any ticks
-                        ax.set_yticks([])
-
-                        ax.set_xlabel(xlabel)
-                        if ax_ind <= 2:
-                            ax.xaxis.set_label_position('top')
-
-                        ax.set_ylabel(ylabel)
-                        if (ax_ind % 2) == 0:
-                            ax.yaxis.set_label_position('right')
-
-                        _ha.set_levels(levels)
-
-                    # decorate
-                    fig.suptitle(title, fontsize=10)
-
-                    plt.plt.subplots_adjust(
-                        left=0.05,
-                        right=0.95,
-                        bottom=0.05,
-                        top=0.95,
-                        hspace=0.01,
-                        wspace=0.01,
-                    )
-
-                    # save
-                    plt.save(fig, (figtmp%scales)+('-ortho_cluster-%03d'%cnd)+'.%s', ['png'], dpi=dpi, verbose=True)
-                    plt.close(fig)
-
-                #---
-
-                if grand_tour and (num_pix > 100): # FIXME? arbitrary cut-off for how big the cluster has to be to get a grand tour...
-                    sys.stdout.write('\r    plotting grand tour!\n')
-
-                    for axis, (n, x) in enumerate([(n0, 'x'), (n1, 'y'), (n2, 'z')]):
-                        for xnd in range(n):
-                            fig = plt.plt.figure(figsize=(5,5))
-                            ax = fig.add_axes([0.05, 0.01, 0.90, 0.90])
-
-                            # plot the overall set of pixels selected
-                            ax.imshow(
-                                np.take(sel, xnd, axis=axis),
-                                cmap='Greys',
-                                vmax=1,
-                                vmin=0,
-                                origin='lower',
-                                extent=(0, 1, 0, 1),
-                            )
-
-                            # plot only this cluster
-                            ax.imshow(
-                                np.take(a, xnd, axis=axis),
-                                cmap=cmap,
-                                vmax=vmax,
-                                vmin=vmin,
-                                origin='lower',
-                                extent=(0, 1, 0, 1),
-                            )
-
-                            # decorate
-                            fig.suptitle('cluster %d (%d pixels)\n$%s=%d$' % (cnd, num_pix, x, xnd), fontsize=10)
-
-                            ax.set_xticks([]) # remove any ticks
-                            ax.set_yticks([])
-
-                            # save
-                            plt.save(
-                                fig,
-                                t (figtmp%scales + '_cluster-%03d-%s-%03d'%(cnd,x,xnd))+'.%s',
-                                ['png'],
-                                dpi=dpi,
-                                verbose=True,
-                            )
-                            plt.close(fig)
-
-            sys.stdout.write('\n')
-            sys.stdout.flush()
 
         #---
 

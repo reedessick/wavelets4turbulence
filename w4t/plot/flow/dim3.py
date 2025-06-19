@@ -247,6 +247,22 @@ def grand_tour(array, increment=1, title=None, verbose=False, figtmp="grand_tour
     figtmp = figtmp + '-dim%d-ind%06d'
 
     for dim in range(3): # iterate over each dimension, making overlaid 1D plot for each
+
+        if dim == 0:
+            xlabel = 'y'
+            ylabel = 'z'
+            dlabel = 'x'
+
+        elif dim == 1:
+            xlabel = 'x'
+            ylabel = 'z'
+            dlabel = 'y'
+
+        elif dim == 2:
+            xlabel = 'x'
+            ylabel = 'y'
+            dlabel = 'z'
+
         for ind in range(0, shape[dim], increment): # iterate over slices
             if verbose:
                 print('dim = %d    ind = %d/%d' % (dim, ind, shape[dim]))
@@ -257,12 +273,12 @@ def grand_tour(array, increment=1, title=None, verbose=False, figtmp="grand_tour
             ax = _dim2_plot(
                 ax,
                 np.take(array, ind, axis=dim), # should be a 2D array
-                xlabel=None, # FIXME!
-                ylabel=None,
+                xlabel=xlabel,
+                ylabel=ylabel,
                 **kwargs
             )
 
-            label = 'dim=%d\nind=%06d' % (dim, ind)
+            label = '%s=%06d' % (dlabel, ind)
             if title:
                 label = '%s\n%s' % (title, label)
             ax.set_title(label)

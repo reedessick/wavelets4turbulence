@@ -34,8 +34,8 @@ IMSHOW_TICK_PARAMS = dict(
 SUBPLOTS_ADJUST = dict(
     left=0.10,
     right=0.90,
-    bottom=0.07,
-    top=0.87,
+    bottom=0.10,
+    top=0.90,
     hspace=0.03,
     wspace=0.03,
 )
@@ -271,6 +271,13 @@ def grand_tour(array, increment=1, title=None, verbose=False, figtmp="grand_tour
         ax = fig.add_axes([0.12, 0.12, 0.78, 0.80]) # scalogram
         cb = fig.add_axes([0.91, 0.12, 0.01, 0.80]) # colorbar
 
+        if dim == 0:
+            cblabel = 'x'
+            xlabel = 'y'
+        else:
+            cblabel = 'y'
+            xlabel = 'x'
+
         for ind in range(0, shape[dim], increment): # iterate over slice
 
             color = cmap((ind+0.5)/shape[dim])
@@ -285,7 +292,7 @@ def grand_tour(array, increment=1, title=None, verbose=False, figtmp="grand_tour
                 **kwargs
             )
 
-        ax.set_xlabel('dim=%d' % ((dim+1)%2))
+        ax.set_xlabel(xlabel)
 
         # add colorbar
 
@@ -298,7 +305,7 @@ def grand_tour(array, increment=1, title=None, verbose=False, figtmp="grand_tour
 
         cb.set_ylim(ymin=0, ymax=1)
 
-        cb.set_ylabel('dim=%d' % dim)
+        cb.set_ylabel(cblabel)
         cb.yaxis.tick_right()
         cb.yaxis.set_label_position('right')
 

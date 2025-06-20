@@ -52,6 +52,7 @@ LOG_NEG_CMAP = 'YlGnBu'
 def _plot(
         ax,
         data,
+        aspect='auto',
         extent=(0, 1, 0, 1),
         log=False,
         grid=False,
@@ -81,7 +82,7 @@ def _plot(
             cmap=LOG_POS_CMAP,
             vmin=vmin,
             vmax=vmax,
-            aspect='auto',
+            aspect=aspect,
             origin='lower',
             extent=extent,
         )
@@ -92,7 +93,7 @@ def _plot(
             cmap=LOG_NEG_CMAP,
             vmin=vmin,
             vmax=vmax,
-            aspect='auto',
+            aspect=aspect,
             origin='lower',
             extent=extent,
         )
@@ -103,7 +104,7 @@ def _plot(
             vmin=vmin,
             vmax=vmax,
             cmap=CMAP,
-            aspect='auto',
+            aspect=aspect,
             origin='lower',
             extent=extent,
         )
@@ -197,17 +198,17 @@ def plot_coeff(aa, ad, da, dd, title=None, **kwargs):
 
 #------------------------
 
-def hist(approx, title=None, **kwargs):
+def hist(approx, title=None, num_samples=True, **kwargs):
     """histogram 1D data
     """
     fig = plt.figure(figsize=FIGSIZE)
-    _hist(plt.subplot(1,1,1), approx, xlabel=title, **kwargs)
+    _hist(plt.subplot(1,1,1), approx, xlabel=title, num_samples=num_samples, **kwargs)
     plt.subplots_adjust(**SUBPLOTS_ADJUST)
     return fig
 
 #-----------
 
-def hist_coeff(aa, ad, da, dd, title=None, **kwargs):
+def hist_coeff(aa, ad, da, dd, title=None, num_samples=True, **kwargs):
     """histogram wavelet coefficients
     """
     fig = plt.figure(figsize=FIGSIZE)
@@ -225,7 +226,7 @@ def hist_coeff(aa, ad, da, dd, title=None, **kwargs):
         if num == 0: # no data
             continue
 
-        ax = _hist(plt.subplot(2,2,ind+1), data, symmetric_xlim=(ind!=0), **kwargs)
+        ax = _hist(plt.subplot(2,2,ind+1), data, symmetric_xlim=(ind!=0), num_samples=num_samples, **kwargs)
 
         if ind < 2: # top row
             ax.xaxis.tick_top()
@@ -238,7 +239,6 @@ def hist_coeff(aa, ad, da, dd, title=None, **kwargs):
         ymin, ymax = ax.get_ylim()
 
         ax.text(xmin + 0.01*(xmax-xmin), ymax / (ymax/ymin)**0.01, label, ha='left', va='top')
-        ax.text(xmax - 0.01*(xmax-xmin), ymax / (ymax/ymin)**0.01, '%d samples' % num, ha='right', va='top')
 
     #---
 

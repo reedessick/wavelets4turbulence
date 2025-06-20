@@ -111,17 +111,17 @@ def plot_coeff(approx, detail, title=None, **kwargs):
 
 #------------------------
 
-def hist(approx, title=None, **kwargs):
+def hist(approx, title=None, num_samples=True, **kwargs):
     """histogram 1D data
     """
     fig = plt.figure(figsize=FIGSIZE)
-    _hist(plt.subplot(1,1,1), approx, xlabel=title, **kwargs)
+    _hist(plt.subplot(1,1,1), approx, xlabel=title, num_samples=num_samples, **kwargs)
     plt.subplots_adjust(**SUBPLOTS_ADJUST)
     return fig
 
 #-----------
 
-def hist_coeff(approx, detail, title=None, **kwargs):
+def hist_coeff(approx, detail, title=None, num_samples=True, **kwargs):
     """plot histograms of coefficients from a 1D decomposed array
     """
     fig = plt.figure(figsize=FIGSIZE)
@@ -134,21 +134,13 @@ def hist_coeff(approx, detail, title=None, **kwargs):
         if num == 0: # no data
             continue
 
-        ax = _hist(plt.subplot(1,2,ind+1), data, symmetric_xlim=(ind!=0), **kwargs)
+        ax = _hist(plt.subplot(1,2,ind+1), data, symmetric_xlim=(ind!=0), num_samples=num_samples, **kwargs)
 
         ax.set_xlabel(label)
 
         if ind:
             ax.yaxis.tick_right()
             ax.yaxis.set_label_position('right')
-
-            xlim = np.max(np.abs(ax.get_xlim()))
-            ax.set_xlim(xmin=-xlim, xmax=+xlim)
-
-        xmin, xmax = ax.get_xlim()
-        ymin, ymax = ax.get_ylim()
-
-        ax.text(xmin + 0.01*(xmax-xmin), ymax / (ymax/ymin)**0.01, '%d samples' % num, ha='left', va='top')
 
     #---
 

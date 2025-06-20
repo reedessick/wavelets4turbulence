@@ -13,13 +13,18 @@ from argparse import ArgumentParser
 ### non-standard libraries
 from w4t.utils import io
 
+from w4t.plot import plot as plt
+from w4t.plot import flow
+
+from w4t.w4t import pywt
+
 #-------------------------------------------------
 
-KNOWN_COMMANDS = [
-    'plot',
-    'hist',
-    'grand_tour',
-]
+KNOWN_COMMANDS = dict(
+    plot = flow.plot,
+    hist = flow.hist,
+    grand_tour = flow.grand_tour,
+)
 
 #-------------------------------------------------
 
@@ -30,23 +35,28 @@ parser.add_argument('structure', type=str)
 
 parser.add_argument('command', type=str, nargs='+',
     help='the type of plot you want to make. Can list multiple commands, but all commands \
-must be one of: %s' % (', '.join(KNOWN_COMMANDS)))
+must be one of: %s' % (', '.join(KNOWN_COMMANDS.keys())))
 
 parser.add_argument('field', type=str)
 parser.add_argument('--component', type=int, default=None)
 
 parser.add_argument('-M', '--max-edgelength', default=None, type=int)
 
+parser.add_argument('-s', '--structure-index', nargs='*', type=int, default=None,
+    help='if specified, only plot the structures corresponding to these indexes')
+
+#---
+
+parser.add_argument('-w', '--wavelet', default=pywt.DEFAULT_WAVELET, type=str,
+    help='if plotting using a command that requires a WaveletArray, use this wavelet')
+
 #---
 
 parser.add_argument('-z', '--zoom', default=False, action='store_true',
     help='zoom in to just the bounding box surrounding the structure')
 
-parser.add_argument('-s', '--structure-index', nargs='*', type=int, default=None,
-    help='if specified, only plot the structures corresponding to these indexes')
-
-parser.add_argument('-w', '--wavelet', default=pywt.DEFAULT_WAVELET, type=str,
-    help='if plotting using a command that requires a WaveletArray, use this wavelet')
+parser.add_argument('--aspect', default='equal', type=str,
+    help='passed to 2D plots to set the aspect ratio. Should be either "equal" (keep pixels square) or "auto" (keep axes square)')
 
 parser.add_argument('--increment', default=1, type=int,
     help='determines the index spacing used when picking slices for grand_tour')
@@ -62,8 +72,6 @@ parser.add_argument('--dpi', default=None, type=float)
 
 args = parser.parse_args()
 
-args.verbose |= args.Verbose
-
 os.makedirs(args.output_dir, exist_ok=True)
 
 if args.tag:
@@ -71,6 +79,11 @@ if args.tag:
 
 if not args.figtype:
     args.figtype.append('png')
+
+#---
+
+for command in args.command:
+    assert command in KNOWN_COMMANDS, 'each command must be one of: %s' % (', '.join(KNOWN_COMMANDS.keys()))
 
 #-------------------------------------------------
 
@@ -90,7 +103,7 @@ wa = pywt.PyWaveletArray(data, args.wavelet) # used when extracting data
 
 # load structure
 
-structures = io.load_structures(args.structures, verbose=args.verbose)
+structures = io.load_structures(args.structure, verbose=args.verbose)
 num_structures = len(structures)
 
 if args.structure_index is None:
@@ -102,10 +115,12 @@ if args.structure_index is None:
 
 for snd in args.structure_index: # iterate over structures
     if args.verbose:
-        print('structure %d/%d' % (snd, num_structure))
+        print('structure %d/%d' % (snd, num_structures))
+
+    structure = structures[snd]
 
     # grab the data that belongs to this structure
-    data = structures[snd].extract_as_array(wa)
+    data = structure.extract_as_array(wa)
 
     #---
 
@@ -113,8 +128,9 @@ for snd in args.structure_index: # iterate over structures
         if args.verbose:
             print('    zooming into bounding-box')
 
-        extent = structures[snd].bounding_box)
-        data = data[tuple(slice(low,high) for low, high in bounds]
+        extent = structure.bounding_box
+        data = data[tuple(slice(low,high+1) for low, high in extent)]
+        extent = [extent[dim]/structure.shape[dim] for dim in range(structure.ndim)]
 
         if args.verbose:
             print('    shape = %s' % str(data.shape))
@@ -130,27 +146,31 @@ for snd in args.structure_index: # iterate over structures
 
         kwargs = dict()
 
-        if command in ['plot', 'plot_coeff']:
+        if command in ['plot', 'grand_tour']:
             kwargs['extent'] = extent
+            kwargs['aspect'] = args.aspect
 
-        elif command == 'grand_tour':
-            kwargs['increment'] = args.increment
-            kwargs['verbose'] = args.verbose
-            kwargs['dpi'] = args.dpi
-            kwargs['figtype'] = args.figtype
-            kwargs['figtmp'] = os.path.join(
+            if command == 'grand_tour':
+                kwargs['increment'] = args.increment
+                kwargs['verbose'] = args.verbose
+                kwargs['dpi'] = args.dpi
+                kwargs['figtype'] = args.figtype
+                kwargs['figtmp'] = os.path.join(
+                    args.output_dir,
+                    os.path.basename(__file__)+'-struc%06d-%s-%s%s' % (snd, command, field, args.tag),
+                )
+
+        if command == 'hist':
+            kwargs['nonzero'] = True # ignore default values
+
+        #---
+
+        fig = KNOWN_COMMANDS[command](data, title=field, **kwargs)
+
+        if fig is not None: # if we've returned a figure, we need to save it
+            figtmp = os.path.join(
                 args.output_dir,
-                os.path.basename(__file__)+'-struc%06d-%s-%s%s' % (snd, command, field, args.tag),
+                os.path.basename(__file__)+'-struc%06d-%s-%s%s.%s' % (snd, command, field, args.tag, '%s'),
             )
-
-    #---
-
-    fig = KNOWN_COMMANDS[command](data, title=field, **kwargs)
-
-    if fig is not None: # if we've returned a figure, we need to save it
-        figtmp = os.path.join(
-            args.output_dir,
-            os.path.basename(__file__)+'-struc%06d-%s-%s%s.%s' % (snd, command, field, args.tag, '%s'),
-        )
-        plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
-        plt.close(fig)
+            plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
+            plt.close(fig)

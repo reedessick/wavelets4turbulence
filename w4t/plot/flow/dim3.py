@@ -165,17 +165,17 @@ def plot_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, title=None, **kwargs):
 
 #------------------------
 
-def hist(approx, title=None, **kwargs):
+def hist(approx, title=None, num_samples=True, **kwargs):
     """histogram approx
     """
     fig = plt.figure(figsize=FIGSIZE)
-    _hist(plt.subplot(1,1,1), approx, xlabel=title, **kwargs)
+    _hist(plt.subplot(1,1,1), approx, xlabel=title, num_samples=num_samples, **kwargs)
     plt.subplots_adjust(**SUBPLOTS_ADJUST)
     return fig
 
 #-----------
 
-def hist_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, title=None, **kwargs):
+def hist_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, title=None, num_samples=True, **kwargs):
     """histogram wavelet coefficients
     """
     fig = plt.figure(figsize=BIG_FIGSIZE)
@@ -199,7 +199,7 @@ def hist_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, title=None, **kwargs):
             if num == 0: # no data
                 continue
 
-            ax = _hist(plt.subplot(4,3,row*3+col+1), data, symmetric_xlim=(row!=0), **kwargs)
+            ax = _hist(plt.subplot(4,3,row*3+col+1), data, symmetric_xlim=(row!=0), num_samples=num_samples, **kwargs)
 
             if col == 1:
                 ax.set_ylabel('')
@@ -216,7 +216,6 @@ def hist_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, title=None, **kwargs):
             _ymax = max(_ymax, ymax)
 
             text.append((ax, xmin + 0.02*(xmax-xmin), label, 'left', 'top'))
-            text.append((ax, xmax - 0.02*(xmax-xmin), '%d samples' % num, 'right', 'top'))
 
         y = ymax / (ymax/ymin)**0.02
         for ax, x, text, ha, va in text:

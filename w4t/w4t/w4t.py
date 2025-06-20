@@ -472,11 +472,12 @@ class Structure(object):
         """extract an array with zeros everywhere except for the active pixels
         """
         # sanity-check input
-        assert waveletarray.shape == self.shape, 'shape mismatch'
         waveletarray.set_levels(self.levels) # set to the appropriate level of decomposition
+        assert np.all(waveletarray.approx.shape == self.shape), 'shape mismatch'
 
         # extract data
-        array = np.zeros_like(waveletarray.approx, dtype=float) # default is zero everwhere
+        array = np.zeros_like(waveletarray.approx, dtype=float) # default is zero everywhere
+
         tup = self.tuple
         array[tup] = waveletarray.approx[tup] # fill in the selected pixels
 

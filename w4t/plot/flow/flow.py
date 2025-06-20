@@ -19,10 +19,27 @@ TICK_PARAMS = dict(
 
 #-------------------------------------------------
 
-def hist(ax, data, symmetric_xlim=False, grid=False, histtype='step', log=True, xlabel=None, title=None, **kwargs):
+def hist(
+        ax,
+        data,
+        nonzero=False,
+        symmetric_xlim=False,
+        grid=False,
+        histtype='step',
+        log=True,
+        xlabel=None,
+        title=None,
+        num_samples=False,
+        **kwargs
+    ):
     """make a standard histogram
     """
     data = np.ravel(data)
+
+    if nonzero:
+        data = data[data != 0] # only consider non-zero values
+
+    data = data[data==data] # only count things that are not nan
     num = len(data)
 
     if symmetric_xlim:
@@ -39,7 +56,8 @@ def hist(ax, data, symmetric_xlim=False, grid=False, histtype='step', log=True, 
     ax.tick_params(**TICK_PARAMS)
     ax.grid(grid, which='both')
 
-    ax.set_xlim(xmin=bins[0], xmax=bins[-1])
+    diff = (xmax-xmin)*0.05
+    ax.set_xlim(xmin=bins[0]-diff, xmax=bins[-1]+diff)
 
     ax.set_ylabel('count')
 
@@ -48,5 +66,10 @@ def hist(ax, data, symmetric_xlim=False, grid=False, histtype='step', log=True, 
 
     if title:
         ax.set_title(title)
+
+    if num_samples:
+        xmin, xmax = ax.get_xlim()
+        ymin, ymax = ax.get_ylim()
+        ax.text(xmax - 0.01*(xmax-xmin), ymax / (ymax/ymin)**0.01, '%d samples' % num, ha='right', va='top')
 
     return ax

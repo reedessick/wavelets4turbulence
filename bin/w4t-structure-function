@@ -35,6 +35,10 @@ parser.add_argument('-t', '--threshold', default=None, type=float,
 parser.add_argument('-m', '--max-scale', default=None, type=float)
 parser.add_argument('-s', '--smooth', default=False, action='store_true')
 
+parser.add_argument('--direction', default=None, type=int,
+    help='specify the direction (index) used to compute structure function. If not specified, compute isotropic structure \
+function by averaging over directions')
+
 parser.add_argument('-d', '--direct', default=False, action='store_true',
     help='if supplied, compute the structure functions "directly" rather than relying on wavelet decomposition')
 parser.add_argument('--direct-scales', nargs='+', type=int, default=None,
@@ -79,7 +83,7 @@ if args.threshold is not None: # denoise before computing structure function
 if args.direct:
 
     if args.verbose:
-        print('computing structure function directly without wavelet decomposition')
+        print('computing structure function directly (without wavelet decomposition)')
 
     if args.direct_scales is not None:
         scales = np.array(sorted(args.direct_scales), dtype=int)
@@ -95,7 +99,24 @@ if args.direct:
     mom = []
     cov = []
     for scale in scales:
-        _, m, c = moments.direct_isotropic_structure_function(data, scale, args.index, verbose=args.verbose, Verbose=args.Verbose)
+        if args.direction is None:
+            _, m, c = moments.direct_isotropic_structure_function(
+                data,
+                scale,
+                args.index,
+                verbose=args.verbose,
+                Verbose=args.Verbose,
+            )
+
+        else:
+            _, m, c = moments.direct_structure_function(
+                data,
+                args.direction,
+                scale,
+                args.index,
+                verbose=args.verbose,
+            )
+
         mom.append(m)
         cov.append(c)
 
@@ -113,10 +134,21 @@ else:
 
     # compute structure functions
 
-    if args.verbose:
-        print('computing structure functions')
+    if args.direction is None:
+        scales, mom, cov = wa.isotropic_structure_function(
+            index=args.index,
+            use_abs=True,
+            verbose=args.verbose,
+            Verbose=args.Verbose,
+        )
 
-    scales, mom, cov = wa.isotropic_structure_function(index=args.index, use_abs=True, verbose=args.verbose, Verbose=args.Verbose)
+    else:
+        scales, mom, cov = wa.structure_function(
+            args.direction,
+            index=args.index,
+            use_abs=True,
+            verbose=args.verbose,
+        )
 
 #------------------------
 

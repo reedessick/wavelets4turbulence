@@ -17,12 +17,12 @@ def direct_isotropic_structure_function(array, scale, index, verbose=False, Verb
     # iterate over dimensions
     ndim = len(array.shape)
 
+    if verbose:
+        print('computing isotropic structure function directly')
+
     mom = []
     cov = []
     for dim in range(ndim):
-        if verbose:
-            print('estimating moments directly along dim=%d' % dim)
-
         index, m, c = direct_structure_function(array, dim, scale, index, verbose=Verbose)
         mom.append(m)
         cov.append(c)
@@ -44,7 +44,7 @@ def direct_structure_function(array, dim, scale, index, verbose=False):
     assert (0 <= dim) and (dim < len(array.shape)), 'bad dimension (dim=%d) for ndim=%d' % (dim, len(array.shape))
 
     if verbose:
-        print('computing moments for scale: %d' % scale)
+        print('computing moments directly for dim=%d for scale=%d' % (dim, scale))
 
     # figure out the relevant indexes
     inds = np.arange(array.shape[dim]-scale)

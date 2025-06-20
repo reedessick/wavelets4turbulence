@@ -242,6 +242,9 @@ class WaveletArray(ABC):
         """
         verbose |= Verbose
 
+        if verbose:
+            print('computing isotropic structure function via wavelet decomposition')
+
         mom_dict = defaultdict(list) # use these to store the result at each scale
         cov_dict = defaultdict(list)
 
@@ -249,8 +252,6 @@ class WaveletArray(ABC):
 
         # compute moments for 1D decompositions along each axis separately
         for dim in range(self.ndim):
-            if verbose:
-                print('estimating moments for wavelet decomposition along dim=%d' % dim)
 
             scales, mom, cov = self.structure_function(dim, index=index, use_abs=use_abs, verbose=Verbose)
             for snd, scale in enumerate(scales):
@@ -290,6 +291,9 @@ class WaveletArray(ABC):
         self.idecompose() # start at the top
 
         approx_or_detail = np.arange(self.ndim) != dim # grab the detail coeffs for just this dimension
+
+        if verbose:
+            print('estimating moments for wavelet decomposition along dim=%d' % dim)
 
         while self.active[dim] > 1: # keep going
             self.dwt(axis=dim)

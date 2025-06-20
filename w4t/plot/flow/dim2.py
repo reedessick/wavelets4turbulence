@@ -54,6 +54,7 @@ def _plot(
         data,
         aspect='auto',
         extent=(0, 1, 0, 1),
+        nonzero=False,
         log=False,
         grid=False,
         xmin=None,
@@ -70,11 +71,14 @@ def _plot(
     """imshow a 2D array
     """
 
+    if nonzero: # only consider values that are not exactly zero
+        data = np.where(data!=0, data, np.nan)
+
     if log:
 
         # limit the range to only a few orders of mag off the maximum
-        vmax = np.max(np.log10(np.abs(data)))
-        vmin = max(np.min(np.log10(np.abs(data))), vmax-3) 
+        vmax = np.max(np.log10(np.abs(data[data==data])))
+        vmin = max(np.min(np.log10(np.abs(data[data==data]))), vmax-3)
 
         # positive values
         ax.imshow(

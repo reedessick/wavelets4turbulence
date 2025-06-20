@@ -285,6 +285,7 @@ def grand_tour(
             ax = _dim2_plot(
                 ax,
                 np.take(array, ind, axis=dim), # should be a 2D array
+                nonzero=True, # only plot values that are not exactly zero
                 xlabel=xlabel,
                 ylabel=ylabel,
                 extent=_extent,

@@ -109,11 +109,13 @@ for snd in args.structure_index: # iterate over structures
 
     #---
 
+    bounds = [(0, 1) for _ in range(wa.ndim)]
     if args.zoom: # zoom in to bounding box of structure
         if args.verbose:
             print('    zooming into bounding-box')
 
-        data = data[tuple(slice(low,high) for low, high in structures[snd].bounding_box)]
+        bounds = structures[snd].bounding_box)
+        data = data[tuple(slice(low,high) for low, high in bounds]
 
         if args.verbose:
             print('    shape = %s' % str(data.shape))
@@ -126,7 +128,10 @@ for snd in args.structure_index: # iterate over structures
 
         kwargs = dict()
 
-        if command == 'grand_tour':
+        if command in ['plot', 'plot_coeff']:
+            kwargs['extent'] = bounds
+
+        elif command == 'grand_tour':
             kwargs['increment'] = args.increment
             kwargs['verbose'] = args.verbose
             kwargs['dpi'] = args.dpi

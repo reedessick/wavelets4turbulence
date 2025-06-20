@@ -40,11 +40,12 @@ SCALOGRAM_CMAP = 'Reds'
 
 #-------------------------------------------------
 
-def _plot(ax, data, symmetric_ylim=False, grid=False, xlabel=None, ylabel=None, title=None, **kwargs):
-    dx = 0.5/len(data)
-    ax.plot(dx + np.arange(len(data))/len(data), data, **kwargs)
+def _plot(ax, data, extent=(0, 1), symmetric_ylim=False, grid=False, xlabel=None, ylabel=None, title=None, **kwargs):
+    num = len(data)
+    dx = (extent[1]-extent[0])/num
+    ax.plot(np.arange(extent[0]+0.5*dx, extent[1], dx), data, **kwargs)
 
-    ax.set_xlim(xmin=0, xmax=1)
+    ax.set_xlim(xmin=extent[0], xmax=extent[1])
 #    ax.set_xticks(ax.get_xticks()[1:-1])
 
     ax.tick_params(**TICK_PARAMS)

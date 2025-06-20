@@ -153,7 +153,7 @@ for command in args.command:
 
     #---
 
-    fig = KNOWN_COMMANDS[command](arg, title=field, **kwargs)
+    fig = KNOWN_COMMANDS[command](arg, title=field, **kwargs) ### FIXME! remove extent
 
     if fig is not None: # if we've returned a figure, we need to save it
         figtmp = os.path.join(

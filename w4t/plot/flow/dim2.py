@@ -52,6 +52,7 @@ LOG_NEG_CMAP = 'YlGnBu'
 def _plot(
         ax,
         data,
+        extent=(0, 1, 0, 1),
         log=False,
         grid=False,
         xmin=None,
@@ -82,7 +83,7 @@ def _plot(
             vmax=vmax,
             aspect='auto',
             origin='lower',
-            extent=(0, 1, 0, 1),
+            extent=extent,
         )
 
         # negative values
@@ -93,7 +94,7 @@ def _plot(
             vmax=vmax,
             aspect='auto',
             origin='lower',
-            extent=(0, 1, 0, 1),
+            extent=extent,
         )
 
     else:
@@ -104,7 +105,7 @@ def _plot(
             cmap=CMAP,
             aspect='auto',
             origin='lower',
-            extent=(0, 1, 0, 1),
+            extent=extent,
         )
 
     if xlabel:
@@ -133,11 +134,11 @@ def _plot(
 
 #---
 
-def plot(approx, title=None, **kwargs):
+def plot(approx, **kwargs):
     """plot a visualization of the flow
     """
     fig = plt.figure(figsize=FIGSIZE)
-    _plot(plt.subplot(1,1,1), approx, title=title, **kwargs)
+    _plot(plt.subplot(1,1,1), approx, **kwargs)
     plt.subplots_adjust(**SUBPLOTS_ADJUST)
     return fig
 
@@ -254,7 +255,17 @@ def hist_coeff(aa, ad, da, dd, title=None, **kwargs):
 
 #-------------------------------------------------
 
-def grand_tour(array, increment=1, title=None, verbose=False, figtmp="grand_tour", figtype=["png"], dpi=None, **kwargs):
+def grand_tour(
+        array,
+        extent=[(0,1)]*2,
+        increment=1,
+        title=None,
+        verbose=False,
+        figtmp="grand_tour",
+        figtype=["png"],
+        dpi=None,
+        **kwargs
+    ):
     """make a sequence of plots showing the behavior of the function as we slice through the data
     """
     shape = array.shape
@@ -274,9 +285,13 @@ def grand_tour(array, increment=1, title=None, verbose=False, figtmp="grand_tour
         if dim == 0:
             cblabel = 'x'
             xlabel = 'y'
+            _extent = (extent[1][0], extent[1][1])
+            cblim = (extent[0][0], extent[0][1])
         else:
             cblabel = 'y'
             xlabel = 'x'
+            _extent = (extent[0][0], extent[0][1])
+            cblim = (extent[1][0], extent[1][1])
 
         for ind in range(0, shape[dim], increment): # iterate over slice
 
@@ -285,6 +300,7 @@ def grand_tour(array, increment=1, title=None, verbose=False, figtmp="grand_tour
             ax = _dim1_plot(
                 ax,
                 np.take(array, ind, axis=dim), # should be a 1D array
+                extent=_extent,
 #                symmetric_ylim=True,
                 ylabel=title,
                 color=color,
@@ -303,7 +319,7 @@ def grand_tour(array, increment=1, title=None, verbose=False, figtmp="grand_tour
 
         cb.set_xticks([])
 
-        cb.set_ylim(ymin=0, ymax=1)
+        cb.set_ylim(*cblim)
 
         cb.set_ylabel(cblabel)
         cb.yaxis.tick_right()

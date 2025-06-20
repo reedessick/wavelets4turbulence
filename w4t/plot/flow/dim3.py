@@ -49,21 +49,21 @@ LOG_NEG_CMAP = 'YlGnBu'
 
 #-------------------------------------------------
 
-def _plot(ax11, ax12, ax22, data, grid=False, labels=True, **kwargs):
+def _plot(ax11, ax12, ax22, data, extent=[(0, 1)]*3, grid=False, labels=True, **kwargs):
     """plot a visualization of the flow
     """
     assert len(np.shape(data)) == 3, 'data must be 3-dimensional'
  
-    for ind, (ax, dim, xlabel, ylabel, transpose) in enumerate([
-            (ax11, 1, 'x', 'z', False),
-            (ax12, 2, 'x', 'y', False),
-            (ax22, 0, 'z', 'y', True),
+    for ind, (ax, dim, xlabel, ylabel, extent, transpose) in enumerate([
+            (ax11, 1, 'x', 'z', (extent[0][0], extent[0][1], extent[2][0], extent[2][1]), False),
+            (ax12, 2, 'x', 'y', (extent[0][0], extent[0][1], extent[1][0], extent[1][1]), False),
+            (ax22, 0, 'z', 'y', (extent[2][0], extent[2][1], extent[1][0], extent[1][1]), True),
         ]):
         d = np.mean(data, axis=dim) # average along one dimension
         if transpose: # make sure we have the correct orientation of axes (x-axis is index 0, y-axis is index 1)
             d = np.transpose(d)
 
-        ax = _dim2_plot(ax, d)
+        ax = _dim2_plot(ax, d, extent=extent, **kwargs)
 
         if ind == 0:
             ax.xaxis.tick_top()
@@ -238,7 +238,17 @@ def hist_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, title=None, **kwargs):
 
 #-------------------------------------------------
 
-def grand_tour(array, increment=1, title=None, verbose=False, figtmp="grand_tour", figtype=["png"], dpi=None, **kwargs):
+def grand_tour(
+        array,
+        extent=[(0,1)]*3,
+        increment=1,
+        title=None,
+        verbose=False,
+        figtmp="grand_tour",
+        figtype=["png"],
+        dpi=None,
+        **kwargs
+    ):
     """make a sequence of plots showing the behavior of the function as we slice through the data
     """
     shape = array.shape
@@ -252,16 +262,19 @@ def grand_tour(array, increment=1, title=None, verbose=False, figtmp="grand_tour
             xlabel = 'y'
             ylabel = 'z'
             dlabel = 'x'
+            _extent = (extent[1][0], extent[1][1], extent[2][0], extent[2][1])
 
         elif dim == 1:
             xlabel = 'x'
             ylabel = 'z'
             dlabel = 'y'
+            _extent = (extent[0][0], extent[0][1], extent[2][0], extent[2][1])
 
         elif dim == 2:
             xlabel = 'x'
             ylabel = 'y'
             dlabel = 'z'
+            _extent = (extent[0][0], extent[0][1], extent[1][0], extent[1][1])
 
         for ind in range(0, shape[dim], increment): # iterate over slices
             if verbose:
@@ -275,6 +288,7 @@ def grand_tour(array, increment=1, title=None, verbose=False, figtmp="grand_tour
                 np.take(array, ind, axis=dim), # should be a 2D array
                 xlabel=xlabel,
                 ylabel=ylabel,
+                extent=_extent,
                 **kwargs
             )
 

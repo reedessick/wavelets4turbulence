@@ -39,4 +39,29 @@ args = parser.parse_args()
 
 #-------------------------------------------------
 
-raise NotImplementedError
+# load data
+
+data, field = io.simplify(
+    io.load([args.field], path=args.source, verbose=args.verbose)[args.field],
+    args.field,
+    component=args.component,
+    max_edgelength=args.max_edgelength,
+    verbose=args.verbose,
+)
+
+wa = pywt.PyWaveletArray(data, args.wavelet) # used when extracting data
+
+#-----------
+
+# load structure
+
+structures = io.load_structures(args.structure, verbose=args.verbose)
+num_structures = len(structures)
+
+#-------------------------------------------------
+
+raise NotImplementedError('''
+iterate through structures and compute properties
+
+write these to disk (big HDF with separate group for each structure)
+''')

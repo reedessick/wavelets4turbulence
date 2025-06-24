@@ -240,6 +240,7 @@ def hist_coeff(aaa, aad, ada, daa, add, dad, dda, ddd, title=None, num_samples=T
 def grand_tour(
         array,
         extent=[(0,1)]*3,
+        start=[0]*3,
         increment=1,
         title=None,
         verbose=False,
@@ -292,7 +293,7 @@ def grand_tour(
                 **kwargs
             )
 
-            label = '%s=%06d' % (dlabel, ind)
+            label = '%s=%06d' % (dlabel, start[dim]+ind)
             if title:
                 label = '%s\n%s' % (title, label)
             ax.set_title(label)
@@ -300,5 +301,5 @@ def grand_tour(
             plt.subplots_adjust(**DIM2_SUBPLOTS_ADJUST)
 
             # save figure
-            save(fig, (figtmp % (dim, ind)) + '.%s', figtype, verbose=verbose, dpi=dpi)
+            save(fig, (figtmp % (dim, start[dim]+ind)) + '.%s', figtype, verbose=verbose, dpi=dpi)
             close(fig)

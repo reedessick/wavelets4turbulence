@@ -141,7 +141,9 @@ for snd in args.structure_index: # iterate over structures
             print('    zooming into bounding-box')
 
         extent = structure.bounding_box
-        data = data[tuple(slice(low,high+1) for low, high in extent)]
+        start = [low for low, high in extent]
+
+        data = data[(slice(wa.nvec),)+tuple(slice(low,high+1) for low, high in extent)]
         extent = [extent[dim]/structure.shape[dim] for dim in range(structure.ndim)]
 
         if args.verbose:
@@ -149,6 +151,7 @@ for snd in args.structure_index: # iterate over structures
 
     else:
         extent = [(0, 1)]*wa.ndim
+        start = [0]*wa.ndim
 
     data = map2scalar(data)
 
@@ -165,6 +168,7 @@ for snd in args.structure_index: # iterate over structures
             kwargs['aspect'] = args.aspect
 
             if command == 'grand_tour':
+                kwargs['start'] = start
                 kwargs['increment'] = args.increment
                 kwargs['verbose'] = args.verbose
                 kwargs['dpi'] = args.dpi

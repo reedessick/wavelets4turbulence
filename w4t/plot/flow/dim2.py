@@ -268,6 +268,7 @@ def grand_tour(
         figtmp="grand_tour",
         figtype=["png"],
         dpi=None,
+        start=None, # this will be ignored and is only included to make this compatible with dim3.grand_tour calls
         **kwargs
     ):
     """make a sequence of plots showing the behavior of the function as we slice through the data

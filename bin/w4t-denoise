@@ -77,7 +77,7 @@ if args.verbose:
     print('denoising with\n    threshold=%.6f\n    max_scale=%.3f\n    smooth=%s' % \
         (args.threshold, args.max_scale, args.smooth))
 
-wa.denoise(args.threshold, map2scalar=map2calar, max_scale=args.max_scale, smooth=args.smooth)
+wa.denoise(args.threshold, map2scalar=map2scalar, max_scale=args.max_scale, smooth=args.smooth)
 
 #------------------------
 

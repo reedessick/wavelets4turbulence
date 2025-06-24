@@ -350,7 +350,7 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
         while self.scales[0] < max_scale: # continue to denoise
             self.dwt() # decompose again
 
-            slices = [tuple()]
+            slices = [(slice(self.nvec),)]
             for dim, num in enumerate(self.active):
                 slices = [_+(slice(0,num),) for _ in slices] + [_+(slice(num,2*num),) for _ in slices]
 
@@ -359,7 +359,7 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
                 sel = np.abs(scalar) <= np.std(scalar)*num_std # the small-amplitude detail coeffs
                 if smooth: # zero the high-amplitude detail coefficients
                     sel = np.logical_not(sel)
-                sel = np.outer(sel, ones).reshape(sel.shape+(self.nvec,))
+                sel = np.outer(ones, sel).reshape((self.nvec,)+sel.shape)
                 self.array[s] *= np.where(sel, 0.0, 1.0)
 
         # zero the remaining approx coeffs

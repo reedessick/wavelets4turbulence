@@ -18,7 +18,7 @@ def direct_isotropic_structure_function(array, scale, index, map2scalar=default_
     verbose |= Verbose
 
     # iterate over dimensions
-    ndim = len(array.shape)
+    ndim = len(array.shape) - 1
 
     if verbose:
         print('computing isotropic structure function directly')

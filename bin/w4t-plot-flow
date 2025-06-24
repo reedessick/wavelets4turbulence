@@ -14,6 +14,7 @@ from argparse import ArgumentParser
 
 ### non-standard libraries
 from w4t.utils import io
+from w4t.utils.utils import default_map2scalar
 
 from w4t.plot import plot as plt
 from w4t.plot import flow
@@ -46,6 +47,8 @@ parser.add_argument('--component', type=int, default=None)
 parser.add_argument('--magnitude', default=False, action='store_true')
 
 parser.add_argument('-M', '--max-edgelength', default=None, type=int)
+parser.add_argument('--map2scalar', default=None, type=str,
+    help='a string that will be evaluated into a function handle to map array data into a scalar')
 
 #---
 
@@ -98,6 +101,13 @@ for dim, ind in args.slice:
     assert dim not in dims, 'cannot slice over dim=%d twice' % dim
     dims.add(dim)
 
+#------------------------
+
+if args.map2scalar is None:
+    map2scalar = default_map2scalar
+else:
+    map2scalar = eval(args.map2scalar)
+
 #-------------------------------------------------
 
 # load data
@@ -130,16 +140,21 @@ for command in args.command:
         print('%s: %s' % (command, field))
 
     if command in ['scalogram', 'plot_coeff', 'hist_coeff']:
-        arg = pywt.PyWaveletArray(data, args.wavelet)
+        wa = pywt.PyWaveletArray(data, args.wavelet)
 
         if args.levels is not None:
             if args.verbose:
                 print('    decomposing data with\n        wavelet=%s\n        levels=%s' % \
                     (args.wavelet, str(args.levels)))
-            arg.set_levels(args.levels)
+            wa.set_levels(args.levels)
+
+        if command in ['plot_coeff', 'hist_coeff']:
+            cmd_args = (wa.ndim,) + tuple(map2scalar(cs) for cs in wa.coeffset)
+        else:
+            cmd_args = (wa, map2scalar)
 
     else:
-        arg = data
+        cmd_args = (map2scalar(data),)
 
     kwargs = dict()
 
@@ -155,7 +170,7 @@ for command in args.command:
 
     #---
 
-    fig = KNOWN_COMMANDS[command](arg, title=field, **kwargs) ### FIXME! remove extent
+    fig = KNOWN_COMMANDS[command](*cmd_args, title=field, **kwargs)
 
     if fig is not None: # if we've returned a figure, we need to save it
         figtmp = os.path.join(

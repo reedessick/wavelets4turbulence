@@ -17,6 +17,12 @@ def seed(num=None, verbose=False):
 #-------------------------------------------------
 
 def default_map2scalar(array):
-    """a default map from a vector to a scalar quantitity: sqrt of quadrature sum of components (euclidean vector magnitude)
+    """a default map from a vector to a scalar quantitity:
+    if there is only as single vector component, return that component
+    otherwise, return the (euclidean) vector magnitude
     """
-    return np.sum(array**2, axis=0)**0.5 # take the quadrature sum of vector components by default
+    if len(array) == 1: # there is only a single component, so just return that
+        return array[0]
+
+    else: # otherwise, return euclidean norm of vector
+        return np.sum(array**2, axis=0)**0.5

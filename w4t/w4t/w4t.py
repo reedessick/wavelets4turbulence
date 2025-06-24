@@ -401,14 +401,14 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
     def plot_coeff(self, map2scalar=default_map2scalar, **kwargs):
         """make plots of wavelet coefficients
         """
-        return flow.plot_coeff(self.ndim, *(self.map2scalar(cs) for cs in self.coeffset), **kwargs)
+        return flow.plot_coeff(self.ndim, *(map2scalar(cs) for cs in self.coeffset), **kwargs)
 
     #---
 
     def hist_coeff(self, map2scalar=default_map2scalar, **kwargs):
         """make histograms of wavelet coefficients
         """
-        return flow.hist_coeff(self.ndim, *(self.map2scalar(cs) for cs in self.coeffset), **kwargs)
+        return flow.hist_coeff(self.ndim, *(map2scalar(cs) for cs in self.coeffset), **kwargs)
 
     #-------
 

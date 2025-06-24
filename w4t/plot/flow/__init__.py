@@ -45,7 +45,7 @@ def plot_coeff(ndim, *args, **kwargs):
         return dim3.plot_coeff(*args, **kwargs)
 
     else:
-        raise RuntimeError('do not know how to plot wavelet coefficients for ndim=%d' % waveletarray.ndim)
+        raise RuntimeError('do not know how to plot wavelet coefficients for ndim=%d' % ndim)
 
 #------------------------
 
@@ -80,7 +80,7 @@ def hist_coeff(ndim, *args, **kwargs):
         foo = dim3.hist_coeff
 
     else:
-        raise RuntimeError('do not know how to plot wavelet coefficients for ndim=%d' % waveletarray.ndim)
+        raise RuntimeError('do not know how to plot wavelet coefficients for ndim=%d' % ndim)
 
     return foo(*args, **kwargs)
 

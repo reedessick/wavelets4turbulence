@@ -190,7 +190,7 @@ def scalogram(waveletarray, map2scalar, **kwargs):
         X.append(xs)
         Y.append(waveletarray.scales[0]*np.ones(waveletarray.active[0]))
 
-        detail = np.array(map2scalar(waveletarray.detail[:])) # make a copy to avoid the fact that ha will edit this in-place
+        detail = np.array(map2scalar(waveletarray.detail)[:], dtype=float) # make a copy because we edit this in-place
         s = np.std(detail)
         if s > 0:
             detail /= s # only scale this if there is some variation
@@ -200,8 +200,13 @@ def scalogram(waveletarray, map2scalar, **kwargs):
         waveletarray.idwt()
 
     # plot the scalogram as a scatter
-    vlim = np.max([np.max(np.abs(z)) for z in Z])
+    vmax = np.max([np.max(np.abs(z)) for z in Z])
 
+    if np.all([np.all(z>0) for z in Z]): # all values are positive
+        vmin = 0
+    else:
+        vmin = -vmax
+    
     cmap = plt.get_cmap(SCALOGRAM_CMAP)
 
     for x, y, z in zip(X, Y, Z): # plot tiles
@@ -213,7 +218,7 @@ def scalogram(waveletarray, map2scalar, **kwargs):
         xmax = x+dx
 
         for xmin, xmax, ymin, ymax, z in zip(xmin, xmax, ymin, ymax, z):
-            color = cmap((z+vlim)/(2*vlim))
+            color = cmap((z-vmin)/(vmax-vmin))
             ax1.fill_between([xmin, xmax], [ymin]*2, [ymax]*2, color=color)
 
     # decorate spectogram
@@ -238,14 +243,14 @@ def scalogram(waveletarray, map2scalar, **kwargs):
 
     # add colorbar to ax2
 
-    gradient = np.linspace(-1, 1, 256)*vlim
+    gradient = np.linspace(vmin, vmax, 256)
     gradient = np.transpose(np.vstack((gradient, gradient)))
 
-    ax2.imshow(gradient, aspect='auto', cmap=cmap, origin='lower', extent=(0,1,-vlim,+vlim))
+    ax2.imshow(gradient, aspect='auto', cmap=cmap, origin='lower', extent=(0,1,vmin,vmax))
 
     ax2.set_xticks([])
 
-    ax2.set_ylim(ymin=-vlim, ymax=+vlim)
+    ax2.set_ylim(ymin=vmin, ymax=vmax)
 
     ax2.set_ylabel('scaled detail')
     ax2.yaxis.tick_right()
@@ -257,7 +262,7 @@ def scalogram(waveletarray, map2scalar, **kwargs):
 
     # plot raw data
 
-    ax3.plot(np.arange(len(waveletarray.array))/len(waveletarray.array), waveletarray.array, )
+    ax3.plot(np.arange(waveletarray.shape[1])/waveletarray.shape[1], map2scalar(waveletarray.array))
 
     ax3.set_xlim(ax1.get_xlim())
     plt.setp(ax3.get_xticklabels(), visible=False)

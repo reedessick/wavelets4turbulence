@@ -157,7 +157,7 @@ def hist_coeff(approx, detail, title=None, num_samples=True, **kwargs):
 
 #-------------------------------------------------
 
-def scalogram(waveletarray, **kwargs):
+def scalogram(waveletarray, map2scalar, **kwargs):
     """plot a scalogram of 1D WaveletArray
     """
     assert waveletarray.ndim == 1, 'can only plot scalogram of 1D WaveletArray'
@@ -190,7 +190,7 @@ def scalogram(waveletarray, **kwargs):
         X.append(xs)
         Y.append(waveletarray.scales[0]*np.ones(waveletarray.active[0]))
 
-        detail = np.array(waveletarray.detail[:]) # make a copy to avoid the fact that ha will edit this in-place
+        detail = np.array(map2scalar(waveletarray.detail[:])) # make a copy to avoid the fact that ha will edit this in-place
         s = np.std(detail)
         if s > 0:
             detail /= s # only scale this if there is some variation

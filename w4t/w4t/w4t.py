@@ -24,14 +24,16 @@ DEFAULT_STRUCTURE_THRESHOLD = 1.0
 
 #-------------------------------------------------
 
-class WaveletArray(ABC):
-    """an object that manages storage and wavelet decompositions of ND arrays
+class VectorWaveletArray(ABC):
+    """an object that manages storage and wavelet decompositions of ND arrays for vector fields
     """
 
     def __init__(self, array):
         self._array = copy.deepcopy(array) # make a copy of the array
+
         self._shape = self.array.shape
-        self._ndim = len(self.shape)
+        self._nvec = self.shape[-1]
+        self._ndim = len(self.shape) - 1
         self._levels = [0]*self.ndim
 
     #--------------------
@@ -47,6 +49,10 @@ class WaveletArray(ABC):
     @property
     def ndim(self):
         return self._ndim
+
+    @property
+    def nvec(self):
+        return self._nvec
 
     #--------------------
 
@@ -129,7 +135,7 @@ class WaveletArray(ABC):
 
     @abstractmethod
     def _dwtn(self, axis):
-        raise NotImplementedError('children need to overwrite this')
+        pass
 
     def dwt(self, axis=None):
         """apply the Haar decomposition to axis. If axis=None, apply it to all axes
@@ -161,7 +167,7 @@ class WaveletArray(ABC):
 
     @abstractmethod
     def _idwtn(self, a, d, axis):
-        raise NotImplementedError('children need to overwrite this')
+        pass
 
     def idwt(self, axis=None):
         """apply the inverse Haar decomposition to axis. If axis=None, apply it to all axes
@@ -237,7 +243,7 @@ class WaveletArray(ABC):
 
     #--------------------
 
-    def isotropic_structure_function(self, index=[2], use_abs=False, verbose=False, Verbose=False):
+    def isotropic_structure_function(self, map2scalar, index=[2], use_abs=False, verbose=False, Verbose=False):
         """compute the structure function for various scales by averaging over all dimensions at each scale
         """
         verbose |= Verbose
@@ -253,7 +259,7 @@ class WaveletArray(ABC):
         # compute moments for 1D decompositions along each axis separately
         for dim in range(self.ndim):
 
-            scales, mom, cov = self.structure_function(dim, index=index, use_abs=use_abs, verbose=Verbose)
+            scales, mom, cov = self.structure_function(map2scalar, dim, index=index, use_abs=use_abs, verbose=Verbose)
             for snd, scale in enumerate(scales):
                 scales_set.add(scale)
                 mom_dict[scale].append(mom[snd])
@@ -277,9 +283,9 @@ class WaveletArray(ABC):
         # return
         return scales, mom, cov
 
-    #-------
+    #---
 
-    def structure_function(self, dim, index=[2], use_abs=False, verbose=False):
+    def structure_function(self, map2scalar, dim, index=[2], use_abs=False, verbose=False):
         """compute the structure function for various scales in a 1D decomposition along dim
         """
         assert (0 <= dim) and (dim < self.ndim), 'bad dimension (dim=%d) for ndim=%d' % (dim, self.ndim)
@@ -301,7 +307,7 @@ class WaveletArray(ABC):
             if verbose:
                 print('computing moments for scales: ' + str(self.scales))
 
-            samples = self.coeffs(approx_or_detail).flatten()
+            samples = map2scalar(self.coeffs(approx_or_detail)).flatten()
             if use_abs:
                 samples = np.abs(samples)
 
@@ -320,34 +326,24 @@ class WaveletArray(ABC):
 
         return np.array(scales, dtype=float), np.array(moms, dtype=float), np.array(covs, dtype=float)
 
-    #-------
-
-    def scaling_exponent(self, index=[2], use_abs=False, min_scale=None, max_scale=None, verbose=False, Verbose=False):
-        """compute scaling exponent for structure functions
-        """
-        # compute moments
-        scales, moms, covs = self.isotropic_structure_function(index=index, use_abs=use_abs, verbose=verbose, Verbose=Verbose)
-
-        # downselect scales before performing basic fit to extract scaling exponent
-        sel = np.ones(len(scale), dtype=bool)
-
-        if min_scale is not None:
-            sel *= (min_scale <= scales)
-
-        if max_scale is not None:
-            sel *= (scales <= max_scales)
-
-        # perform fit and return
-        return [moments.scaling_exponent(scales[sel], mom[sel,ind], 1./covs[sel,ind,ind]**0.5) for ind in range(len(index))]
-
     #--------------------
 
-    def denoise(self, num_std, smooth=False, max_scale=None):
+    def denoise(self, map2scalar, num_std, smooth=False, max_scale=None):
         """perform basic "wavelet denoising" by taking the full wavelet decomposition and zeroing all detail coefficients with \
 with absolute values less than a threshold. This threshold is taken as num_std*std(detail) within each scale separately
 
         WARNING: this function modifies data in-place. Data will be lost for the coefficients that are set to zero.
         """
+
+
+
+
+        raise NotImplementedError(' I am not sure the following will work with "map2scalar" as written... ')
+
+
+
+
+
         if max_scale is None:
             max_scale = self.shape[0] # continue to denoise over all scales
 
@@ -364,7 +360,8 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
                 slices = [_+(slice(0,num),) for _ in slices] + [_+(slice(num,2*num),) for _ in slices]
 
             for s in slices[1:]: # only touch the detail coefficients
-                sel = np.abs(self.array[s]) <= np.std(self.array[s])*num_std # the small-amplitude detail coeffs
+                scalar = map2scalar(self.array[s])
+                sel = np.abs(scalar) <= np.std(scalar)*num_std # the small-amplitude detail coeffs
                 if smooth: # zero the high-amplitude detail coefficients
                     sel = np.logical_not(sel)
                 self.array[s] *= np.where(sel, 0.0, 1.0)
@@ -378,12 +375,12 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
     #--------------------
 
-    def structures(self, thr=0, num_proc=1, timeit=False):
+    def structures(self, map2scalar, thr=0, num_proc=1, timeit=False):
         """returns a list of sets of pixels corresponding to spatially separate structures at the current scale
         thr sets the threshold for considering a pixel to be "on" and therefore eligible to be included in a structure
         """
         pixels = structures.find_structures(
-            np.abs(self.approx) >= thr*np.std(self.approx.flatten()),
+            np.abs(map2scalar(self.approx)) >= thr*np.std(map2scalar(self.approx).flatten()),
             num_proc=num_proc,
             timeit=timeit,
         )
@@ -391,38 +388,104 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
     #--------------------
 
+    def plot(self, map2scalar, **kwargs):
+        """make a plot of approx coefficients
+        """
+        return flow.plot(map2scalar(self.approx), **kwargs)
+
+    #---
+
+    def hist(self, map2scalar, **kwargs):
+        """make a histogram of approx coefficients
+        """
+        return flow.hist(map2scalar(self.approx), **kwargs)
+
+    #-------
+
+    def plot_coeff(self, map2scalar, **kwargs):
+        """make plots of wavelet coefficients
+        """
+        return flow.plot_coeff(self.ndim, *(self.map2scalar(cs) for cs in self.coeffset), **kwargs)
+
+    #---
+
+    def hist_coeff(self, map2scalar, **kwargs):
+        """make histograms of wavelet coefficients
+        """
+        return flow.hist_coeff(self.ndim, *(self.map2scalar(cs) for cs in self.coeffset), **kwargs)
+
+    #-------
+
+    def scalogram(self, map2scalar, **kwargs):
+        """make a scalogram of the data
+        """
+        return flow.dim1.scalogram(self, map2scalar, **kwargs)
+
+#-------------------------------------------------
+
+class ScalarWaveletArray(VectorWaveletArray):
+    """an object that manages storage and wavelet decompositions of ND arrays for scalar fields
+    """
+    _map2scalar = lambda x : x # used internally to allow compatability with VectorWaveletArray
+
+    def __init__(self, array):
+        self._array = copy.deepcopy(array) # make a copy of the array
+        self._shape = self.array.shape
+        self._ndim = len(self.shape)
+        self._levels = [0]*self.ndim
+
+    #--------------------
+
+    def isotropic_structure_function(self, *args, **kwargs):
+        return VectorWaveletArray(self, self._map2scalar, *args, **kwargs)
+
+    def structure_function(self, *args, **kwargs):
+        return VectorWaveletArray(self, self._map2scalar, *args, **kwargs)
+
+    #--------------------
+
+    def denoise(self, *args, **kwargs):
+        return VectorWaveletArray(self, self._map2scalar, *args, **kwargs)
+
+    #--------------------
+
+    def structures(self, *args, **kwargs):
+        return VectorWaveletArray(self, self._map2scalar, *args, **kwargs)
+
+    #--------------------
+
     def plot(self, **kwargs):
         """make a plot of approx coefficients
         """
-        return flow.plot(self.approx, **kwargs)
+        return VectorWaveletArray(self, self._map2scalar, **kwargs)
 
     #---
 
     def hist(self, **kwargs):
         """make a histogram of approx coefficients
         """
-        return flow.hist(self.approx, **kwargs)
+        return VectorWaveletArray(self, self._map2scalar, **kwargs)
 
     #-------
 
     def plot_coeff(self, **kwargs):
         """make plots of wavelet coefficients
         """
-        return flow.plot_coeff(self, **kwargs)
+        return VectorWaveletArray.plot_coeff(self, self._map2scalar, **kwargs)
 
     #---
 
     def hist_coeff(self, **kwargs):
         """make histograms of wavelet coefficients
         """
-        return flow.hist_coeff(self, **kwargs)
+        return VectorWaveletArray.hist_coeff(self, self._map2scalar, **kwargs)
 
     #-------
 
     def scalogram(self):
         """make a scalogram of the data
         """
-        return flow.dim1.scalogram(self)
+        return VectorWaveletArray.scalogram(self, self._map2scalar)
 
 #-------------------------------------------------
 
@@ -492,15 +555,11 @@ class Structure(object):
 
     #-------
 
-    def principle_components(self, waveletarray=None, index=1):
+    def principle_components(self, waveletarray, map2scalar, index=1):
         """compute the principle components of a structure with respect to the field contained in waveletarray raised to index
         """
         # figure out the measure with repect to which we compute the principle components
-        if waveletarray is not None: # extract measure for principle components
-            weights = np.abs(self.extract(waveletarray))**index
-        else:
-            weights = np.ones(len(self), dtype=float)
-
+        weights = np.abs(map2scalar(self.extract(waveletarray)))**index
         weights /= np.sum(weights)
 
         # compute principle components and return
@@ -508,19 +567,15 @@ class Structure(object):
 
     #--------------------
 
-    def plot(self, waveletarray, zoom=False, **kwargs):
+    def plot(self, waveletarray, map2scalar, zoom=False, **kwargs):
         """make a plot of approx coefficients
         """
         array = self.extract_as_array(waveletarray)
-        if zoom:
-            raise NotImplementedError('array size to only include bounding box')
-
-        return flow.plot(array, **kwargs)
+        return flow.plot(map2scalar(array), **kwargs)
 
     #-------
 
-    def hist(self, waveletarray, **kwargs):
+    def hist(self, waveletarray, map2scalar, **kwargs):
         """make a histogram of approx coefficients
         """
-        return flow.hist(self.extract(waveletarray), **kwargs)
-
+        return flow.hist(map2scalar(self.extract(waveletarray)), **kwargs)

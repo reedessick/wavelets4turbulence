@@ -29,20 +29,20 @@ def plot(array, **kwargs):
 
 #-----------
 
-def plot_coeff(waveletarray, **kwargs):
+def plot_coeff(ndim, *args, **kwargs):
     """a simple routing function that controls workflow based on data dimensionality
     """
-    if waveletarray.ndim == 1:
+    if ndim == 1:
         extent = kwargs.pop('extent', [(0, 1)])[0]
-        return dim1.plot_coeff(*waveletarray.coeffset, extent=extent, **kwargs)
+        return dim1.plot_coeff(*args, extent=extent, **kwargs)
 
-    elif waveletarray.ndim == 2:
+    elif ndim == 2:
         extent = kwargs.pop('extent', [(0,1)]*2)
         extent = (extent[0][0], extent[0][1], extent[1][0], extent[1][1])
-        return dim2.plot_coeff(*waveletarray.coeffset, extent=extent, **kwargs)
+        return dim2.plot_coeff(*args, extent=extent, **kwargs)
 
-    elif waveletarray.ndim == 3:
-        return dim3.plot_coeff(*waveletarray.coeffset, **kwargs)
+    elif ndim == 3:
+        return dim3.plot_coeff(*args, **kwargs)
 
     else:
         raise RuntimeError('do not know how to plot wavelet coefficients for ndim=%d' % waveletarray.ndim)
@@ -67,22 +67,22 @@ def hist(array, **kwargs):
 
 #-----------
 
-def hist_coeff(waveletarray, **kwargs):
+def hist_coeff(ndim, *args, **kwargs):
     """a simple routing function that controls workflow based on data dimensionality
     """
-    if waveletarray.ndim == 1:
+    if ndim == 1:
         foo = dim1.hist_coeff
 
-    elif waveletarray.ndim == 2:
+    elif ndim == 2:
         foo = dim2.hist_coeff
 
-    elif waveletarray.ndim == 3:
+    elif ndim == 3:
         foo = dim3.hist_coeff
 
     else:
         raise RuntimeError('do not know how to plot wavelet coefficients for ndim=%d' % waveletarray.ndim)
 
-    return foo(*waveletarray.coeffset, **kwargs)
+    return foo(*args, **kwargs)
 
 #------------------------
 

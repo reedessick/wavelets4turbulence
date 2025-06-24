@@ -190,7 +190,7 @@ rest are interpreted as spatial coordinates.
             # update in place
             np.put_along_axis(
                 self.array,
-                np.arange(2*ind).reshape(tuple(2*ind if a==axis else 1 for a in range(self.ndim))),
+                np.arange(2*ind).reshape((1,)+tuple(2*ind if a==axis else 1 for a in range(self.ndim))),
                 x,
                 axis=axis+1,
             )

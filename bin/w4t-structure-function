@@ -13,6 +13,8 @@ from argparse import ArgumentParser
 ### non-standard libraries
 from w4t.utils import io
 from w4t.utils import moments
+from w4t.utils.utils import default_map2scalar
+
 from w4t.w4t import pywt
 
 #-------------------------------------------------
@@ -24,8 +26,11 @@ parser.add_argument('target', type=str)
 
 parser.add_argument('field', type=str)
 parser.add_argument('--component', type=int, default=None)
+parser.add_argument('--magnitude', default=False, action='store_true')
 
 parser.add_argument('-M', '--max-edgelength', default=None, type=int)
+parser.add_argument('--map2scalar', default=None, type=str,
+    help='a string that will be evaluated into a function handle to map array data into a scalar')
 
 parser.add_argument('-w', '--wavelet', default=pywt.DEFAULT_WAVELET, type=str)
 parser.add_argument('-i', '--index', nargs='+', type=float)
@@ -54,6 +59,13 @@ args.verbose |= args.Verbose
 
 args.index = sorted(args.index)
 
+#------------------------
+
+if args.map2scalar is None:
+    map2scalar = default_map2scalar
+else:
+    map2scalar = eval(args.map2scalar)
+
 #-------------------------------------------------
 
 # load data into a wavelet array
@@ -62,6 +74,7 @@ data, field = io.simplify(
     io.load([args.field], path=args.source, verbose=args.verbose)[args.field],
     args.field,
     component=args.component,
+    magnitude=args.magnitude,
     max_edgelength=args.max_edgelength,
     verbose=args.verbose,
 )
@@ -74,7 +87,7 @@ if args.threshold is not None: # denoise before computing structure function
             (args.wavelet, args.threshold, args.max_scale, args.smooth))
 
     wa = pywt.PyWaveletArray(data, args.wavelet)
-    wa.denoise(args.threshold, max_scale=args.max_scale, smooth=args.smooth)
+    wa.denoise(args.threshold, map2scalar=map2scalar, max_scale=args.max_scale, smooth=args.smooth)
     wa.idecompose() # make sure we're at full resolution before we save
     data = wa.array
 
@@ -104,6 +117,7 @@ if args.direct:
                 data,
                 scale,
                 args.index,
+                map2scalar=args.map2scalar,
                 verbose=args.verbose,
                 Verbose=args.Verbose,
             )
@@ -114,6 +128,7 @@ if args.direct:
                 args.direction,
                 scale,
                 args.index,
+                map2scalar=map2scalar,
                 verbose=args.verbose,
             )
 
@@ -136,6 +151,7 @@ else:
 
     if args.direction is None:
         scales, mom, cov = wa.isotropic_structure_function(
+            map2scalar=map2scalar,
             index=args.index,
             use_abs=True,
             verbose=args.verbose,
@@ -145,6 +161,7 @@ else:
     else:
         scales, mom, cov = wa.structure_function(
             args.direction,
+            map2scalar=map2scalar,
             index=args.index,
             use_abs=True,
             verbose=args.verbose,
@@ -154,12 +171,7 @@ else:
 
 # write structure functions to disk
 
-io.write_structure_function(
-    scales,
-    args.index,
-    mom,
-    cov,
-    args.target,
+kwargs = dict(
     verbose=args.verbose,
     source=args.source,
     field=field,
@@ -167,3 +179,8 @@ io.write_structure_function(
     direct=args.direct,
     wavelet=args.wavelet,
 )
+
+if args.map2scalar is not None:
+    kwargs['map2scalar'] = args.map2scalar
+
+io.write_structure_function(scales, args.index, mom, cov, args.target, **kwargs)

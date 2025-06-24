@@ -43,6 +43,7 @@ must be one of: %s' % (', '.join(KNOWN_COMMANDS.keys())))
 
 parser.add_argument('field', type=str)
 parser.add_argument('--component', type=int, default=None)
+parser.add_argument('--magnitude', default=False, action='store_true')
 
 parser.add_argument('-M', '--max-edgelength', default=None, type=int)
 
@@ -105,6 +106,7 @@ data, field = io.simplify(
     io.load([args.field], path=args.source, verbose=args.verbose)[args.field],
     args.field,
     component=args.component,
+    magnitude=args.magnitude,
     max_edgelength=args.max_edgelength,
     verbose=args.verbose,
 )
@@ -117,7 +119,7 @@ for dim, ind in args.slice:
     assert dim < len(data.shape), 'cannot slice along dim=%d for data with ndim=%d' % (dim, len(data.shape))
     if args.verbose:
         print('taking slice\n    dim=%d\n    ind=%d' % (dim, ind))
-    data = np.take(data, ind, axis=dim)
+    data = np.take(data, ind, axis=dim+1)
 
 #------------------------
 

@@ -24,7 +24,7 @@ DEFAULT_STRUCTURE_THRESHOLD = 1.0
 
 #-------------------------------------------------
 
-class VectorWaveletArray(ABC):
+class WaveletArray(ABC):
     """an object that manages storage and wavelet decompositions of ND arrays for vector fields
     """
 
@@ -334,16 +334,6 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
         WARNING: this function modifies data in-place. Data will be lost for the coefficients that are set to zero.
         """
-
-
-
-
-        raise NotImplementedError(' I am not sure the following will work with "map2scalar" as written... ')
-
-
-
-
-
         if max_scale is None:
             max_scale = self.shape[0] # continue to denoise over all scales
 
@@ -351,6 +341,8 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
         self.idecompose() # start from the top
         max_scale = min(max_scale, min(*self.active)) # limit this to the size of the array
+
+        ones = np.ones(self.nvec, dtype=bool)
 
         while self.scales[0] < max_scale: # continue to denoise
             self.dwt() # decompose again
@@ -364,6 +356,7 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
                 sel = np.abs(scalar) <= np.std(scalar)*num_std # the small-amplitude detail coeffs
                 if smooth: # zero the high-amplitude detail coefficients
                     sel = np.logical_not(sel)
+                sel = np.outer(sel, ones).reshape(sel.shape+(self.nvec,))
                 self.array[s] *= np.where(sel, 0.0, 1.0)
 
         # zero the remaining approx coeffs
@@ -420,72 +413,6 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
         """make a scalogram of the data
         """
         return flow.dim1.scalogram(self, map2scalar, **kwargs)
-
-#-------------------------------------------------
-
-class ScalarWaveletArray(VectorWaveletArray):
-    """an object that manages storage and wavelet decompositions of ND arrays for scalar fields
-    """
-    _map2scalar = lambda x : x # used internally to allow compatability with VectorWaveletArray
-
-    def __init__(self, array):
-        self._array = copy.deepcopy(array) # make a copy of the array
-        self._shape = self.array.shape
-        self._ndim = len(self.shape)
-        self._levels = [0]*self.ndim
-
-    #--------------------
-
-    def isotropic_structure_function(self, *args, **kwargs):
-        return VectorWaveletArray(self, self._map2scalar, *args, **kwargs)
-
-    def structure_function(self, *args, **kwargs):
-        return VectorWaveletArray(self, self._map2scalar, *args, **kwargs)
-
-    #--------------------
-
-    def denoise(self, *args, **kwargs):
-        return VectorWaveletArray(self, self._map2scalar, *args, **kwargs)
-
-    #--------------------
-
-    def structures(self, *args, **kwargs):
-        return VectorWaveletArray(self, self._map2scalar, *args, **kwargs)
-
-    #--------------------
-
-    def plot(self, **kwargs):
-        """make a plot of approx coefficients
-        """
-        return VectorWaveletArray(self, self._map2scalar, **kwargs)
-
-    #---
-
-    def hist(self, **kwargs):
-        """make a histogram of approx coefficients
-        """
-        return VectorWaveletArray(self, self._map2scalar, **kwargs)
-
-    #-------
-
-    def plot_coeff(self, **kwargs):
-        """make plots of wavelet coefficients
-        """
-        return VectorWaveletArray.plot_coeff(self, self._map2scalar, **kwargs)
-
-    #---
-
-    def hist_coeff(self, **kwargs):
-        """make histograms of wavelet coefficients
-        """
-        return VectorWaveletArray.hist_coeff(self, self._map2scalar, **kwargs)
-
-    #-------
-
-    def scalogram(self):
-        """make a scalogram of the data
-        """
-        return VectorWaveletArray.scalogram(self, self._map2scalar)
 
 #-------------------------------------------------
 

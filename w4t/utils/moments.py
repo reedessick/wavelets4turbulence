@@ -50,11 +50,11 @@ def direct_structure_function(array, dim, scale, index, map2scalar=default_map2s
         print('computing moments directly for dim=%d for scale=%d' % (dim, scale))
 
     # figure out the relevant indexes
-    inds = np.arange(array.shape[dim]-scale)
+    inds = np.arange(array.shape[dim+1]-scale)
 
     # compute the differences with step size "scale", take moments, and return
     return moments(
-        np.abs(map2scalar(np.take(array, inds+scale, axis=dim) - np.take(array, inds, axis=dim))).flatten(),
+        map2scalar(np.take(array, inds+scale, axis=dim+1) - np.take(array, inds, axis=dim+1)).flatten(),
         index,
         central=False,
         verbose=verbose,

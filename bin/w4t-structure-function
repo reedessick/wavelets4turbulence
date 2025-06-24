@@ -101,7 +101,7 @@ if args.direct:
     if args.direct_scales is not None:
         scales = np.array(sorted(args.direct_scales), dtype=int)
     else:
-        max_scale = np.min(data.shape)
+        max_scale = np.min(data.shape[1:])
         scale = 1
         scales = []
         while scale < max_scale:
@@ -117,7 +117,7 @@ if args.direct:
                 data,
                 scale,
                 args.index,
-                map2scalar=args.map2scalar,
+                map2scalar=map2scalar,
                 verbose=args.verbose,
                 Verbose=args.Verbose,
             )

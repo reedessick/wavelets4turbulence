@@ -71,7 +71,7 @@ def find_structures(sel, num_proc=1, timeit=False):
             strucs = pool.starmap(_structures, [(sel[s:e], s) for s, e in bounds]) # find structures in separate regions
 
             if timeit:
-                print('identify structures: %f' % (time.time()-t0))
+                print('identify structures: %f sec' % (time.time()-t0))
 
             # merge
             if timeit:
@@ -88,7 +88,7 @@ def find_structures(sel, num_proc=1, timeit=False):
                 bounds = [b for a,b in ans] + bounds[2*num_pairs:]
 
             if timeit:
-                print('preliminary merge structures: %f' % (time.time()-t0))
+                print('preliminary merge structures: %f sec' % (time.time()-t0))
 
         if timeit:
             t0 = time.time()
@@ -97,7 +97,7 @@ def find_structures(sel, num_proc=1, timeit=False):
         strucs, _ = _merge2structures(strucs[0], bounds[0], strucs[1], bounds[1], ndim)
 
         if timeit:
-            print('final merge structures: %f' % (time.time()-t0))
+            print('final merge structures: %f sec' % (time.time()-t0))
 
     # return
     return strucs

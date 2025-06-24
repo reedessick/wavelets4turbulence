@@ -27,7 +27,7 @@ parser.add_argument('--component', type=int, default=None)
 parser.add_argument('--magnitude', default=False, action='store_true')
 
 parser.add_argument('-M', '--max-edgelength', default=None, type=int)
-arser.add_argument('--map2scalar', default=None, type=str,
+parser.add_argument('--map2scalar', default=None, type=str,
     help='a string that will be evaluated into a function handle to map array data into a scalar')
 
 parser.add_argument('-w', '--wavelet', default=pywt.DEFAULT_WAVELET, type=str)

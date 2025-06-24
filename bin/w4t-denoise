@@ -96,4 +96,4 @@ kwargs = dict(
 if args.map2scalar is not None:
     kwargs['map2scalar'] = args.map2scalar
 
-io.write(dict([(field, wa.array.reshape((1,)+wa.shape))]), args.target, **kwargs)
+io.write(dict([(field, wa.array)]), args.target, **kwargs)

@@ -380,7 +380,7 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
             num_proc=num_proc,
             timeit=timeit,
         )
-        return [Structure(pix, self.levels, self.shape) for pix in pixels]
+        return [Structure(pix, self.levels, self.shape[1:]) for pix in pixels]
 
     #--------------------
 

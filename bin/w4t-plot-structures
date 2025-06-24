@@ -12,6 +12,7 @@ from argparse import ArgumentParser
 
 ### non-standard libraries
 from w4t.utils import io
+from w4t.utils.utils import default_map2scalar
 
 from w4t.plot import plot as plt
 from w4t.plot import flow
@@ -42,6 +43,8 @@ parser.add_argument('--component', type=int, default=None)
 parser.add_argument('--magnitude', default=False, action='store_true')
 
 parser.add_argument('-M', '--max-edgelength', default=None, type=int)
+parser.add_argument('--map2scalar', default=None, type=str,
+    help='a string that will be evaluated into a function handle to map array data into a scalar')
 
 parser.add_argument('-s', '--structure-index', nargs='*', type=int, default=None,
     help='if specified, only plot the structures corresponding to these indexes')
@@ -85,6 +88,13 @@ if not args.figtype:
 
 for command in args.command:
     assert command in KNOWN_COMMANDS, 'each command must be one of: %s' % (', '.join(KNOWN_COMMANDS.keys()))
+
+#------------------------
+
+if args.map2scalar is None:
+    map2scalar = default_map2scalar
+else:
+    map2scalar = eval(args.map2scalar)
 
 #-------------------------------------------------
 
@@ -139,6 +149,8 @@ for snd in args.structure_index: # iterate over structures
 
     else:
         extent = [(0, 1)]*wa.ndim
+
+    data = map2scalar(data)
 
     #---
 

@@ -156,29 +156,28 @@ def load(
 
 #------------------------
 
-def simplify(data, field, component=None, max_edgelength=None, verbose=False):
+def simplify(data, field, component=None, magnitude=False, max_edgelength=None, verbose=False):
     """further extract specific components of an array and standardize truncation
     """
     if component is None:
-        if data.shape[0] > 1: # take the magnitude
+        if magnitude: # take the magnitude
             if verbose:
                 print('extracting magnitude')
             data = np.sum(data**2, axis=0)**0.5
-            field = field+"_mag"
-        else:
-            data = data[0]
-            field = field
+            data = data.reshape((1,)+data.shape)
+            field = "%s_mag" % field
 
     else: # take a specific component
         if verbose:
             print('extracting component: %d' % component)
         data = data[component]
+        data = data.reshape((1,)+data.shape)
         field = "%s_%d" % (field, component)
 
     if max_edgelength is not None:
         if verbose:
             print('retaining the first %d samples in each dimension' % max_edgelength)
-        data = data[tuple(slice(max_edgelength) for _ in range(len(data.shape)))]
+        data = data[:,tuple(slice(max_edgelength) for _ in range(len(data.shape)))]
 
     if verbose:
         print('    %s %s' % (field, data.shape))

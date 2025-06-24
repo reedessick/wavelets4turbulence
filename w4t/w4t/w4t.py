@@ -22,15 +22,23 @@ from w4t.plot import flow
 DEFAULT_DENOISE_THRESHOLD = 1.0
 DEFAULT_STRUCTURE_THRESHOLD = 1.0
 
+#------------------------
+
+def _default_map2scalar(array):
+    """a default map from a vector to a scalar quantitity: sqrt of quadrature sum of components (euclidean vector magnitude)
+    """
+    return np.sum(array**2, axis=0)**0.5 # take the quadrature sum of vector components by default
+
 #-------------------------------------------------
 
 class WaveletArray(ABC):
-    """an object that manages storage and wavelet decompositions of ND arrays for vector fields
+    """an object that manages storage and wavelet decompositions of ND arrays for vector fields.
+expect arrays to have shape (nvec, numx, numy, ...) so that the first index is interpreted as the vector componets and the \
+rest are interpreted as spatial coordinates.
     """
 
     def __init__(self, array):
         self._array = copy.deepcopy(array) # make a copy of the array
-
         self._shape = self.array.shape
         self._nvec = self.shape[-1]
         self._ndim = len(self.shape) - 1
@@ -83,14 +91,14 @@ class WaveletArray(ABC):
         """grab the current approximate coefficients
         """
         inds = self.active
-        return self.array[tuple(slice(ind) for ind in inds)]
+        return self.array[:,tuple(slice(ind) for ind in inds)]
 
     @property
     def detail(self):
         """grab the current detail coefficients. Only grabs details in all dimensions
         """
         inds = self.active
-        return self.array[tuple(slice(ind, 2*ind) for ind in inds)]
+        return self.array[:,tuple(slice(ind, 2*ind) for ind in inds)]
 
     def coeffs(self, approx_or_detail):
         """grab the current coefficients in various blocks of the array.
@@ -98,7 +106,7 @@ class WaveletArray(ABC):
         """
         assert len(approx_or_detail) == self.ndim, 'bad length for approx_or_detail'
         inds = self.active
-        return self.array[tuple(slice(ind) if aod else slice(ind,2*ind) for ind, aod in zip(inds, approx_or_detail))]
+        return self.array[:,tuple(slice(ind) if aod else slice(ind,2*ind) for ind, aod in zip(inds, approx_or_detail))]
 
     @property
     def coeffset(self):
@@ -141,20 +149,20 @@ class WaveletArray(ABC):
         """apply the Haar decomposition to axis. If axis=None, apply it to all axes
         """
         if axis is not None:
-            assert 2**self.levels[axis] < self.shape[axis], 'cannot decompose axis=%d further!' % axis
+            assert 2**self.levels[axis] < self.shape[axis+1], 'cannot decompose axis=%d further!' % axis
 
             ind = self.active[axis]
             inds = np.arange(ind)
 
             # perform decomposition
-            a, d = self._dwtn(np.take(self.array, inds, axis=axis), axis)
+            a, d = self._dwtn(np.take(self.array, inds, axis=axis+1), axis+1)
 
             # update in place
             num = ind//2
             shape = tuple(num if _==axis else 1 for _ in range(self.ndim))
 
-            np.put_along_axis(self.array, inds[:num].reshape(shape), a, axis=axis)
-            np.put_along_axis(self.array, inds[num:].reshape(shape), d, axis=axis)
+            np.put_along_axis(self.array, inds[:num].reshape(shape), a, axis=axis+1)
+            np.put_along_axis(self.array, inds[num:].reshape(shape), d, axis=axis+1)
 
             # increment level
             self.levels[axis] += 1
@@ -179,9 +187,9 @@ class WaveletArray(ABC):
 
             # perform inverse decomposition
             x = self._idwtn(
-                np.take(self.array, np.arange(ind), axis=axis), # a
-                np.take(self.array, np.arange(ind, 2*ind), axis=axis), # d
-                axis,
+                np.take(self.array, np.arange(ind), axis=axis+1), # a
+                np.take(self.array, np.arange(ind, 2*ind), axis=axis+1), # d
+                axis+1,
             )
 
             # update in place
@@ -189,7 +197,7 @@ class WaveletArray(ABC):
                 self.array,
                 np.arange(2*ind).reshape(tuple(2*ind if a==axis else 1 for a in range(self.ndim))),
                 x,
-                axis=axis,
+                axis=axis+1,
             )
 
             # increment level
@@ -243,7 +251,7 @@ class WaveletArray(ABC):
 
     #--------------------
 
-    def isotropic_structure_function(self, map2scalar, index=[2], use_abs=False, verbose=False, Verbose=False):
+    def isotropic_structure_function(self, map2scalar=_default_map2scalar, index=[2], use_abs=False, verbose=False, Verbose=False):
         """compute the structure function for various scales by averaging over all dimensions at each scale
         """
         verbose |= Verbose
@@ -285,7 +293,7 @@ class WaveletArray(ABC):
 
     #---
 
-    def structure_function(self, map2scalar, dim, index=[2], use_abs=False, verbose=False):
+    def structure_function(self, dim, map2scalar=_default_map2scalar, index=[2], use_abs=False, verbose=False):
         """compute the structure function for various scales in a 1D decomposition along dim
         """
         assert (0 <= dim) and (dim < self.ndim), 'bad dimension (dim=%d) for ndim=%d' % (dim, self.ndim)
@@ -328,7 +336,7 @@ class WaveletArray(ABC):
 
     #--------------------
 
-    def denoise(self, map2scalar, num_std, smooth=False, max_scale=None):
+    def denoise(self, num_std, map2scalar=_default_map2scalar, smooth=False, max_scale=None):
         """perform basic "wavelet denoising" by taking the full wavelet decomposition and zeroing all detail coefficients with \
 with absolute values less than a threshold. This threshold is taken as num_std*std(detail) within each scale separately
 
@@ -368,7 +376,7 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
     #--------------------
 
-    def structures(self, map2scalar, thr=0, num_proc=1, timeit=False):
+    def structures(self, map2scalar=_default_map2scalar, thr=0, num_proc=1, timeit=False):
         """returns a list of sets of pixels corresponding to spatially separate structures at the current scale
         thr sets the threshold for considering a pixel to be "on" and therefore eligible to be included in a structure
         """
@@ -381,35 +389,35 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
     #--------------------
 
-    def plot(self, map2scalar, **kwargs):
+    def plot(self, map2scalar=_default_map2scalar, **kwargs):
         """make a plot of approx coefficients
         """
         return flow.plot(map2scalar(self.approx), **kwargs)
 
     #---
 
-    def hist(self, map2scalar, **kwargs):
+    def hist(self, map2scalar=_default_map2scalar, **kwargs):
         """make a histogram of approx coefficients
         """
         return flow.hist(map2scalar(self.approx), **kwargs)
 
     #-------
 
-    def plot_coeff(self, map2scalar, **kwargs):
+    def plot_coeff(self, map2scalar=_default_map2scalar, **kwargs):
         """make plots of wavelet coefficients
         """
         return flow.plot_coeff(self.ndim, *(self.map2scalar(cs) for cs in self.coeffset), **kwargs)
 
     #---
 
-    def hist_coeff(self, map2scalar, **kwargs):
+    def hist_coeff(self, map2scalar=_default_map2scalar, **kwargs):
         """make histograms of wavelet coefficients
         """
         return flow.hist_coeff(self.ndim, *(self.map2scalar(cs) for cs in self.coeffset), **kwargs)
 
     #-------
 
-    def scalogram(self, map2scalar, **kwargs):
+    def scalogram(self, map2scalar=_default_map2scalar, **kwargs):
         """make a scalogram of the data
         """
         return flow.dim1.scalogram(self, map2scalar, **kwargs)
@@ -463,26 +471,26 @@ class Structure(object):
         """
         # sanity-check input
         waveletarray.set_levels(self.levels) # set to the appropriate level of decomposition
-        assert np.all(waveletarray.approx.shape == self.shape), 'shape mismatch'
+        assert np.all(waveletarray.approx.shape[1:] == self.shape), 'shape mismatch'
 
         # extract data
         array = np.zeros_like(waveletarray.approx, dtype=float) # default is zero everywhere
 
         tup = self.tuple
-        array[tup] = waveletarray.approx[tup] # fill in the selected pixels
+        array[tup] = waveletarray.approx[:,tup] # fill in the selected pixels
 
         # return
         return array
 
     def extract(self, waveletarray):
         # sanity-check input
-        assert waveletarray.shape == self.shape, 'shape mismatch'
+        assert waveletarray.shape[1:] == self.shape, 'shape mismatch'
         waveletarray.set_levels(self.levels) # set to the appropriate level of decomposition
-        return waveletarray.approx[self.tuple]
+        return waveletarray.approx[:,self.tuple]
 
     #-------
 
-    def principle_components(self, waveletarray, map2scalar, index=1):
+    def principle_components(self, waveletarray, map2scalar=_default_map2scalar, index=1):
         """compute the principle components of a structure with respect to the field contained in waveletarray raised to index
         """
         # figure out the measure with repect to which we compute the principle components
@@ -494,7 +502,7 @@ class Structure(object):
 
     #--------------------
 
-    def plot(self, waveletarray, map2scalar, zoom=False, **kwargs):
+    def plot(self, waveletarray, map2scalar=_default_map2scalar, zoom=False, **kwargs):
         """make a plot of approx coefficients
         """
         array = self.extract_as_array(waveletarray)
@@ -502,7 +510,7 @@ class Structure(object):
 
     #-------
 
-    def hist(self, waveletarray, map2scalar, **kwargs):
+    def hist(self, waveletarray, map2scalar=_default_map2scalar, **kwargs):
         """make a histogram of approx coefficients
         """
         return flow.hist(map2scalar(self.extract(waveletarray)), **kwargs)

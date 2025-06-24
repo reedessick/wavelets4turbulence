@@ -7,9 +7,12 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 import numpy as np
 from scipy.special import comb # comb(n, k) = "n choose k" = n! / ((n-k)! k!)
 
+### non-standard libraries
+from w4t.w4t.w4t import _default_map2scalar
+
 #-------------------------------------------------
 
-def direct_isotropic_structure_function(array, scale, index, verbose=False, Verbose=False):
+def direct_isotropic_structure_function(array, scale, index, map2scalar=_default_map2scalar, verbose=False, Verbose=False):
     """average over cartesian directions to estimate isotropic structure function
     """
     verbose |= Verbose
@@ -23,7 +26,7 @@ def direct_isotropic_structure_function(array, scale, index, verbose=False, Verb
     mom = []
     cov = []
     for dim in range(ndim):
-        index, m, c = direct_structure_function(array, dim, scale, index, verbose=Verbose)
+        index, m, c = direct_structure_function(array, dim, scale, index, map2scalar=map2scalar, verbose=Verbose)
         mom.append(m)
         cov.append(c)
 
@@ -38,7 +41,7 @@ def direct_isotropic_structure_function(array, scale, index, verbose=False, Verb
 
 #------------------------
 
-def direct_structure_function(array, dim, scale, index, verbose=False):
+def direct_structure_function(array, dim, scale, index, map2scalar=_default_map2scalar, verbose=False):
     """directly estimate the structure function along dimension "dim" at length "scale"
     """
     assert (0 <= dim) and (dim < len(array.shape)), 'bad dimension (dim=%d) for ndim=%d' % (dim, len(array.shape))
@@ -51,7 +54,7 @@ def direct_structure_function(array, dim, scale, index, verbose=False):
 
     # compute the differences with step size "scale", take moments, and return
     return moments(
-        np.abs(np.take(array, inds+scale, axis=dim) - np.take(array, inds, axis=dim)).flatten(),
+        np.abs(map2scalar(np.take(array, inds+scale, axis=dim) - np.take(array, inds, axis=dim))).flatten(),
         index,
         central=False,
         verbose=verbose,

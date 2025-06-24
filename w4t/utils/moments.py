@@ -8,11 +8,11 @@ import numpy as np
 from scipy.special import comb # comb(n, k) = "n choose k" = n! / ((n-k)! k!)
 
 ### non-standard libraries
-from w4t.w4t.w4t import _default_map2scalar
+from w4t.utils.utils import default_map2scalar
 
 #-------------------------------------------------
 
-def direct_isotropic_structure_function(array, scale, index, map2scalar=_default_map2scalar, verbose=False, Verbose=False):
+def direct_isotropic_structure_function(array, scale, index, map2scalar=default_map2scalar, verbose=False, Verbose=False):
     """average over cartesian directions to estimate isotropic structure function
     """
     verbose |= Verbose
@@ -41,7 +41,7 @@ def direct_isotropic_structure_function(array, scale, index, map2scalar=_default
 
 #------------------------
 
-def direct_structure_function(array, dim, scale, index, map2scalar=_default_map2scalar, verbose=False):
+def direct_structure_function(array, dim, scale, index, map2scalar=default_map2scalar, verbose=False):
     """directly estimate the structure function along dimension "dim" at length "scale"
     """
     assert (0 <= dim) and (dim < len(array.shape)), 'bad dimension (dim=%d) for ndim=%d' % (dim, len(array.shape))

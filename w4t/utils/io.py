@@ -177,7 +177,7 @@ def simplify(data, field, component=None, magnitude=False, max_edgelength=None, 
     if max_edgelength is not None:
         if verbose:
             print('retaining the first %d samples in each dimension' % max_edgelength)
-        data = data[:,tuple(slice(max_edgelength) for _ in range(len(data.shape)))]
+        data = data[(slice(len(data)),) + (slice(max_edgelength),)*(len(data.shape)-1)]
 
     if verbose:
         print('    %s %s' % (field, data.shape))

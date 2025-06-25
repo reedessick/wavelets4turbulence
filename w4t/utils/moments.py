@@ -71,7 +71,7 @@ def direct_structure_function(
     assert (0 <= dim) and (dim < len(array.shape)), 'bad dimension (dim=%d) for ndim=%d' % (dim, len(array.shape))
 
     if verbose:
-        print('computing moments directly for dim=%d for scale=%d' % (dim, scale))
+        print('computing moments directly for dim=%d for scale=%d with increment=%d' % (dim, scale, increment))
 
     # figure out the relevant indexes
     inds = np.arange(0, array.shape[dim+1]-scale, increment)

@@ -364,7 +364,7 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
         # zero the remaining approx coeffs
         if not smooth:
-            self.array[tuple(slice(0,num) for num in self.active)] *= 0
+            self.array[(slice(self.nvec),)+tuple(slice(0,num) for num in self.active)] *= 0
 
         # put the levels back
         self.set_levels(levels)

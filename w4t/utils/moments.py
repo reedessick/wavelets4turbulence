@@ -17,6 +17,7 @@ def direct_isotropic_structure_function(
         scale,
         index,
         map2scalar=default_map2scalar,
+        use_abs=True,
         increment=1,
         verbose=False,
         Verbose=False,
@@ -40,6 +41,7 @@ def direct_isotropic_structure_function(
             scale,
             index,
             map2scalar=map2scalar,
+            use_abs=use_abs,
             increment=increment,
             verbose=Verbose,
         )
@@ -63,6 +65,7 @@ def direct_structure_function(
         scale,
         index,
         map2scalar=default_map2scalar,
+        use_abs=True,
         increment=1,
         verbose=False,
     ):
@@ -77,8 +80,12 @@ def direct_structure_function(
     inds = np.arange(0, array.shape[dim+1]-scale, increment)
 
     # compute the differences with step size "scale", take moments, and return
+    samples = map2scalar(np.take(array, inds+scale, axis=dim+1) - np.take(array, inds, axis=dim+1)).flatten()
+    if use_abs:
+        samples = np.abs(samples)
+
     return moments(
-        map2scalar(np.take(array, inds+scale, axis=dim+1) - np.take(array, inds, axis=dim+1)).flatten(),
+        samples,
         index,
         central=False,
         verbose=verbose,

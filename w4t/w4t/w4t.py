@@ -246,7 +246,7 @@ rest are interpreted as spatial coordinates.
 
     #--------------------
 
-    def isotropic_structure_function(self, map2scalar=default_map2scalar, index=[2], use_abs=False, verbose=False, Verbose=False):
+    def isotropic_structure_function(self, map2scalar=default_map2scalar, index=[2], use_abs=True, verbose=False, Verbose=False):
         """compute the structure function for various scales by averaging over all dimensions at each scale
         """
         verbose |= Verbose
@@ -288,7 +288,7 @@ rest are interpreted as spatial coordinates.
 
     #---
 
-    def structure_function(self, dim, map2scalar=default_map2scalar, index=[2], use_abs=False, verbose=False):
+    def structure_function(self, dim, map2scalar=default_map2scalar, index=[2], use_abs=True, verbose=False):
         """compute the structure function for various scales in a 1D decomposition along dim
         """
         if verbose:

@@ -1,0 +1,122 @@
+#!/usr/bin/env python3
+
+"""a simple executable to identify structures
+"""
+__author__ = "Reed Essick (reed.essick@gmail.com)"
+
+#-------------------------------------------------
+
+from argparse import ArgumentParser
+
+### non-standard libraries
+from w4t.utils import io
+from w4t.utils.utils import default_map2scalar
+
+from w4t.w4t import pywt
+from w4t.w4t.w4t import DEFAULT_STRUCTURE_THRESHOLD
+
+#-------------------------------------------------
+
+parser = ArgumentParser()
+
+parser.add_argument('source', type=str)
+parser.add_argument('target', type=str)
+
+parser.add_argument('field', type=str)
+parser.add_argument('--component', type=int, default=None)
+parser.add_argument('--magnitude', default=False, action='store_true')
+
+parser.add_argument('-M', '--max-edgelength', default=None, type=int)
+parser.add_argument('--map2scalar', default=None, type=str,
+    help='a string that will be evaluated into a function handle to map array data into a scalar')
+
+parser.add_argument('-w', '--wavelet', default=pywt.DEFAULT_WAVELET, type=str)
+parser.add_argument('-T', '--structure-threshold', default=DEFAULT_STRUCTURE_THRESHOLD, type=float)
+
+parser.add_argument('-t', '--threshold', default=None, type=float,
+    help='if supplied, denoise using this threshold before identifying structures')
+parser.add_argument('-m', '--max-scale', default=None, type=float)
+parser.add_argument('-s', '--smooth', default=False, action='store_true')
+
+parser.add_argument('-n', '--num-proc', default=1, type=int)
+
+parser.add_argument('-v', '--verbose', default=False, action='store_true')
+parser.add_argument('-V', '--Verbose', default=False, action='store_true')
+
+args = parser.parse_args()
+
+args.verbose |= args.Verbose
+
+#------------------------
+
+if args.map2scalar is None:
+    map2scalar = default_map2scalar
+else:
+    map2scalar = eval(args.map2scalar)
+
+#-------------------------------------------------
+
+# load data inot a wavelet array
+
+data, field = io.simplify(
+    io.load([args.field], path=args.source, verbose=args.verbose)[args.field],
+    args.field,
+    component=args.component,
+    magnitude=args.magnitude,
+    max_edgelength=args.max_edgelength,
+    verbose=args.verbose,
+)
+
+#------------------------
+
+# instantiate wavelet object
+
+if args.verbose:
+    print('decomposing with wavelet=%s' % args.wavelet)
+
+wa = pywt.PyWaveletArray(data, args.wavelet)
+
+#-----------
+
+if args.threshold is not None: # denoise before computing structure function
+    if args.verbose:
+        print('denoising with\n    wavelet=%s\n    threshold=%.6f\n    max_scale=%s\n    smooth=%s' % \
+            (args.wavelet, args.threshold, args.max_scale, args.smooth))
+
+    wa.denoise(args.threshold, map2scalar=map2scalar, max_scale=args.max_scale, smooth=args.smooth)
+    wa.idecompose() # make sure we're at full resolution before we save
+
+#-----------
+
+# identify structures
+
+if args.verbose:
+    print('identifying structures with\n    threshold=%.6f\n    num_proc=%d' % \
+        (args.structure_threshold, args.num_proc))
+
+structures = wa.structures(thr=args.structure_threshold, map2scalar=map2scalar, num_proc=args.num_proc, timeit=args.verbose)
+
+if args.verbose:
+    print('identified %d structures' % len(structures))
+
+    if args.Verbose:
+        for ind, struc in enumerate(structures):
+            print('    %d : %d pixels' % (ind, len(struc)))
+
+#------------------------
+
+# save data
+
+kwargs = dict(
+    verbose=args.verbose,
+    source=args.source,
+    field=field,
+    shape=wa.shape,
+    max_edgelength=args.max_edgelength,
+    wavelet=args.wavelet,
+    threshold=args.structure_threshold,
+)
+if args.map2scalar is not None:
+    kwargs['map2scalar'] = args.map2scalar
+
+io.write_structures(structures, args.target, **kwargs)

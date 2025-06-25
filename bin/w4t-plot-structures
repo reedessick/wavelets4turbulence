@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+
+"""an executable to visualize individual structures identified in the flow
+"""
+__author__ = "Reed Essick (reed.essick@gmail.com)"
+
+#-------------------------------------------------
+
+import os
+
+from argparse import ArgumentParser
+
+### non-standard libraries
+from w4t.utils import io
+from w4t.utils.utils import default_map2scalar
+
+from w4t.plot import plot as plt
+from w4t.plot import flow
+
+from w4t.w4t import pywt
+
+#-------------------------------------------------
+
+KNOWN_COMMANDS = dict(
+    plot = flow.plot,
+    hist = flow.hist,
+    grand_tour = flow.grand_tour,
+)
+
+#-------------------------------------------------
+
+parser = ArgumentParser()
+
+parser.add_argument('source', type=str)
+parser.add_argument('structure', type=str)
+
+parser.add_argument('command', type=str, nargs='+',
+    help='the type of plot you want to make. Can list multiple commands, but all commands \
+must be one of: %s' % (', '.join(KNOWN_COMMANDS.keys())))
+
+parser.add_argument('field', type=str)
+parser.add_argument('--component', type=int, default=None)
+parser.add_argument('--magnitude', default=False, action='store_true')
+
+parser.add_argument('-M', '--max-edgelength', default=None, type=int)
+parser.add_argument('--map2scalar', default=None, type=str,
+    help='a string that will be evaluated into a function handle to map array data into a scalar')
+
+parser.add_argument('-s', '--structure-index', nargs='*', type=int, default=None,
+    help='if specified, only plot the structures corresponding to these indexes')
+
+#---
+
+parser.add_argument('-w', '--wavelet', default=pywt.DEFAULT_WAVELET, type=str,
+    help='if plotting using a command that requires a WaveletArray, use this wavelet')
+
+#---
+
+parser.add_argument('-z', '--zoom', default=False, action='store_true',
+    help='zoom in to just the bounding box surrounding the structure')
+
+parser.add_argument('--aspect', default='equal', type=str,
+    help='passed to 2D plots to set the aspect ratio. Should be either "equal" (keep pixels square) or "auto" (keep axes square)')
+
+parser.add_argument('--increment', default=1, type=int,
+    help='determines the index spacing used when picking slices for grand_tour')
+
+#---
+
+parser.add_argument('-v', '--verbose', default=False, action='store_true')
+
+parser.add_argument('-o', '--output-dir', default='.', type=str)
+parser.add_argument('-t', '--tag', default='', type=str)
+parser.add_argument('--figtype', default=[], type=str, action='append')
+parser.add_argument('--dpi', default=None, type=float)
+
+args = parser.parse_args()
+
+os.makedirs(args.output_dir, exist_ok=True)
+
+if args.tag:
+    args.tag = "_"+args.tag
+
+if not args.figtype:
+    args.figtype.append('png')
+
+#---
+
+for command in args.command:
+    assert command in KNOWN_COMMANDS, 'each command must be one of: %s' % (', '.join(KNOWN_COMMANDS.keys()))
+
+#------------------------
+
+if args.map2scalar is None:
+    map2scalar = default_map2scalar
+else:
+    map2scalar = eval(args.map2scalar)
+
+#-------------------------------------------------
+
+# load data
+
+data, field = io.simplify(
+    io.load([args.field], path=args.source, verbose=args.verbose)[args.field],
+    args.field,
+    component=args.component,
+    magnitude=args.magnitude,
+    max_edgelength=args.max_edgelength,
+    verbose=args.verbose,
+)
+
+wa = pywt.PyWaveletArray(data, args.wavelet) # used when extracting data
+
+#-----------
+
+# load structure
+
+structures = io.load_structures(args.structure, verbose=args.verbose)
+num_structures = len(structures)
+
+if args.structure_index is None:
+    args.structure_index = list(range(num_structures)) # just consider all structures
+
+#------------------------
+
+# generate and save plots
+
+for snd in args.structure_index: # iterate over structures
+    if args.verbose:
+        print('structure %d/%d' % (snd, num_structures))
+
+    structure = structures[snd]
+
+    # grab the data that belongs to this structure
+    data = structure.extract_as_array(wa)
+
+    #---
+
+    if args.zoom: # zoom in to bounding box of structure
+        if args.verbose:
+            print('    zooming into bounding-box')
+
+        extent = structure.bounding_box
+        start = [low for low, high in extent]
+
+        data = data[(slice(wa.nvec),)+tuple(slice(low,high+1) for low, high in extent)]
+        extent = [extent[dim]/structure.shape[dim] for dim in range(structure.ndim)]
+
+        if args.verbose:
+            print('    shape = %s' % str(data.shape))
+
+    else:
+        extent = [(0, 1)]*wa.ndim
+        start = [0]*wa.ndim
+
+    data = map2scalar(data)
+
+    #---
+
+    for command in args.command:
+        if args.verbose:
+            print('%s: %s' % (command, field))
+
+        kwargs = dict()
+
+        if command in ['plot', 'grand_tour']:
+            kwargs['extent'] = extent
+            kwargs['aspect'] = args.aspect
+
+            if command == 'grand_tour':
+                kwargs['start'] = start
+                kwargs['increment'] = args.increment
+                kwargs['verbose'] = args.verbose
+                kwargs['dpi'] = args.dpi
+                kwargs['figtype'] = args.figtype
+                kwargs['figtmp'] = os.path.join(
+                    args.output_dir,
+                    os.path.basename(__file__)+'-struc%06d-%s-%s%s' % (snd, command, field, args.tag),
+                )
+
+        if command == 'hist':
+            kwargs['nonzero'] = True # ignore default values
+
+        #---
+
+        fig = KNOWN_COMMANDS[command](data, title=field, **kwargs)
+
+        if fig is not None: # if we've returned a figure, we need to save it
+            figtmp = os.path.join(
+                args.output_dir,
+                os.path.basename(__file__)+'-struc%06d-%s-%s%s.%s' % (snd, command, field, args.tag, '%s'),
+            )
+            plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
+            plt.close(fig)

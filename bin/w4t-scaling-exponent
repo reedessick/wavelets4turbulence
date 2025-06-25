@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+
+"""a simple executable to extract scaling exponents from structure functions
+"""
+__author__ = "Reed Essick (reed.essick@gmail.com)"
+
+#-------------------------------------------------
+
+import numpy as np
+
+from argparse import ArgumentParser
+
+### non-standard libraries
+from w4t.utils import io
+from w4t.utils import moments
+
+#-------------------------------------------------
+
+parser = ArgumentParser()
+
+parser.add_argument('source', type=str)
+parser.add_argument('target', type=str)
+
+parser.add_argument('-m', '--min-scale', default=0.0, type=float,
+    help='only include scales > min_scale within the fit')
+parser.add_argument('-M', '--max-scale', default=np.inf, type=float,
+    help='only include scales < max_scale within the fit')
+
+parser.add_argument('-d', '--degree', default=1, type=int,
+    help='the degree of the polynomial fit')
+
+parser.add_argument('-v', '--verbose', default=False, action='store_true')
+
+args = parser.parse_args()
+
+#-------------------------------------------------
+
+# load structure functions
+scales, indexes, mom, cov = io.load_structure_function(args.source, verbose=args.verbose)
+
+#-----------
+
+# compute scaling exponents
+
+min_scale = max(args.min_scale, np.min(scales))
+max_scale = min(args.max_scale, np.max(scales))
+
+if args.verbose:
+    print('computing scaling exponent with scales between %.3f - %.3f' % \
+        (min_scale, max_scale))
+
+sel = (min_scale <= scales) * (scales <= max_scale)
+
+poly = np.empty((len(indexes), args.degree+1), dtype=float)
+for ind, index in enumerate(indexes):
+    poly[ind,:] = moments.scaling_exponent(scales[sel], mom[sel,ind], cov[sel,ind,ind]**0.5, deg=args.degree)
+
+#-----------
+
+# save scaling exponents
+io.write_scaling_exponent(
+    poly,
+    indexes,
+    args.degree,
+    args.target,
+    verbose=args.verbose,
+    source=args.source,
+    min_scale=min_scale,
+    max_scale=max_scale,
+)

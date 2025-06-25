@@ -4,7 +4,9 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 #-------------------------------------------------
 
-from .utils import *
+from .plot import *
+
+from w4t.utils.infer import structure_function_ansatz
 
 #-------------------------------------------------
 
@@ -29,12 +31,32 @@ SUBPLOTS_ADJUST = dict(
 
 DEFAULT_NUM_STD = 1.0
 
+DEFAULT_LINESTYLE = 'none'
+DEFAULT_MARKER = 'o'
+
 #-------------------------------------------------
 
-def moments(scales, indexes, mom, cov, poly=None, num_std=DEFAULT_NUM_STD, verbose=False):
-    """plot 'raw' moments, including polynomial fits if supplied
+def moments(
+        scales,
+        indexes,
+        mom,
+        cov,
+        label='',
+        linestyle=DEFAULT_LINESTYLE,
+        marker=DEFAULT_MARKER,
+        poly=None,
+        num_std=DEFAULT_NUM_STD,
+        rescale=False,
+        verbose=False,
+        ncols=None,
+        fig=None,
+    ):
+    """plot moments, including polynomial fits if supplied.
+    if rescale: plot mom**(1./index) instead of just mom
     """
-    fig = plt.figure()
+    if fig is None:
+        fig = plt.figure()
+
     ax = fig.gca()
 
     #---
@@ -43,22 +65,28 @@ def moments(scales, indexes, mom, cov, poly=None, num_std=DEFAULT_NUM_STD, verbo
         poly, polybins = poly
 
     for ind, index in enumerate(indexes):
-        color = ax.plot(
-            scales[:,0],
-            mom[:,ind],
-            alpha=0.75,
-            marker='o',
-            markerfacecolor='none',
-            linestyle='none',
-            label='$p=%d$'%index,
-        )[0].get_color()
 
-        for snd, scale in enumerate(scales[:,0]):
+        exp = 1./index if rescale else 1
+
+        color = 'C%d' % ind
+
+        ax.plot(
+            scales,
+            mom[:,ind]**exp,
+            marker=marker,
+            markerfacecolor='none',
+            linestyle=linestyle,
+            color=color,
+            alpha=0.75,
+            label='%s $p=%d$'%(label, index),
+        )
+
+        for snd, scale in enumerate(scales):
             m = mom[snd,ind]
             s = cov[snd,ind,ind]
             if s > 0: # only plot sensible error estimates
                 s = s**0.5 * num_std
-                ax.plot([scale]*2, [m-s, m+s], color=color, alpha=0.75)
+                ax.plot([scale]*2, np.array([m-s, m+s])**exp, color=color, alpha=0.75)
             elif verbose:
                 print('        WARNING! skipping error estimate for index=%d at scale=%d with var=%.3e' % (index, scale, s))
 
@@ -71,26 +99,29 @@ def moments(scales, indexes, mom, cov, poly=None, num_std=DEFAULT_NUM_STD, verbo
 
                 ax.plot(
                     np.exp(x),
-                    np.exp(y),
+                    np.exp(y * exp),
                     color=color,
-                    alpha=0.25,
+                    alpha=0.50,
                 )
 
     #---
 
     ax.set_xlabel('scale')
     ax.set_xscale('log')
-    ax.set_xlim(xmin=scales[-1,0]*1.1, xmax=scales[0,0]/1.1)
+    ax.set_xlim(xmin=scales[-1]*1.1, xmax=scales[0]/1.1)
     ax.set_xticks([], minor=True)
-    ax.set_xticks(scales[:,0])
+    ax.set_xticks(scales)
     ax.set_xticklabels(['%d'%_ for _ in ax.get_xticks()])
 
     ax.set_yscale('log')
-    ax.set_ylabel('$\left<\left|d_{x,s}\\right|^p\\right>_x$')
+    if rescale:
+        ax.set_ylabel('$\left<\left|d_{x,s}\\right|^p\\right>^{1/p}_x$')
+    else:
+        ax.set_ylabel('$\left<\left|d_{x,s}\\right|^p\\right>_x$')
 
     #---
 
-    ax.legend(loc='upper right')
+    ax.legend(loc='best', ncols=ncols)
     ax.grid(True, which='both')
 
     ax.tick_params(**TICK_PARAMS)
@@ -102,8 +133,21 @@ def moments(scales, indexes, mom, cov, poly=None, num_std=DEFAULT_NUM_STD, verbo
 
 #-------------------------------------------------
 
-def scaled_moments(scales, indexes, mom, cov, num_std=DEFAULT_NUM_STD, verbose=False):
-    """plot 'scaled' moments
+def scaled_moments(
+        scales,
+        indexes,
+        mom,
+        cov,
+        label='',
+        linestyle=DEFAULT_LINESTYLE,
+        marker=DEFAULT_MARKER,
+        num_std=DEFAULT_NUM_STD,
+        rescale=False,
+        verbose=False,
+        ncols=None,
+        fig=None,
+    ):
+    """plot moments scaled by the standard deviation
     """
     assert 2 in list(indexes), 'cannot scale moments if 2nd moment is not present!'
 
@@ -112,30 +156,38 @@ def scaled_moments(scales, indexes, mom, cov, num_std=DEFAULT_NUM_STD, verbose=F
 
     #---
 
-    fig = plt.figure()
+    if fig is None:
+        fig = plt.figure()
+
     ax = fig.gca()
 
     #---
 
     for ind, index in enumerate(indexes):
-        color = ax.plot(
-            scales[:,0],
-            mom[:,ind] / std**index,
-            alpha=0.75,
-            marker='o',
-            markerfacecolor='none',
-            linestyle='none',
-            label='$p=%d$'%index,
-        )[0].get_color()
 
-        for snd, scale in enumerate(scales[:,0]):
+        exp = 1./index if rescale else 1
+
+        color = 'C%d' % ind
+
+        ax.plot(
+            scales,
+            (mom[:,ind] / std**index)**exp,
+            marker=marker,
+            markerfacecolor='none',
+            linestyle=linestyle,
+            color=color,
+            alpha=0.75,
+            label='%s $p=%d$'%(label, index),
+        )
+
+        for snd, scale in enumerate(scales):
             m = mom[snd,ind] / std[snd]**index
             s = (-(index/2)*mom[snd,ind]/std[snd]**(index+2))**2 * cov[snd,ind2,ind2] \
                 + (1./std[snd]**index)**2 * cov[snd,ind,ind] \
                 + (1./std[snd]**index)*(-(index/2)*mom[snd,ind]/std[snd]**(index+2)) * cov[snd,ind2,ind]
             if s > 0: # only plot sensible error estimates
                 s = s**0.5 * num_std
-                ax.plot([scale]*2, [m-s, m+s], color=color, alpha=0.75)
+                ax.plot([scale]*2, np.array([m-s, m+s])**exp, color=color, alpha=0.75)
             elif verbose:
                 print('        WARNING! skipping error estimate for index=%d at scale=%d with var=%.3e' % (index, scale, s))
 
@@ -143,18 +195,21 @@ def scaled_moments(scales, indexes, mom, cov, num_std=DEFAULT_NUM_STD, verbose=F
 
     ax.set_xlabel('scale')
     ax.set_xscale('log')
-    ax.set_xlim(xmin=scales[-1,0]*1.1, xmax=scales[0,0]/1.1)
+    ax.set_xlim(xmin=scales[-1]*1.1, xmax=scales[0]/1.1)
     ax.set_xticks([], minor=True)
-    ax.set_xticks(scales[:,0])
+    ax.set_xticks(scales)
     ax.set_xticklabels(['%d'%_ for _ in ax.get_xticks()])
 
     ax.set_yscale('log')
-    ax.set_ylabel('$\left<\left|d_{x,s}\\right|^p\\right>_x \left/ \left<d_{x,s}^2\\right>_x^{p/2} \\right.$')
+    if rescale:
+        ax.set_ylabel('$\left<\left|d_{x,s}\\right|^p\\right>^{1/p}_x \left/ \left<d_{x,s}^2\\right>_x^{1/2} \\right.$')
+    else:
+        ax.set_ylabel('$\left<\left|d_{x,s}\\right|^p\\right>_x \left/ \left<d_{x,s}^2\\right>_x^{p/2} \\right.$')
 
     #---
 
     ax.grid(True, which='both')
-    ax.legend(loc='upper left')
+    ax.legend(loc='best', ncols=ncols)
 
     ax.tick_params(**TICK_PARAMS)
     plt.subplots_adjust(**SUBPLOTS_ADJUST)
@@ -165,7 +220,20 @@ def scaled_moments(scales, indexes, mom, cov, num_std=DEFAULT_NUM_STD, verbose=F
 
 #-------------------------------------------------
 
-def extended_intermittency(scales, indexes, mom, cov, num_std=DEFAULT_NUM_STD, verbose=False):
+def extended_intermittency(
+        scales,
+        indexes,
+        mom,
+        cov,
+        label='',
+        linestyle=DEFAULT_LINESTYLE,
+        marker=DEFAULT_MARKER,
+        num_std=DEFAULT_NUM_STD,
+        rescale=False,
+        verbose=False,
+        ncols=None,
+        fig=None,
+    ):
     """plot extended intermittency diagram
     """
     assert 2 in list(indexes), 'cannot scale moments if 2nd moment is not present!'
@@ -175,29 +243,38 @@ def extended_intermittency(scales, indexes, mom, cov, num_std=DEFAULT_NUM_STD, v
 
     #---
 
-    fig = plt.figure()
+    if fig is None:
+        fig = plt.figure()
+
     ax = fig.gca()
 
     #---
 
-    for ind, index in enumerate(indexes):
-        color = ax.plot(
-            mom[:,ind2],
-            mom[:,ind],
-            alpha=0.75,
-            marker='o',
-            markerfacecolor='none',
-            linestyle='none',
-            label='$p=%d$'%index,
-        )[0].get_color()
+    exp2 = 0.5 if rescale else 1
 
-        for snd, scale in enumerate(scales[:,0]):
+    for ind, index in enumerate(indexes):
+
+        exp = 1./index if rescale else 1
+
+        color = 'C%d' % ind
+        ax.plot(
+            mom[:,ind2]**exp2,
+            mom[:,ind]**exp,
+            marker=marker,
+            markerfacecolor='none',
+            linestyle=linestyle,
+            color=color,
+            alpha=0.75,
+            label='%s $p=%d$'%(label, index),
+        )
+
+        for snd, scale in enumerate(scales):
             # plot errors for x-axis
             m = mom[snd,ind2]
             s = cov[snd,ind2,ind2]
             if s > 0: # only plot sensible error estimates
                 s = s**0.5 * num_std
-                ax.plot([m-s, m+s], [mom[snd,ind]]*2, color=color, alpha=0.75)
+                ax.plot(np.array([m-s, m+s])**exp2, np.array([mom[snd,ind]]*2)**exp, color=color, alpha=0.75)
             elif verbose:
                 print('        WARNING! skipping error estimate for index=2 at scale=%d with var=%.3e' % (scale, s))
 
@@ -206,19 +283,84 @@ def extended_intermittency(scales, indexes, mom, cov, num_std=DEFAULT_NUM_STD, v
             s = cov[snd,ind,ind]
             if s > 0: # only plot sensible error estimates
                 s = s**0.5 * num_std
-                ax.plot([mom[snd,ind2]]*2, [m-s, m+s], color=color, alpha=0.75)
+                ax.plot(np.array([mom[snd,ind2]]*2)**exp2, np.array([m-s, m+s])**exp, color=color, alpha=0.75)
             elif verbose:
                 print('        WARNING! skipping error estimate for index=2 at scale=%d with var=%.3e' % (scale, s))
 
     #---
 
     ax.set_xscale('log')
-    ax.set_xlabel('$\left<d_{x,s}^2\\right>_x$')
-
     ax.set_yscale('log')
-    ax.set_ylabel('$\left<\left|d_{x,s}\\right|^p\\right>_x$')
+
+    if rescale:
+        ax.set_xlabel('$\left<d_{x,s}^2\\right>^{1/2}_x$')
+        ax.set_ylabel('$\left<\left|d_{x,s}\\right|^p\\right>^{1/p}_x$')
+    else:
+        ax.set_xlabel('$\left<d_{x,s}^2\\right>_x$')
+        ax.set_ylabel('$\left<\left|d_{x,s}\\right|^p\\right>_x$')
 
     #---
+
+    ax.grid(True, which='both')
+    ax.legend(loc='best', ncols=ncols)
+
+    ax.tick_params(**TICK_PARAMS)
+    plt.subplots_adjust(**SUBPLOTS_ADJUST)
+
+    #---
+
+    return fig
+
+#-------------------------------------------------
+
+def structure_function_ansatz_samples(scales, indexes, mom, cov, samples, verbose=False):
+    """make a simple plot of structure function ansatz
+    """
+    fig = plt.figure()
+
+    ax = fig.gca()
+
+    #---
+
+    # plot the original data
+
+    for ind, index in enumerate(indexes):
+        color = 'C%d' % ind
+
+        ax.plot(scales, mom[:,ind], color=color, marker='o', linestyle='none', markerfacecolor='none', label='$p=%d$'%ind)
+
+        std = cov[:,ind,ind]**0.5
+        for snd, scale in enumerate(scales):
+            ax.plot([scale]*2, mom[snd,ind]+std[snd]*np.array([+1,-1]), color=color)
+
+    ax.set_yscale('log')
+    ylim = ax.get_ylim()
+
+    #---
+
+    # plot the inferred ansatz
+
+    for ind, index in enumerate(indexes):
+        color = 'C%d' % ind
+
+        samp = samples[index]
+        alpha = max(0.01, 1./len(samp['amp']))
+
+        for amp, xi, sl, bl, nl, sh, bh, nh in zip(*[samp[key] for key in ['amp', 'xi', 'sl', 'bl', 'nl', 'sh', 'bh', 'nh']]):
+            ax.plot(scales, structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh), color=color, alpha=alpha)
+
+    #---
+
+    ax.set_xlabel('scale')
+    ax.set_xscale('log')
+    ax.set_xlim(xmin=scales[-1]*1.1, xmax=scales[0]/1.1)
+    ax.set_xticks([], minor=True)
+    ax.set_xticks(scales)
+    ax.set_xticklabels(['%d'%_ for _ in ax.get_xticks()])
+
+    ax.set_ylabel('$\left<\left|d_{x,s}\\right|^p\\right>_x$')
+
+    ax.set_ylim(ylim)
 
     ax.grid(True, which='both')
     ax.legend(loc='best')

@@ -11,7 +11,7 @@ import glob
 #-------------------------------------------------
 
 # set up arguments
-scripts = glob.glob('bin/*')
+scripts = glob.glob('bin/w4t-*')
 
 packages = find_packages()
 
@@ -20,7 +20,10 @@ requires = [
     'numpy',
     'scipy',
     'matplotlib',
+    'corner',
     'PyWavelets',
+    'numpyro',
+    'jax',
 ]
 
 #------------------------
@@ -36,5 +39,5 @@ setup(
     license = None,
     scripts = scripts,
     packages = packages,
-    requires = requires,
+    install_requires = requires,
 )

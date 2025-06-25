@@ -1,0 +1,181 @@
+#!/usr/bin/env python3
+
+"""an executable to visualize the flow
+"""
+__author__ = "Reed Essick (reed.essick@gmail.com)"
+
+#-------------------------------------------------
+
+import os
+
+import numpy as np
+
+from argparse import ArgumentParser
+
+### non-standard libraries
+from w4t.utils import io
+from w4t.utils.utils import default_map2scalar
+
+from w4t.plot import plot as plt
+from w4t.plot import flow
+
+from w4t.w4t import pywt
+
+#-------------------------------------------------
+
+KNOWN_COMMANDS = dict(
+    plot = flow.plot,
+    plot_coeff = flow.plot_coeff,
+    hist = flow.hist,
+    hist_coeff = flow.hist_coeff,
+    grand_tour = flow.grand_tour,
+    scalogram = flow.dim1.scalogram
+)
+
+#-------------------------------------------------
+
+parser = ArgumentParser()
+
+parser.add_argument('source', type=str)
+
+parser.add_argument('command', type=str, nargs='+',
+    help='the type of plot you want to make. Can list multiple commands, but all commands \
+must be one of: %s' % (', '.join(KNOWN_COMMANDS.keys())))
+
+parser.add_argument('field', type=str)
+parser.add_argument('--component', type=int, default=None)
+parser.add_argument('--magnitude', default=False, action='store_true')
+
+parser.add_argument('-M', '--max-edgelength', default=None, type=int)
+parser.add_argument('--map2scalar', default=None, type=str,
+    help='a string that will be evaluated into a function handle to map array data into a scalar')
+
+#---
+
+parser.add_argument('--slice', nargs=2, type=int, default=[], action='append',
+    help='take a slice of the data. Can be repeated. eg, --slice dim ind')
+
+parser.add_argument('--levels', nargs='*', type=int, default=None,
+    help='use the approx coefficients at this level of decomposition after taking slices')
+
+#---
+
+parser.add_argument('-w', '--wavelet', default=pywt.DEFAULT_WAVELET, type=str,
+    help='if plotting using a command that requires a WaveletArray, use this wavelet')
+
+parser.add_argument('--increment', default=1, type=int,
+    help='determines the index spacing used when picking slices for grand_tour')
+
+#---
+
+parser.add_argument('-v', '--verbose', default=False, action='store_true')
+
+parser.add_argument('-o', '--output-dir', default='.', type=str)
+parser.add_argument('-t', '--tag', default='', type=str)
+parser.add_argument('--figtype', default=[], type=str, action='append')
+parser.add_argument('--dpi', default=None, type=float)
+
+#---
+
+args = parser.parse_args()
+
+os.makedirs(args.output_dir, exist_ok=True)
+
+if args.tag:
+    args.tag = "_"+args.tag
+
+if not args.figtype:
+    args.figtype.append('png')
+
+#---
+
+for command in args.command:
+    assert command in KNOWN_COMMANDS, 'each command must be one of: %s' % (', '.join(KNOWN_COMMANDS.keys()))
+
+#---
+
+args.slice.sort(key=lambda x: -x[0]) # sort these so the biggest dimension is first
+
+dims = set()
+for dim, ind in args.slice:
+    assert dim not in dims, 'cannot slice over dim=%d twice' % dim
+    dims.add(dim)
+
+#------------------------
+
+if args.map2scalar is None:
+    map2scalar = default_map2scalar
+else:
+    map2scalar = eval(args.map2scalar)
+
+#-------------------------------------------------
+
+# load data
+
+data, field = io.simplify(
+    io.load([args.field], path=args.source, verbose=args.verbose)[args.field],
+    args.field,
+    component=args.component,
+    magnitude=args.magnitude,
+    max_edgelength=args.max_edgelength,
+    verbose=args.verbose,
+)
+
+#------------------------
+
+# take slices of the data
+
+for dim, ind in args.slice:
+    assert dim < len(data.shape), 'cannot slice along dim=%d for data with ndim=%d' % (dim, len(data.shape))
+    if args.verbose:
+        print('taking slice\n    dim=%d\n    ind=%d' % (dim, ind))
+    data = np.take(data, ind, axis=dim+1)
+
+#------------------------
+
+# generate and save plots
+
+for command in args.command:
+    if args.verbose:
+        print('%s: %s' % (command, field))
+
+    if command in ['scalogram', 'plot_coeff', 'hist_coeff']:
+        wa = pywt.PyWaveletArray(data, args.wavelet)
+
+        if args.levels is not None:
+            if args.verbose:
+                print('    decomposing data with\n        wavelet=%s\n        levels=%s' % \
+                    (args.wavelet, str(args.levels)))
+            wa.set_levels(args.levels)
+
+        if command in ['plot_coeff', 'hist_coeff']:
+            cmd_args = (wa.ndim,) + tuple(map2scalar(cs) for cs in wa.coeffset)
+        else:
+            cmd_args = (wa, map2scalar)
+
+    else:
+        cmd_args = (map2scalar(data),)
+
+    kwargs = dict()
+
+    if command == 'grand_tour':
+        kwargs['increment'] = args.increment
+        kwargs['verbose'] = args.verbose
+        kwargs['dpi'] = args.dpi
+        kwargs['figtype'] = args.figtype
+        kwargs['figtmp'] = os.path.join(
+            args.output_dir,
+            os.path.basename(__file__)+'-%s-%s%s' % (command, field, args.tag),
+        )
+
+    #---
+
+    fig = KNOWN_COMMANDS[command](*cmd_args, title=field, **kwargs)
+
+    if fig is not None: # if we've returned a figure, we need to save it
+        figtmp = os.path.join(
+            args.output_dir,
+            os.path.basename(__file__)+'-%s-%s%s.%s' % (command, field, args.tag, '%s'),
+        )
+        plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
+        plt.close(fig)

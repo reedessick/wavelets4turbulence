@@ -85,7 +85,7 @@ data, field = io.simplify(
 
 if args.threshold is not None: # denoise before computing structure function
     if args.verbose:
-        print('denoising with\n    wavelet=%s\n    threshold=%.6f\n    max_scale=%.3f\n    smooth=%s' % \
+        print('denoising with\n    wavelet=%s\n    threshold=%.6f\n    max_scale=%s\n    smooth=%s' % \
             (args.wavelet, args.threshold, args.max_scale, args.smooth))
 
     wa = pywt.PyWaveletArray(data, args.wavelet)

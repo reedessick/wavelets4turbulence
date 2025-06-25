@@ -12,7 +12,15 @@ from w4t.utils.utils import default_map2scalar
 
 #-------------------------------------------------
 
-def direct_isotropic_structure_function(array, scale, index, map2scalar=default_map2scalar, verbose=False, Verbose=False):
+def direct_isotropic_structure_function(
+        array,
+        scale,
+        index,
+        map2scalar=default_map2scalar,
+        increment=1,
+        verbose=False,
+        Verbose=False,
+    ):
     """average over cartesian directions to estimate isotropic structure function
     """
     verbose |= Verbose
@@ -26,7 +34,15 @@ def direct_isotropic_structure_function(array, scale, index, map2scalar=default_
     mom = []
     cov = []
     for dim in range(ndim):
-        index, m, c = direct_structure_function(array, dim, scale, index, map2scalar=map2scalar, verbose=Verbose)
+        index, m, c = direct_structure_function(
+            array,
+            dim,
+            scale,
+            index,
+            map2scalar=map2scalar,
+            increment=increment,
+            verbose=Verbose,
+        )
         mom.append(m)
         cov.append(c)
 
@@ -41,7 +57,15 @@ def direct_isotropic_structure_function(array, scale, index, map2scalar=default_
 
 #------------------------
 
-def direct_structure_function(array, dim, scale, index, map2scalar=default_map2scalar, verbose=False):
+def direct_structure_function(
+        array,
+        dim,
+        scale,
+        index,
+        map2scalar=default_map2scalar,
+        increment=1,
+        verbose=False,
+    ):
     """directly estimate the structure function along dimension "dim" at length "scale"
     """
     assert (0 <= dim) and (dim < len(array.shape)), 'bad dimension (dim=%d) for ndim=%d' % (dim, len(array.shape))
@@ -50,7 +74,7 @@ def direct_structure_function(array, dim, scale, index, map2scalar=default_map2s
         print('computing moments directly for dim=%d for scale=%d' % (dim, scale))
 
     # figure out the relevant indexes
-    inds = np.arange(array.shape[dim+1]-scale)
+    inds = np.arange(0, array.shape[dim+1]-scale, increment)
 
     # compute the differences with step size "scale", take moments, and return
     return moments(

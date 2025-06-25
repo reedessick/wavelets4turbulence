@@ -31,7 +31,15 @@ parser.add_argument('--map2scalar', default=None, type=str,
     help='a string that will be evaluated into a function handle to map array data into a scalar')
 
 parser.add_argument('-w', '--wavelet', default=pywt.DEFAULT_WAVELET, type=str)
-parser.add_argument('-t', '--threshold', default=DEFAULT_STRUCTURE_THRESHOLD, type=float)
+parser.add_argument('-T', '--structure-threshold', default=DEFAULT_STRUCTURE_THRESHOLD, type=float)
+
+parser.add_argument('-w', '--wavelet', default=pywt.DEFAULT_WAVELET, type=str)
+parser.add_argument('-i', '--index', nargs='+', type=float)
+
+parser.add_argument('-t', '--threshold', default=None, type=float,
+    help='if supplied, denoise using this threshold before computing structure function')
+parser.add_argument('-m', '--max-scale', default=None, type=float)
+parser.add_argument('-s', '--smooth', default=False, action='store_true')
 
 parser.add_argument('-n', '--num-proc', default=1, type=int)
 
@@ -73,12 +81,23 @@ wa = pywt.PyWaveletArray(data, args.wavelet)
 
 #-----------
 
+if args.threshold is not None: # denoise before computing structure function
+    if args.verbose:
+        print('denoising with\n    wavelet=%s\n    threshold=%.6f\n    max_scale=%.3f\n    smooth=%s' % \
+            (args.wavelet, args.threshold, args.max_scale, args.smooth))
+
+    wa.denoise(args.threshold, map2scalar=map2scalar, max_scale=args.max_scale, smooth=args.smooth)
+    wa.idecompose() # make sure we're at full resolution before we save
+
+#-----------
+
 # identify structures
 
 if args.verbose:
-    print('identifying structures with\n    threshold=%.6f\n    num_proc=%d' % (args.threshold, args.num_proc))
+    print('identifying structures with\n    threshold=%.6f\n    num_proc=%d' % \
+        (args.structure_threshold, args.num_proc))
 
-structures = wa.structures(thr=args.threshold, map2scalar=map2scalar, num_proc=args.num_proc, timeit=args.verbose)
+structures = wa.structures(thr=args.structure_threshold, map2scalar=map2scalar, num_proc=args.num_proc, timeit=args.verbose)
 
 if args.verbose:
     print('identified %d structures' % len(structures))
@@ -98,7 +117,7 @@ kwargs = dict(
     shape=wa.shape,
     max_edgelength=args.max_edgelength,
     wavelet=args.wavelet,
-    threshold=args.threshold,
+    threshold=args.structure_threshold,
 )
 if args.map2scalar is not None:
     kwargs['map2scalar'] = args.map2scalar

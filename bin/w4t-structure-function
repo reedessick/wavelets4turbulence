@@ -49,6 +49,8 @@ parser.add_argument('-d', '--direct', default=False, action='store_true',
 parser.add_argument('--direct-scales', nargs='+', type=int, default=None,
     help='compute the structure function at these scales directly. If not supplied, will choose diadic scales based on \
 size of data') 
+parser.add_argument('--direct-increment', default=1, type=int,
+    help='only take 1 out of this many possible pairs of points within direct structure function calculation')
 
 parser.add_argument('-v', '--verbose', default=False, action='store_true')
 parser.add_argument('-V', '--Verbose', default=False, action='store_true')
@@ -118,6 +120,7 @@ if args.direct:
                 scale,
                 args.index,
                 map2scalar=map2scalar,
+                increment=args.direct_increment,
                 verbose=args.verbose,
                 Verbose=args.Verbose,
             )
@@ -129,6 +132,7 @@ if args.direct:
                 scale,
                 args.index,
                 map2scalar=map2scalar,
+                increment=args.direct_increment,
                 verbose=args.verbose,
             )
 

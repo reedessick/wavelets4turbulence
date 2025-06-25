@@ -13,6 +13,7 @@ try:
     from PLASMAtools.aux_funcs import derived_var_funcs as dv
 except ImportError:
     Fields = None
+    dv = None
 
 from w4t.w4t.w4t import Structure
 
@@ -98,6 +99,9 @@ def load(
         compute_curr = ('curr' in fields) and ('curr' not in data)
 
         if compute_vort or compute_curr:
+            if dv is None:
+                raise ImportError('could not import PLASMAtools.aux_funcs.derived_var_funcs')
+
             dvf = dv.DerivedVars()
 
             if compute_vort:

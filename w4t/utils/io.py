@@ -10,7 +10,7 @@ import numpy as np
 ### non-standard libraries
 try:
     from PLASMAtools.read_funcs.read import Fields
-    from PLASMAtools.aux_funcs import derived_var_funcs as dv
+    from PLASMAtools.funcs import derived_var_funcs as dv
 except ImportError:
     Fields = None
     dv = None
@@ -100,7 +100,7 @@ def load(
 
         if compute_vort or compute_curr:
             if dv is None:
-                raise ImportError('could not import PLASMAtools.aux_funcs.derived_var_funcs')
+                raise ImportError('could not import PLASMAtools.funcs.derived_var_funcs')
 
             dvf = dv.DerivedVars()
 

@@ -22,6 +22,9 @@ parser = ArgumentParser()
 parser.add_argument('source', type=str)
 parser.add_argument('target', type=str)
 
+parser.add_argument('--flash', default=False, action='store_true',
+    help='source is in FLASH format')
+
 parser.add_argument('field', type=str)
 parser.add_argument('--component', type=int, default=None)
 parser.add_argument('--magnitude', default=False, action='store_true')
@@ -59,7 +62,7 @@ else:
 # load data inot a wavelet array
 
 data, field = io.simplify(
-    io.load([args.field], path=args.source, verbose=args.verbose)[args.field],
+    io.load([args.field], path=args.source, verbose=args.verbose, flash_format=args.flash)[args.field],
     args.field,
     component=args.component,
     magnitude=args.magnitude,

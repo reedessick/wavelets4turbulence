@@ -38,6 +38,9 @@ parser.add_argument('command', type=str, nargs='+',
     help='the type of plot you want to make. Can list multiple commands, but all commands \
 must be one of: %s' % (', '.join(KNOWN_COMMANDS.keys())))
 
+parser.add_argument('--flash', default=False, action='store_true',
+    help='source is in FLASH format')
+
 parser.add_argument('field', type=str)
 parser.add_argument('--component', type=int, default=None)
 parser.add_argument('--magnitude', default=False, action='store_true')
@@ -101,7 +104,7 @@ else:
 # load data
 
 data, field = io.simplify(
-    io.load([args.field], path=args.source, verbose=args.verbose)[args.field],
+    io.load([args.field], path=args.source, verbose=args.verbose, flash_format=args.flash)[args.field],
     args.field,
     component=args.component,
     magnitude=args.magnitude,

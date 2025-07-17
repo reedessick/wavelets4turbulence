@@ -16,7 +16,10 @@ from w4t.utils import moments
 from w4t.utils import structures
 from w4t.utils.utils import default_map2scalar
 
-from w4t.plot import flow
+try:
+    from w4t.plot import flow
+except:
+    flow = None
 
 #-------------------------------------------------
 
@@ -387,6 +390,8 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
     def plot(self, map2scalar=default_map2scalar, **kwargs):
         """make a plot of approx coefficients
         """
+        if flow is None:
+            raise ImportError('cannot import w4t.plot.flow')
         return flow.plot(map2scalar(self.approx), **kwargs)
 
     #---
@@ -394,6 +399,8 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
     def hist(self, map2scalar=default_map2scalar, **kwargs):
         """make a histogram of approx coefficients
         """
+        if flow is None:
+            raise ImportError('cannot import w4t.plot.flow')
         return flow.hist(map2scalar(self.approx), **kwargs)
 
     #-------
@@ -401,6 +408,8 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
     def plot_coeff(self, map2scalar=default_map2scalar, **kwargs):
         """make plots of wavelet coefficients
         """
+        if flow is None:
+            raise ImportError('cannot import w4t.plot.flow')
         return flow.plot_coeff(self.ndim, *(map2scalar(cs) for cs in self.coeffset), **kwargs)
 
     #---
@@ -408,6 +417,8 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
     def hist_coeff(self, map2scalar=default_map2scalar, **kwargs):
         """make histograms of wavelet coefficients
         """
+        if flow is None:
+            raise ImportError('cannot import w4t.plot.flow')
         return flow.hist_coeff(self.ndim, *(map2scalar(cs) for cs in self.coeffset), **kwargs)
 
     #-------
@@ -415,6 +426,8 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
     def scalogram(self, map2scalar=default_map2scalar, **kwargs):
         """make a scalogram of the data
         """
+        if flow is None:
+            raise ImportError('cannot import w4t.plot.flow')
         return flow.dim1.scalogram(self, map2scalar, **kwargs)
 
 #-------------------------------------------------
@@ -500,6 +513,8 @@ class Structure(object):
     def plot(self, waveletarray, map2scalar=default_map2scalar, zoom=False, **kwargs):
         """make a plot of approx coefficients
         """
+        if flow is None:
+            raise ImportError('cannot import w4t.plot.flow')
         array = self.extract_as_array(waveletarray)
         return flow.plot(map2scalar(array), **kwargs)
 
@@ -508,4 +523,6 @@ class Structure(object):
     def hist(self, waveletarray, map2scalar=default_map2scalar, **kwargs):
         """make a histogram of approx coefficients
         """
+        if flow is None:
+            raise ImportError('cannot import w4t.plot.flow')
         return flow.hist(map2scalar(self.extract(waveletarray)), **kwargs)

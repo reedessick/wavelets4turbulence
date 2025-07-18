@@ -7,6 +7,7 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 #-------------------------------------------------
 
 import os
+import sys
 
 import numpy as np
 
@@ -118,7 +119,8 @@ if args.verbose:
 fig = None
 for key, val in data.items():
     if args.verbose:
-        print('    '+key)
+        sys.stdout.write('\r    '+key)
+        sys.stdout.flush()
 
     fig = plt.moments(
         val['scales'],
@@ -138,6 +140,10 @@ for key, val in data.items():
         alpha=alpha.get(key, 0.75),
         fig=fig,
     )
+
+if args.verbose:
+    sys.stdout.write('\n')
+    sys.stdout.flush()
 
 if args.title is not None:
     fig.suptitle(args.title)
@@ -161,7 +167,8 @@ if not args.index: # plot things scaled by other 2nd moment
     fig = None
     for key, val in data.items():
         if args.verbose:
-            print('    '+key)
+            sys.stdout.write('\r    '+key)
+            sys.stdout.flush()
 
         fig = plt.scaled_moments(
             val['scales'],
@@ -180,6 +187,10 @@ if not args.index: # plot things scaled by other 2nd moment
             alpha=alpha.get(key, 0.75),
             fig=fig,
         )
+
+    if args.verbose:
+        sys.stdout.write('\n')
+        sys.stdout.flush()
 
     if args.title is not None:
         fig.suptitle(args.title)
@@ -201,7 +212,8 @@ if not args.index: # plot things scaled by other 2nd moment
     fig = None
     for key, val in data.items():
         if args.verbose:
-            print('    '+key)
+            sys.stdout.write('\r    '+key)
+            sys.stdout.flush()
 
         fig = plt.extended_intermittency(
             val['scales'],
@@ -220,6 +232,10 @@ if not args.index: # plot things scaled by other 2nd moment
             alpha=alpha.get(key, 0.75),
             fig=fig,
         )
+
+    if args.verbose:
+        sys.stdout.write('\n')
+        sys.stdout.flush()
 
     if args.title is not None:
         fig.suptitle(args.title)

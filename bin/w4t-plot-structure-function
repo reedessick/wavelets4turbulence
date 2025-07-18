@@ -32,6 +32,8 @@ parser.add_argument('-l', '--linestyle', nargs=2, type=str, default=[], action='
     help='label and linestyle. eg: --linestyle label solid')
 parser.add_argument('-m', '--marker', nargs=2, type=str, default=[], action='append',
     help='label and marker. eg: --marker label o')
+parser.add_argument('-a', '--alpha', nargs=2, type=str, default=[], action='append',
+    help='use this alpha when plotting. eg: --alpha label 0.5')
 
 parser.add_argument('-i', '--index', default=None, type=int,
     help='only plot this index')
@@ -41,6 +43,9 @@ parser.add_argument('-r', '--rescale', default=False, action='store_true',
 
 parser.add_argument('-v', '--verbose', default=False, action='store_true')
 parser.add_argument('-V', '--Verbose', default=False, action='store_true')
+
+parser.add_argument('--legend', default=False, action='store_true')
+parser.add_argument('--grid', default=False, action='store_true')
 
 parser.add_argument('-o', '--output-dir', default='.', type=str)
 parser.add_argument('-t', '--tag', default='', type=str)
@@ -61,6 +66,7 @@ if not args.figtype:
 
 linestyles = dict(args.linestyle)
 markers = dict(args.marker)
+alpha = dict((a, float(b)) for a, b in args.alpha)
 
 polys = dict(args.scaling_poly)
 
@@ -127,6 +133,9 @@ for key, val in data.items():
         marker=markers.get(key, 'o'),
         verbose=args.Verbose,
         ncols=ncols,
+        legend=args.legend,
+        grid=args.grid,
+        alpha=alpha.get(key, 0.75),
         fig=fig,
     )
 
@@ -166,6 +175,9 @@ if not args.index: # plot things scaled by other 2nd moment
             marker=markers.get(key, 'o'),
             verbose=args.Verbose,
             ncols=ncols,
+            legend=args.legend,
+            grid=args.grid,
+            alpha=alpha.get(key, 0.75),
             fig=fig,
         )
 
@@ -203,6 +215,9 @@ if not args.index: # plot things scaled by other 2nd moment
             marker=markers.get(key, 'o'),
             verbose=args.Verbose,
             ncols=ncols,
+            legend=args.legend,
+            grid=args.grid,
+            alpha=alpha.get(key, 0.75),
             fig=fig,
         )
 

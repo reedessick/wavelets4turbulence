@@ -49,6 +49,9 @@ def moments(
         rescale=False,
         verbose=False,
         ncols=None,
+        legend=False,
+        grid=True,
+        alpha=0.75,
         fig=None,
     ):
     """plot moments, including polynomial fits if supplied.
@@ -77,7 +80,7 @@ def moments(
             markerfacecolor='none',
             linestyle=linestyle,
             color=color,
-            alpha=0.75,
+            alpha=alpha,
             label='%s $p=%d$'%(label, index),
         )
 
@@ -86,7 +89,7 @@ def moments(
             s = cov[snd,ind,ind]
             if s > 0: # only plot sensible error estimates
                 s = s**0.5 * num_std
-                ax.plot([scale]*2, np.array([m-s, m+s])**exp, color=color, alpha=0.75)
+                ax.plot([scale]*2, np.array([m-s, m+s])**exp, color=color, alpha=alpha)
             elif verbose:
                 print('        WARNING! skipping error estimate for index=%d at scale=%d with var=%.3e' % (index, scale, s))
 
@@ -101,7 +104,7 @@ def moments(
                     np.exp(x),
                     np.exp(y * exp),
                     color=color,
-                    alpha=0.50,
+                    alpha=alpha,
                 )
 
     #---
@@ -121,8 +124,11 @@ def moments(
 
     #---
 
-    ax.legend(loc='best', ncols=ncols)
-    ax.grid(True, which='both')
+    if legend:
+        ax.legend(loc='best', ncols=ncols)
+
+    if grid:
+        ax.grid(True, which='both')
 
     ax.tick_params(**TICK_PARAMS)
     plt.subplots_adjust(**SUBPLOTS_ADJUST)
@@ -145,6 +151,9 @@ def scaled_moments(
         rescale=False,
         verbose=False,
         ncols=None,
+        legend=False,
+        grid=True,
+        alpha=0.75,
         fig=None,
     ):
     """plot moments scaled by the standard deviation
@@ -176,7 +185,7 @@ def scaled_moments(
             markerfacecolor='none',
             linestyle=linestyle,
             color=color,
-            alpha=0.75,
+            alpha=alpha,
             label='%s $p=%d$'%(label, index),
         )
 
@@ -187,7 +196,7 @@ def scaled_moments(
                 + (1./std[snd]**index)*(-(index/2)*mom[snd,ind]/std[snd]**(index+2)) * cov[snd,ind2,ind]
             if s > 0: # only plot sensible error estimates
                 s = s**0.5 * num_std
-                ax.plot([scale]*2, np.array([m-s, m+s])**exp, color=color, alpha=0.75)
+                ax.plot([scale]*2, np.array([m-s, m+s])**exp, color=color, alpha=alpha)
             elif verbose:
                 print('        WARNING! skipping error estimate for index=%d at scale=%d with var=%.3e' % (index, scale, s))
 
@@ -208,8 +217,11 @@ def scaled_moments(
 
     #---
 
-    ax.grid(True, which='both')
-    ax.legend(loc='best', ncols=ncols)
+    if legend:
+        ax.legend(loc='best', ncols=ncols)
+
+    if grid:
+        ax.grid(True, which='both')
 
     ax.tick_params(**TICK_PARAMS)
     plt.subplots_adjust(**SUBPLOTS_ADJUST)
@@ -232,6 +244,9 @@ def extended_intermittency(
         rescale=False,
         verbose=False,
         ncols=None,
+        legend=False,
+        grid=True,
+        alpha=0.75,
         fig=None,
     ):
     """plot extended intermittency diagram
@@ -264,7 +279,7 @@ def extended_intermittency(
             markerfacecolor='none',
             linestyle=linestyle,
             color=color,
-            alpha=0.75,
+            alpha=alpha,
             label='%s $p=%d$'%(label, index),
         )
 
@@ -274,7 +289,7 @@ def extended_intermittency(
             s = cov[snd,ind2,ind2]
             if s > 0: # only plot sensible error estimates
                 s = s**0.5 * num_std
-                ax.plot(np.array([m-s, m+s])**exp2, np.array([mom[snd,ind]]*2)**exp, color=color, alpha=0.75)
+                ax.plot(np.array([m-s, m+s])**exp2, np.array([mom[snd,ind]]*2)**exp, color=color, alpha=alpha)
             elif verbose:
                 print('        WARNING! skipping error estimate for index=2 at scale=%d with var=%.3e' % (scale, s))
 
@@ -283,7 +298,7 @@ def extended_intermittency(
             s = cov[snd,ind,ind]
             if s > 0: # only plot sensible error estimates
                 s = s**0.5 * num_std
-                ax.plot(np.array([mom[snd,ind2]]*2)**exp2, np.array([m-s, m+s])**exp, color=color, alpha=0.75)
+                ax.plot(np.array([mom[snd,ind2]]*2)**exp2, np.array([m-s, m+s])**exp, color=color, alpha=alpha)
             elif verbose:
                 print('        WARNING! skipping error estimate for index=2 at scale=%d with var=%.3e' % (scale, s))
 
@@ -301,8 +316,11 @@ def extended_intermittency(
 
     #---
 
-    ax.grid(True, which='both')
-    ax.legend(loc='best', ncols=ncols)
+    if legend:
+        ax.legend(loc='best', ncols=ncols)
+
+    if grid:
+        ax.grid(True, which='both')
 
     ax.tick_params(**TICK_PARAMS)
     plt.subplots_adjust(**SUBPLOTS_ADJUST)
@@ -313,7 +331,7 @@ def extended_intermittency(
 
 #-------------------------------------------------
 
-def structure_function_ansatz_samples(scales, indexes, mom, cov, samples, verbose=False):
+def structure_function_ansatz_samples(scales, indexes, mom, cov, samples, alpha=0.75, legend=False, grid=True, verbose=False):
     """make a simple plot of structure function ansatz
     """
     fig = plt.figure()
@@ -327,11 +345,11 @@ def structure_function_ansatz_samples(scales, indexes, mom, cov, samples, verbos
     for ind, index in enumerate(indexes):
         color = 'C%d' % ind
 
-        ax.plot(scales, mom[:,ind], color=color, marker='o', linestyle='none', markerfacecolor='none', label='$p=%d$'%ind)
+        ax.plot(scales, mom[:,ind], color=color, alpha=alpha, marker='o', linestyle='none', markerfacecolor='none', label='$p=%d$'%ind)
 
         std = cov[:,ind,ind]**0.5
         for snd, scale in enumerate(scales):
-            ax.plot([scale]*2, mom[snd,ind]+std[snd]*np.array([+1,-1]), color=color)
+            ax.plot([scale]*2, mom[snd,ind]+std[snd]*np.array([+1,-1]), color=color, alpha=alpha)
 
     ax.set_yscale('log')
     ylim = ax.get_ylim()
@@ -344,10 +362,10 @@ def structure_function_ansatz_samples(scales, indexes, mom, cov, samples, verbos
         color = 'C%d' % ind
 
         samp = samples[index]
-        alpha = max(0.01, 1./len(samp['amp']))
+        _alpha = max(0.01, 1./len(samp['amp']))
 
         for amp, xi, sl, bl, nl, sh, bh, nh in zip(*[samp[key] for key in ['amp', 'xi', 'sl', 'bl', 'nl', 'sh', 'bh', 'nh']]):
-            ax.plot(scales, structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh), color=color, alpha=alpha)
+            ax.plot(scales, structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh), color=color, alpha=_alpha)
 
     #---
 
@@ -362,8 +380,11 @@ def structure_function_ansatz_samples(scales, indexes, mom, cov, samples, verbos
 
     ax.set_ylim(ylim)
 
-    ax.grid(True, which='both')
-    ax.legend(loc='best')
+    if legend:
+        ax.legend(loc='best')
+
+    if grid:
+        ax.grid(True, which='both')
 
     ax.tick_params(**TICK_PARAMS)
     plt.subplots_adjust(**SUBPLOTS_ADJUST)

@@ -44,9 +44,10 @@ def moments(
         label='',
         linestyle=DEFAULT_LINESTYLE,
         marker=DEFAULT_MARKER,
-        poly=None,
+#        poly=None,
         num_std=DEFAULT_NUM_STD,
         rescale=False,
+        normalize=None,
         verbose=False,
         ncols=None,
         legend=False,
@@ -73,9 +74,14 @@ def moments(
 
         color = 'C%d' % ind
 
+        if normalize is not None:
+            scale = np.interp(normalize, scales, mom[:,ind])
+        else:
+            scale = 1.0
+
         ax.plot(
             scales,
-            mom[:,ind]**exp,
+            (mom[:,ind]/scale)**exp,
             marker=marker,
             markerfacecolor='none',
             linestyle=linestyle,
@@ -85,27 +91,27 @@ def moments(
         )
 
         for snd, scale in enumerate(scales):
-            m = mom[snd,ind]
+            m = mom[snd,ind]/scale
             s = cov[snd,ind,ind]
             if s > 0: # only plot sensible error estimates
-                s = s**0.5 * num_std
+                s = s**0.5 * num_std / scale
                 ax.plot([scale]*2, np.array([m-s, m+s])**exp, color=color, alpha=alpha)
             elif verbose:
                 print('        WARNING! skipping error estimate for index=%d at scale=%d with var=%.3e' % (index, scale, s))
 
-        if poly is not None: ### add the fit
-            for bnd, (m, M) in enumerate(polybins[ind]):
-                x = np.linspace(np.log(m), np.log(M), 101)
-                y = 0.
-                for order, p in enumerate(poly[ind][bnd][::-1]):
-                    y += p * x**order
-
-                ax.plot(
-                    np.exp(x),
-                    np.exp(y * exp),
-                    color=color,
-                    alpha=alpha,
-                )
+#        if poly is not None: ### add the fit
+#            for bnd, (m, M) in enumerate(polybins[ind]):
+#                x = np.linspace(np.log(m), np.log(M), 101)
+#                y = 0.
+#                for order, p in enumerate(poly[ind][bnd][::-1]):
+#                    y += p * x**order
+#
+#                ax.plot(
+#                    np.exp(x),
+#                    np.exp(y * exp) / scale,
+#                    color=color,
+#                    alpha=alpha,
+#                )
 
     #---
 

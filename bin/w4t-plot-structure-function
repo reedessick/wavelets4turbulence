@@ -26,8 +26,8 @@ parser.add_argument('--title', default=None, type=str)
 parser.add_argument('-s', '--source', nargs=2, type=str, default=[], action='append', required=True,
     help='label and path for input data. eg: --inpath label path/to/data')
 
-parser.add_argument('-e', '--scaling-poly', nargs=2, type=str, default=[], action='append',
-    help='a path to scaling exponent data. eg: --inpath label path/to/data')
+#parser.add_argument('-e', '--scaling-poly', nargs=2, type=str, default=[], action='append',
+#    help='a path to scaling exponent data. eg: --inpath label path/to/data')
 
 parser.add_argument('-l', '--linestyle', nargs=2, type=str, default=[], action='append',
     help='label and linestyle. eg: --linestyle label solid')
@@ -38,6 +38,9 @@ parser.add_argument('-a', '--alpha', nargs=2, type=str, default=[], action='appe
 
 parser.add_argument('-i', '--index', default=None, type=int,
     help='only plot this index')
+
+parser.add_argument('--normalize-scale', default=None, type=int,
+    help='normalize the structure functions so that the value at this scale is always 1')
 
 parser.add_argument('-r', '--rescale', default=False, action='store_true',
     help='plot mom**(1./index) instead of just mom')
@@ -69,7 +72,7 @@ linestyles = dict(args.linestyle)
 markers = dict(args.marker)
 alpha = dict((a, float(b)) for a, b in args.alpha)
 
-polys = dict(args.scaling_poly)
+#polys = dict(args.scaling_poly)
 
 #-------------------------------------------------
 
@@ -82,11 +85,11 @@ for key, path in args.source:
 
     scales, index, mom, cov = io.load_structure_function(path, verbose=args.verbose)
 
-    if key in polys:
-        poly, inds, deg, bounds = io.load_scaling_exponent(polys[key], verbose=args.verbose)
-        assert np.all(inds==index), 'mismatch in indexes'
-    else:
-        poly = None
+#    if key in polys:
+#        poly, inds, deg, bounds = io.load_scaling_exponent(polys[key], verbose=args.verbose)
+#        assert np.all(inds==index), 'mismatch in indexes'
+#    else:
+#        poly = None
 
     if args.index is not None: # make sure we have this index
         sel = args.index == index
@@ -95,14 +98,14 @@ for key, path in args.source:
         mom = mom[:,sel]
         cov = cov[:,sel,:][:,:,sel]
 
-        if poly is not None:
-            poly = poly[sel]
+#        if poly is not None:
+#            poly = poly[sel]
 
-    if poly is not None:
-        n, m = poly.shape
-        poly = (poly.reshape((n,1,m)), [[bounds]]*n)
+#    if poly is not None:
+#        n, m = poly.shape
+#        poly = (poly.reshape((n,1,m)), [[bounds]]*n)
 
-    data[key] = dict(scales=scales, index=index, mom=mom, cov=cov, poly=poly)
+    data[key] = dict(scales=scales, index=index, mom=mom, cov=cov) #, poly=poly)
 
 ncols = len(data.keys())
 
@@ -129,7 +132,8 @@ for key, val in data.items():
         val['cov'],
         label=key,
         rescale=args.rescale,
-        poly=val['poly'],
+        normalize=args.normalize_scale,
+#        poly=val['poly'],
         num_std=1.0, # used for error bars
         linestyle=linestyles.get(key, 'none'),
         marker=markers.get(key, 'o'),

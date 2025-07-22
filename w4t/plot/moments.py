@@ -364,6 +364,8 @@ def structure_function_ansatz_samples(scales, indexes, mom, cov, samples, alpha=
 
     # plot the inferred ansatz
 
+    dense_scales = np.logspace(np.log10(np.min(scales)), np.log10(np.max(scales)), 1001)
+
     for ind, index in enumerate(indexes):
         color = 'C%d' % ind
 
@@ -371,7 +373,7 @@ def structure_function_ansatz_samples(scales, indexes, mom, cov, samples, alpha=
         _alpha = max(0.01, 1./len(samp['amp']))
 
         for amp, xi, sl, bl, nl, sh, bh, nh in zip(*[samp[key] for key in ['amp', 'xi', 'sl', 'bl', 'nl', 'sh', 'bh', 'nh']]):
-            ax.plot(scales, structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh), color=color, alpha=_alpha)
+            ax.plot(dense_scales, structure_function_ansatz(dense_scales, amp, xi, sl, bl, nl, sh, bh, nh), color=color, alpha=_alpha)
 
     #---
 

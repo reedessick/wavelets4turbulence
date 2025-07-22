@@ -41,30 +41,32 @@ def structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh):
 
 def sample_prior(
         mean_logamp=-10.0,
-        stdv_logamp=5.0,
+        stdv_logamp=10.0,
         mean_xi=0.0,
         stdv_xi=3.0,
-        min_sl=2.0,
-        max_sl=16.0,
+        mean_logsl=np.log(10), ## FIXME
+        stdv_logsl=2.0,
         mean_bl=0.0,
         stdv_bl=3.0,
-        rate_nl=1.0,
-        min_sh=32.0,
-        max_sh=256.0,
+        mean_nl=0.0,
+        stdv_nl=3.0,
+        mean_logsh=np.log(128),
+        stdv_logsh=2.0,
         mean_bh=0.0,
         stdv_bh=3.0,
-        rate_nh=1.0,
+        mean_nh=0.0,
+        stdv_nh=3.0,
     ):
     amp = numpyro.sample("amp", dist.LogNormal(mean_logamp, stdv_logamp))
     xi = numpyro.sample("xi", dist.Normal(mean_xi, stdv_xi))
 
-    sl = numpyro.sample("sl", dist.LogUniform(min_sl, max_sl))
+    sl = numpyro.sample("sl", dist.LogNormal(mean_logsl, stdv_logsl))
     bl = numpyro.sample("bl", dist.Normal(mean_bl, stdv_bl))
-    nl = numpyro.sample("nl", dist.Exponential(rate_nl))
+    nl = numpyro.sample("nl", dist.Normal(mean_nl, stdv_nl))
 
-    sh = numpyro.sample("sh", dist.LogUniform(min_sh, max_sh))
+    sh = numpyro.sample("sh", dist.LogNormal(mean_logsh, stdv_logsh))
     bh = numpyro.sample("bh", dist.Normal(mean_bh, stdv_bh))
-    nh = numpyro.sample("nh", dist.Exponential(rate_nh))
+    nh = numpyro.sample("nh", dist.Normal(mean_nh, stdv_nh))
 
     return amp, xi, sl, bl, nl, sh, bh, nh
 

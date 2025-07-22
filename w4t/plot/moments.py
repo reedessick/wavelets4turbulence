@@ -65,8 +65,8 @@ def moments(
 
     #---
 
-    if poly is not None:
-        poly, polybins = poly
+#    if poly is not None:
+#        poly, polybins = poly
 
     for ind, index in enumerate(indexes):
 
@@ -75,13 +75,13 @@ def moments(
         color = 'C%d' % ind
 
         if normalize is not None:
-            scale = np.interp(normalize, scales, mom[:,ind])
+            norm = np.interp(normalize, scales, mom[:,ind])
         else:
-            scale = 1.0
+            norm = 1.0
 
         ax.plot(
             scales,
-            (mom[:,ind]/scale)**exp,
+            (mom[:,ind]/norm)**exp,
             marker=marker,
             markerfacecolor='none',
             linestyle=linestyle,
@@ -91,10 +91,10 @@ def moments(
         )
 
         for snd, scale in enumerate(scales):
-            m = mom[snd,ind]/scale
+            m = mom[snd,ind]/norm
             s = cov[snd,ind,ind]
             if s > 0: # only plot sensible error estimates
-                s = s**0.5 * num_std / scale
+                s = s**0.5 * num_std / norm
                 ax.plot([scale]*2, np.array([m-s, m+s])**exp, color=color, alpha=alpha)
             elif verbose:
                 print('        WARNING! skipping error estimate for index=%d at scale=%d with var=%.3e' % (index, scale, s))

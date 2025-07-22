@@ -14,7 +14,7 @@ import numpy as np
 from argparse import ArgumentParser
 
 ### non-standard libraries
-from w4t.plot import utils as plt
+from w4t.plot import plot as plt
 
 import corner
 

@@ -26,8 +26,13 @@ parser.add_argument('-m', '--min-scale', default=0.0, type=float,
 parser.add_argument('-M', '--max-scale', default=np.inf, type=float,
     help='only include scales < max_scale within the fit')
 
+parser.add_argument('-i', '--index', nargs='*', type=int, default=None,
+    help='only fit these indexes. eg: --index 1 2 3')
+
 parser.add_argument('--num-warmup', default=infer.DEFAULT_NUM_WARMUP, type=int)
 parser.add_argument('--num-samples', default=infer.DEFAULT_NUM_SAMPLES, type=int)
+
+parser.add_argument('--num-retained', default=infer.DEFAULT_NUM_RETAINED, type=int)
 
 parser.add_argument('--seed', default=infer.DEFAULT_SEED, type=int)
 
@@ -56,6 +61,11 @@ sel = (min_scale <= scales) * (scales <= max_scale)
 posterior = dict()
 prior = dict()
 for ind, index in enumerate(indexes):
+
+    if args.index is not None:
+        if index not in args.index: # skip this index
+            continue
+
     if args.verbose:
         print('\n>>> fitting ansatz for index=%d\n' % index)
 
@@ -65,6 +75,7 @@ for ind, index in enumerate(indexes):
         cov[sel,ind,ind]**0.5,
         num_warmup=args.num_warmup,
         num_samples=args.num_samples,
+        num_retained=args.num_retained,
         seed=args.seed,
         verbose=args.verbose,
     )
@@ -84,5 +95,6 @@ io.write_structure_function_ansatz_samples(
     max_scale=max_scale,
     num_warmup=args.num_warmup,
     num_sapmles=args.num_samples,
+    num_retained=args.num_retained,
     seed=args.seed,
 )

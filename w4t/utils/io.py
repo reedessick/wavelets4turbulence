@@ -331,6 +331,7 @@ def load_structure_function_ansatz_samples(path, verbose=False):
         for ind in index:
             for label, data in [('posterior', posterior), ('prior', prior)]:
                 key = '%s_%d' % (label, ind)
-                data[ind] = dict((k, obj[key][k][:]) for k in obj[key].keys())
+                if key in obj.keys():
+                    data[ind] = dict((k, obj[key][k][:]) for k in obj[key].keys())
 
     return posterior, prior, scales, index

@@ -29,6 +29,8 @@ DEFAULT_SEED = 1
 DEFAULT_NUM_WARMUP = 500
 DEFAULT_NUM_SAMPLES = 1000
 
+DEFAULT_NUM_RETAINED = np.inf
+
 #-------------------------------------------------
 
 def structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh):
@@ -44,14 +46,14 @@ def sample_prior(
         stdv_logamp=10.0,
         mean_xi=0.0,
         stdv_xi=3.0,
-        mean_logsl=np.log(10), ## FIXME
-        stdv_logsl=2.0,
+        mean_logsl=np.log(10),
+        stdv_logsl=1.0,
         mean_bl=0.0,
         stdv_bl=3.0,
         mean_nl=0.0,
         stdv_nl=3.0,
         mean_logsh=np.log(128),
-        stdv_logsh=2.0,
+        stdv_logsh=1.0,
         mean_bh=0.0,
         stdv_bh=3.0,
         mean_nh=0.0,
@@ -78,6 +80,7 @@ def sample_structure_function_ansatz(
         std,
         num_warmup=DEFAULT_NUM_WARMUP,
         num_samples=DEFAULT_NUM_SAMPLES,
+        num_retained=DEFAULT_NUM_RETAINED,
         seed=DEFAULT_SEED,
         verbose=False,
         **prior_kwargs
@@ -121,6 +124,11 @@ def sample_structure_function_ansatz(
     if verbose:
         mcmc.print_summary(exclude_deterministic=False)
 
+    if num_retained < np.inf:
+        if verbose:
+            print('retaining the final %d samples' % num_retained)
+        prior = dict((key, val[-num_retained:]) for key, val in prior.items())
+
     #---
 
     if verbose:
@@ -139,6 +147,11 @@ def sample_structure_function_ansatz(
 
     if verbose:
         mcmc.print_summary(exclude_deterministic=False)
+
+    if num_retained < np.inf:
+        if verbose:
+            print('retaining the final %d samples' % num_retained)
+        posterior = dict((key, val[-num_retained:]) for key, val in posterior.items())
 
     #---
 

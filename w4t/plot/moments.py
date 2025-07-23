@@ -369,6 +369,9 @@ def structure_function_ansatz_samples(scales, indexes, mom, cov, samples, alpha=
     for ind, index in enumerate(indexes):
         color = 'C%d' % ind
 
+        if index not in samples: # no fit for this index
+            continue
+
         samp = samples[index]
         _alpha = max(0.01, 1./len(samp['amp']))
 

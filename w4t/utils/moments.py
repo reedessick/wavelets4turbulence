@@ -125,12 +125,13 @@ def moments(samples, index, central=False, verbose=False):
         for j in range(i+1):
 
             if np.any(samples!=samples[0]): # there is more than 1 unique value
-                c[i,j] = c[j,i] = np.sum((samples**index[i]-m[i]) * (samples**index[j]-m[j])) / (num_samples-1) / num_samples
+                # compute this in a silly way to avoid overflow errors
+                c[i,j] = c[j,i] = m[i]*m[j]*np.sum((1 - samples**index[i]/m[i]) * (1 - samples**index[j]/m[j])) / (num_samples-1) / num_samples
 
             else:
                 c[i,j] = c[j,i] = 0
 
-    if np.any(np.diag(c) < 0):
+    if np.any(np.diag(c) < 0) or np.any(np.isnan(c)):
         raise RuntimeError('''\
 bad covariance matrix!
 num_samples = %d

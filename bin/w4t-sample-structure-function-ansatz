@@ -73,6 +73,8 @@ for ind, index in enumerate(indexes):
         scales[sel],
         mom[sel,ind],
         cov[sel,ind,ind]**0.5,
+        mean_logamp=np.log(mom[sel,ind][0]), # center this on the observed value
+        stdv_logamp=1.0,
         num_warmup=args.num_warmup,
         num_samples=args.num_samples,
         num_retained=args.num_retained,

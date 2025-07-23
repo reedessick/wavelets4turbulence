@@ -50,7 +50,7 @@ def sample_prior(
         stdv_logsl=1.0,
         mean_bl=0.0,
         stdv_bl=3.0,
-        mean_nl=0.0,
+        mean_nl=0.0, ### FIXME may want to force this to be a roll-off --> nl, bl > 0 ?
         stdv_nl=3.0,
         mean_logsh=np.log(128),
         stdv_logsh=1.0,
@@ -111,7 +111,7 @@ def sample_structure_function_ansatz(
         print('running sampler for prior with seed=%d for %d warmup and %d samples' % (seed, num_warmup, num_samples))
 
     mcmc = MCMC(NUTS(sample_prior), num_warmup=num_warmup, num_samples=num_samples)
-    mcmc.run(random.PRNGKey(seed))
+    mcmc.run(random.PRNGKey(seed), **prior_kwargs)
     prior = mcmc.get_samples()
 
 #    # record the likelihood of each sample
@@ -155,5 +155,5 @@ def sample_structure_function_ansatz(
 
     #---
 
-    # retur
+    # return
     return posterior, prior

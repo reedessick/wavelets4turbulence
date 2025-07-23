@@ -23,39 +23,41 @@ In practice, this ensemble average is estimated with a spatial average over $\ve
 
 The wavelet structure function's definition depends on the wavelet.
 We use the Haar wavelet because of its simplicity (and hope that the intuition generalizes to other wavelet families).
-The structure function computed via the detail coefficients of the Haar decomposition at scale $\tau = 2^t$ is
+The structure function computed via the detail coefficients of the Haar decomposition at scale $\tau$ is
 \begin{equation}
-    W^p_\tau(\vec{\phi}) = \left< \left| \left(\frac{1}{2^t}\sum\limits_{i=2^t}^{2^{t+1}} \vec{\phi}(\vec{x}_i)\right) - \left(\frac{1}{2^t}\sum\limits_{i=1}^{i=2^t} \vec{\phi}(\vec{x}_i)\right)\right|^p \right>
+    W^p_\tau(\vec{\phi}) = \left< \left| \left(\frac{1}{\tau}\sum\limits_{i=\tau}^{2\tau} \vec{\phi}(\vec{x}_i)\right) - \left(\frac{1}{\tau}\sum\limits_{i}^{\tau} \vec{\phi}(\vec{x}_i)\right)\right|^p \right>
 \end{equation}
 since the Haar decomposition performs a straightforward average of neighboring data when generating the approximate coefficients.
 
 In general, expanding the sum is hard (although it is just a multinomial expansion) and may not provide any useful insight.
 We focus on the 2nd order structure function ($p=2$) as it remains tractable and provides some insight into the observed differences between $S^p_\tau$ and $W^p_\tau$.
-To wit,
+To wit, consider the scalar field $\phi_i = \phi(x_i)$
 \begin{align}
     W^2_\tau
-        & = \left< \frac{1}{\tau^2} \left| \sum\limits_{i}^{\tau} \left[\phi_{i+\tau} - \phi_{i}\right] \right|^2\right> \\
-        & = \tau^{-2} \left< \sum\limits_{i}^{\tau} \sum\limits_{j}^{\tau} (\phi_{i+s} - \phi_i)(\phi_{j+s} - \phi_j) \right> \\
-        & = \tau^{-2} \sum\limits_{i}^{\tau} \sum\limits_{j}^{\tau} \left< \phi_{i+\tau}\phi_{j+\tau} + \phi_{i}\phi_{j} - \phi_{i}\phi_{j+\tau} - \phi_{i+\tau}\phi_{j}\right> \\
-        & = \frac{2}{\tau^2} \sum\limits_{i}^{\tau} \sum\limits_{j}^{\tau} \left<\phi_i \phi_j\right> - \left<\phi_i \phi_{j+\tau}\right> \\
-        & = \frac{2}{\tau} \sum\limits_{j}^{\tau} \left[ \left<\phi_0 \phi_j\right> - \left<\phi_0 \phi_{j+\tau}\right> \right] \\
+        & = \left< \frac{1}{\tau^2} \left| \sum\limits_{i}^{\tau} \left[\phi_{i+\tau} - \phi_{i}\right] \right|^2\right> \nonumber \\
+        & = \tau^{-2} \left< \sum\limits_{i}^{\tau} \sum\limits_{j}^{\tau} (\phi_{i+s} - \phi_i)(\phi_{j+s} - \phi_j) \right> \nonumber \\
+        & = \tau^{-2} \sum\limits_{i}^{\tau} \sum\limits_{j}^{\tau} \left< \phi_{i+\tau}\phi_{j+\tau} + \phi_{i}\phi_{j} - \phi_{i}\phi_{j+\tau} - \phi_{i+\tau}\phi_{j}\right> \nonumber \\
+        & = \frac{2}{\tau^2} \sum\limits_{i}^{\tau} \sum\limits_{j}^{\tau} \left<\phi_i \phi_j\right> - \left<\phi_i \phi_{j+\tau}\right> \nonumber \\
+        & = \frac{2}{\tau} \sum\limits_{j}^{\tau} \left[ \left<\phi_0 \phi_j\right> - \left<\phi_0 \phi_{j+\tau}\right> \right]
 \end{align}
 Recalling that $S^2_\tau = \left<(\phi_\tau - \phi_0)^2\right>$ and therefore $\left<\phi_0 \phi_\tau\right> = \left<\phi_0^2\right> - S^2_\tau/2$,
 we obtain
 \begin{align}
     W^2_\tau
-        & = \frac{2}{\tau}\sum\limits_j^\tau \left[ \left(\left<\phi_0^2\right> - S^2_j/2\right) - \left(\left<\phi_0^2\right> - S^2_{j+\tau}/2\right)\right] \\
-        & = \frac{1}{\tau} \sum\limits_j^\tau \left[ S^2_{j+\tau} - S^2_j \right]
+        & = \frac{2}{\tau}\sum\limits_j^\tau \left[ \left(\left<\phi_0^2\right> - S^2_j/2\right) - \left(\left<\phi_0^2\right> - S^2_{j+\tau}/2\right)\right] \nonumber \\
+        & = \frac{1}{\tau} \sum\limits_j^\tau \left[ S^2_{j+\tau} - S^2_j \right] \label{eq:result}
 \end{align}
+Following similar steps, it is also possible to show that the same relation holds for $S^2_\tau$ and $W^2_\tau$ for vector fields.
 
-\textbf{
-I believe this for scalar fields, but what about vector fields?
-}
+Eq.~\ref{eq:result} shows that we can think of $W^2_\tau$ as an average of the differences between $S^2_{\tau^\prime}$ at different scales all the way up to $\tau^\prime = 2\tau$.
+Heuristically, this seems reasonable, as $W^p_\tau$ involves the difference between points as far away as $2\tau$ for the Haar decomposition.
+More generally, if the wavelet has support over $m$ points, then we may expect $W^p_\tau$ to involve points that are separated by $m\tau$ and therefore depend on $S^p_{\tau^\prime}$ up to $\tau^\prime = m\tau$.
 
-\textbf{
-Discuss the intuition: $W^p_\tau$ depends on $S^p_{\tau^\prime}$ for all $\tau^\prime \leq 2\tau$.
-In general, for wavelets with length $m$, we expect $W^p_\tau$ to depend on $S^p_{\tau^\prime}$ for all $\tau^\prime \leq m \tau$.
-}
+Additionally, we see that $W^2_\tau$ can be expressed as a difference between $S^2_{\tau^\prime}$ evaluated at scales separated by $\tau$.
+This also explains why $W^2_\tau$ is often lower than $S^2_\tau$ for large $\tau$.
+If the flucutations in the field occur at small scales, then $S^p_\tau$ will not change much as $\tau$ changes as long as $\tau$ is very large.
+As such, $S^2_\tau$ will be relatively flat for large $\tau$ and therefore $W^2_\tau$ can decrease significantly.
+Similarly, the wavelet decomposition will naturally average away the small-scale fluctuations in computing the approximant coefficients, which naturally explains why there is less power attributed to large-scale fluctuations.
 
 %-------------------------------------------------
 \end{document}

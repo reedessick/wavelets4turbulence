@@ -481,13 +481,12 @@ def structure_function_ansatz_violins(
 
         # plot a quick KDE
 #        samp = posterior[index][key]
-
-        samp = posterior[index]['xi'] + posterior[index]['bh']
-
-        stdv = 1.06 * np.std(samp) / len(samp)**0.2 # rule of thumb for optimal KDE bandwidth w/r/t IMSE
+        samp = posterior[index]['xi'] + posterior[index]['bh'] ### FIXME the parameters of the ansatz are doing something funny
 
         smin = np.min(samp)
         smax = np.max(samp)
+
+        stdv = 1.06 * np.std(samp) / len(samp)**0.2 # rule of thumb for optimal KDE bandwidth w/r/t IMSE
 
         y = np.linspace(smin-3*stdv, smax+3*stdv, num_grid)
         x = np.zeros(num_grid, dtype=float)

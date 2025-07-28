@@ -83,7 +83,7 @@ plt.close(fig)
 
 #------------------------
 
-fig = plt.structure_function_ansatz_violins(
+fig = plt.structure_function_ansatz_violin(
     posterior,
     args.ref_scale,
     title=args.title,

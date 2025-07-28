@@ -442,7 +442,7 @@ def structure_function_ansatz_samples(
 
 #-------------------------------------------------
 
-def structure_function_ansatz_violins(
+def structure_function_ansatz_violin(
         posterior,
         scale,
         title=None,

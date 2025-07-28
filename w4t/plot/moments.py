@@ -337,7 +337,18 @@ def extended_intermittency(
 
 #-------------------------------------------------
 
-def structure_function_ansatz_samples(scales, indexes, mom, cov, samples, alpha=0.75, legend=False, grid=True, verbose=False):
+def structure_function_ansatz_samples(
+        scales,
+        indexes,
+        mom,
+        cov,
+        samples,
+        alpha=0.75,
+        legend=False,
+        grid=True,
+        title=None,
+        verbose=False,
+    ):
     """make a simple plot of structure function ansatz
     """
     fig = plt.figure()
@@ -347,11 +358,25 @@ def structure_function_ansatz_samples(scales, indexes, mom, cov, samples, alpha=
     #---
 
     # plot the original data
+    if verbose:
+        print('plotting the original data')
 
     for ind, index in enumerate(indexes):
         color = 'C%d' % ind
 
-        ax.plot(scales, mom[:,ind], color=color, alpha=alpha, marker='o', linestyle='none', markerfacecolor='none', label='$p=%d$'%ind)
+        if verbose:
+            print('    index=%d' % index)
+
+        ax.plot(
+            scales,
+            mom[:,ind],
+            color=color,
+            alpha=alpha,
+            marker='o',
+            linestyle='none',
+            markerfacecolor='none',
+            label='$p=%d$'%ind,
+        )
 
         std = cov[:,ind,ind]**0.5
         for snd, scale in enumerate(scales):
@@ -364,13 +389,21 @@ def structure_function_ansatz_samples(scales, indexes, mom, cov, samples, alpha=
 
     # plot the inferred ansatz
 
+    if verbose:
+        print('plotting inferred ansatz')
+
     dense_scales = np.logspace(np.log10(np.min(scales)), np.log10(np.max(scales)), 1001)
 
     for ind, index in enumerate(indexes):
         color = 'C%d' % ind
 
         if index not in samples: # no fit for this index
+            if verbose:
+                print('    index=%d not in samples; skipping...' % index)
             continue
+
+        elif verbose:
+            print('    index=%d' % index)
 
         samp = samples[index]
         _alpha = max(0.01, 1./len(samp['amp']))
@@ -397,9 +430,106 @@ def structure_function_ansatz_samples(scales, indexes, mom, cov, samples, alpha=
     if grid:
         ax.grid(True, which='both')
 
+    if title:
+        ax.set_title(title)
+
     ax.tick_params(**TICK_PARAMS)
     plt.subplots_adjust(**SUBPLOTS_ADJUST)
 
     #---
+
+    return fig
+
+#-------------------------------------------------
+
+def structure_function_ansatz_violins(
+        posterior,
+        key='xi',
+        ylabel=None,
+        title=None,
+        hatch=None,
+        alpha=0.25,
+        num_grid=101,
+        verbose=False,
+        grid=True,
+        legend=True,
+        fig=None,
+    ):
+    """violin plots of ansatz parameters as a function of structure function order
+    """
+    if fig is None:
+        fig = plt.figure()
+
+    ax = fig.gca()
+
+    #-------
+
+    if verbose:
+        print('plotting violins for %s' % key)
+
+    xmin = +np.inf
+    xmax = -np.inf
+
+    ymin = +np.inf
+    ymax = -np.inf
+
+    for ind, index in enumerate(sorted(posterior.keys())):
+        if verbose:
+            print('    index=%d' % index)
+
+        color = 'C%d' % ind
+
+        # plot a quick KDE
+#        samp = posterior[index][key]
+
+        samp = posterior[index]['xi'] + posterior[index]['bh']
+
+        stdv = 1.06 * np.std(samp) / len(samp)**0.2 # rule of thumb for optimal KDE bandwidth w/r/t IMSE
+
+        smin = np.min(samp)
+        smax = np.max(samp)
+
+        y = np.linspace(smin-3*stdv, smax+3*stdv, num_grid)
+        x = np.zeros(num_grid, dtype=float)
+
+        for s in samp:
+            x += np.exp(-0.5*(y-s)**2/stdv**2)
+
+        x *= 0.25/np.max(x)
+
+        ax.fill_betweenx(y, index-x, index+x, color=color, hatch=hatch, alpha=alpha, label='$p=%d$'%index)
+
+        ymin = min(np.min(y), ymin)
+        ymax = max(np.max(y), ymax)
+
+        xmin = min(index, xmin)
+        xmax = max(index, xmax)
+
+    #---
+
+    ax.set_xlabel('$p$')
+    ax.set_xlim(xmin=xmin-0.5, xmax=xmax+0.5)
+    ax.set_xticks(range(int(xmin), int(xmax)+1))
+
+    if ylabel:
+        ax.set_ylabel(ylabel)
+    else:
+        ax.set_ylabel(key)
+
+    ax.set_ylim(ymin=ymin, ymax=ymax)
+
+    if legend:
+        ax.legend(loc='best')
+
+    if grid:
+        ax.grid(True, which='both')
+
+    if title:
+        ax.set_title(title)
+
+    ax.tick_params(**TICK_PARAMS)
+    plt.subplots_adjust(**SUBPLOTS_ADJUST)
+
+    #-------
 
     return fig

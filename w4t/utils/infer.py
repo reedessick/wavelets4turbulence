@@ -39,6 +39,14 @@ def structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh):
     """
     return amp * scales**xi * (1 + (sl/scales)**nl)**(bl/nl) * (1 + (scales/sh)**nh)**(bh/nh)
 
+#---
+
+def logarithmic_derivative_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh):
+    """
+    logarithmic derivative of structure_function_ansatz with respect to scales
+    """
+    return xi - bl/(1 + (sl/scales)**-nl) + bh/(1 + (scales/sh)**-nh)
+
 #------------------------
 
 def sample_prior(

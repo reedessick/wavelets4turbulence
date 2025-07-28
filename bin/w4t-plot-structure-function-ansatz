@@ -21,6 +21,9 @@ parser = ArgumentParser()
 parser.add_argument('structure_function', type=str)
 parser.add_argument('samples', type=str)
 
+parser.add_argument('ref_scale', type=float,
+    help='the reference scale at which the logarithmic derivative will be evaluated for violin plot')
+
 parser.add_argument('--title', default=None, type=str)
 
 parser.add_argument('--max-num-samples', default=None, type=int)
@@ -82,8 +85,7 @@ plt.close(fig)
 
 fig = plt.structure_function_ansatz_violins(
     posterior,
-    key='xi',
-    ylabel='$\\xi$',
+    args.ref_scale,
     title=args.title,
     verbose=args.Verbose,
 )

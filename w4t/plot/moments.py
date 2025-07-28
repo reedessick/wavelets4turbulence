@@ -6,7 +6,7 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 from .plot import *
 
-from w4t.utils.infer import structure_function_ansatz
+from w4t.utils.infer import (structure_function_ansatz, logarithmic_derivative_ansatz)
 
 #-------------------------------------------------
 
@@ -444,11 +444,10 @@ def structure_function_ansatz_samples(
 
 def structure_function_ansatz_violins(
         posterior,
-        key='xi',
-        ylabel=None,
+        scale,
         title=None,
         hatch=None,
-        alpha=0.25,
+        alpha=0.5,
         num_grid=101,
         verbose=False,
         grid=True,
@@ -465,7 +464,7 @@ def structure_function_ansatz_violins(
     #-------
 
     if verbose:
-        print('plotting violins for %s' % key)
+        print('plotting violins for logarithmic derivative at scale=%.3f' % scale)
 
     xmin = +np.inf
     xmax = -np.inf
@@ -479,9 +478,18 @@ def structure_function_ansatz_violins(
 
         color = 'C%d' % ind
 
-        # plot a quick KDE
-#        samp = posterior[index][key]
-        samp = posterior[index]['xi'] + posterior[index]['bh'] ### FIXME the parameters of the ansatz are doing something funny
+        # plot a quick KDE of the logarithmic derivative at a reference scale
+        samp = logarithmic_derivative_ansatz(
+            scale,
+            posterior[index]['amp'],
+            posterior[index]['xi'],
+            posterior[index]['sl'],
+            posterior[index]['bl'],
+            posterior[index]['nl'],
+            posterior[index]['sh'],
+            posterior[index]['bh'],
+            posterior[index]['nh'],
+        )
 
         smin = np.min(samp)
         smax = np.max(samp)
@@ -504,17 +512,26 @@ def structure_function_ansatz_violins(
         xmin = min(index, xmin)
         xmax = max(index, xmax)
 
+    xmin = min(xmin-0.5, 0)
+    xmax = xmax+0.5
+
+    ymin = min(ymin, 0)
+
+    #---
+
+    # add reference lines
+
+    x = np.linspace(xmin, xmax, 11)
+    ax.plot(x, x/3, color='k', linestyle='dashed', label='$p/3$')
+    ax.plot(x, x/4, color='k', linestyle='dotted', label='$p/4$')
+
     #---
 
     ax.set_xlabel('$p$')
-    ax.set_xlim(xmin=xmin-0.5, xmax=xmax+0.5)
+    ax.set_xlim(xmin=xmin, xmax=xmax)
     ax.set_xticks(range(int(xmin), int(xmax)+1))
 
-    if ylabel:
-        ax.set_ylabel(ylabel)
-    else:
-        ax.set_ylabel(key)
-
+    ax.set_ylabel('$d\log S^P_\\tau/d\log \\tau \ @ \ \\tau=%.1f$' % scale)
     ax.set_ylim(ymin=ymin, ymax=ymax)
 
     if legend:

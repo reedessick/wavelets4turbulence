@@ -21,7 +21,7 @@ parser = ArgumentParser()
 parser.add_argument('structure_function', type=str)
 parser.add_argument('samples', type=str)
 
-parser.add_argument('ref_scale', type=float,
+parser.add_argument('ref_scale', type=float, nargs='+',
     help='the reference scale at which the logarithmic derivative will be evaluated for violin plot')
 
 parser.add_argument('--title', default=None, type=str)
@@ -83,16 +83,18 @@ plt.close(fig)
 
 #------------------------
 
-fig = plt.structure_function_ansatz_violin(
-    posterior,
-    args.ref_scale,
-    title=args.title,
-    verbose=args.Verbose,
-)
+for ref_scale in args.ref_scale:
 
-figtmp = os.path.join(
-    args.output_dir,
-    os.path.basename(__file__)+'-violin%s.%s' % (args.tag, '%s'),
-)
-plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
-plt.close(fig)
+    fig = plt.structure_function_ansatz_violin(
+        posterior,
+        ref_scale,
+        title=args.title,
+        verbose=args.Verbose,
+    )
+
+    figtmp = os.path.join(
+        args.output_dir,
+        os.path.basename(__file__)+'-violin-%03d%s.%s' % (ref_scale, args.tag, '%s'),
+    )
+    plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
+    plt.close(fig)

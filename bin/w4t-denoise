@@ -37,6 +37,8 @@ parser.add_argument('--map2scalar', default=None, type=str,
 
 parser.add_argument('-w', '--wavelet', default=pywt.DEFAULT_WAVELET, type=str)
 parser.add_argument('-t', '--threshold', default=DEFAULT_DENOISE_THRESHOLD, type=float)
+parser.add_argument('-q', '--quantile', default=None, type=float,
+    help='denoise using this quantile rather than the standard deviation')
 parser.add_argument('-m', '--max-scale', default=None, type=float)
 parser.add_argument('-s', '--smooth', default=False, action='store_true')
 
@@ -77,10 +79,10 @@ wa = pywt.PyWaveletArray(data, args.wavelet)
 
 # denoise
 if args.verbose:
-    print('denoising with\n    threshold=%.6f\n    max_scale=%s\n    smooth=%s' % \
-        (args.threshold, args.max_scale, args.smooth))
+    print('denoising with\n    threshold=%.6f\n    max_scale=%s\n    smooth=%s\n    quantile=%s' % \
+        (args.threshold, args.max_scale, args.smooth, args.quantile))
 
-wa.denoise(args.threshold, map2scalar=map2scalar, max_scale=args.max_scale, smooth=args.smooth)
+wa.denoise(args.threshold, map2scalar=map2scalar, max_scale=args.max_scale, smooth=args.smooth, quantile=args.quantile)
 
 #------------------------
 

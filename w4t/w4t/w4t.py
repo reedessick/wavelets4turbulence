@@ -334,7 +334,7 @@ rest are interpreted as spatial coordinates.
 
     #--------------------
 
-    def denoise(self, num_std, map2scalar=default_map2scalar, smooth=False, max_scale=None):
+    def denoise(self, num_std, map2scalar=default_map2scalar, smooth=False, max_scale=None, quantile=None):
         """perform basic "wavelet denoising" by taking the full wavelet decomposition and zeroing all detail coefficients with \
 with absolute values less than a threshold. This threshold is taken as num_std*std(detail) within each scale separately
 
@@ -359,9 +359,16 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
             for s in slices[1:]: # only touch the detail coefficients
                 scalar = map2scalar(self.array[s])
-                sel = np.abs(scalar) <= np.std(scalar)*num_std # the small-amplitude detail coeffs
+
+                if quantile is not None:
+                    stdv = np.percentile(np.abs(scalar), quantile*100) # convert from quantile to percentile
+                else:
+                    stdv = np.std(scalar)
+
+                sel = np.abs(scalar) <= stdv * num_std # the small-amplitude detail coeffs
                 if smooth: # zero the high-amplitude detail coefficients
                     sel = np.logical_not(sel)
+
                 sel = np.outer(ones, sel).reshape((self.nvec,)+sel.shape)
                 self.array[s] *= np.where(sel, 0.0, 1.0)
 

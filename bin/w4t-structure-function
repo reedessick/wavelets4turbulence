@@ -40,6 +40,8 @@ parser.add_argument('-i', '--index', nargs='+', type=float)
 
 parser.add_argument('-t', '--threshold', default=None, type=float,
     help='if supplied, denoise using this threshold before computing structure function')
+parser.add_argument('-q', '--quantile', default=None, type=float,
+    help='denoise using this quantile rather than the standard deviation')
 parser.add_argument('-m', '--max-scale', default=None, type=float)
 parser.add_argument('-s', '--smooth', default=False, action='store_true')
 
@@ -88,11 +90,11 @@ data, field = io.simplify(
 
 if args.threshold is not None: # denoise before computing structure function
     if args.verbose:
-        print('denoising with\n    wavelet=%s\n    threshold=%.6f\n    max_scale=%s\n    smooth=%s' % \
-            (args.wavelet, args.threshold, args.max_scale, args.smooth))
+        print('denoising with\n    wavelet=%s\n    threshold=%.6f\n    max_scale=%s\n    smooth=%s\n    quantile=%s' % \
+            (args.wavelet, args.threshold, args.max_scale, args.smooth, args.quantile))
 
     wa = pywt.PyWaveletArray(data, args.wavelet)
-    wa.denoise(args.threshold, map2scalar=map2scalar, max_scale=args.max_scale, smooth=args.smooth)
+    wa.denoise(args.threshold, map2scalar=map2scalar, max_scale=args.max_scale, smooth=args.smooth, quantile=args.quantile)
     wa.idecompose() # make sure we're at full resolution before we save
     data = wa.array
 

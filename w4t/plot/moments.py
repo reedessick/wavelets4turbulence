@@ -445,9 +445,11 @@ def structure_function_ansatz_samples(
 def structure_function_ansatz_violin(
         posterior,
         scale,
+        color=None,
         title=None,
         hatch=None,
         alpha=0.5,
+        fill=True,
         num_grid=101,
         verbose=False,
         grid=True,
@@ -476,7 +478,7 @@ def structure_function_ansatz_violin(
         if verbose:
             print('    index=%d' % index)
 
-        color = 'C%d' % ind
+        c = 'C%d' % ind if color is None else color
 
         # plot a quick KDE of the logarithmic derivative at a reference scale
         samp = logarithmic_derivative_ansatz(
@@ -504,7 +506,11 @@ def structure_function_ansatz_violin(
 
         x *= 0.25/np.max(x)
 
-        ax.fill_betweenx(y, index-x, index+x, color=color, hatch=hatch, alpha=alpha, label='$p=%d$'%index)
+        if fill:
+            ax.fill_betweenx(y, index-x, index+x, color=c, hatch=hatch, alpha=alpha, label='$p=%d$'%index)
+        else:
+            ax.plot(index-x, y, color=c, alpha=alpha, label='$p=%d$'%index)
+            ax.plot(index+x, y, color=c, alpha=alpha)
 
         ymin = min(np.min(y), ymin)
         ymax = max(np.max(y), ymax)

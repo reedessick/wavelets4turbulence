@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+
+"""a simple script to plot the fits for the structure function ansatz
+"""
+__author__ = "Reed Essick (reed.essick@gmail.com)"
+
+#-------------------------------------------------
+
+import os
+
+from argparse import ArgumentParser
+
+### non-standard libararies
+from w4t.utils import io
+from w4t.plot import moments as plt
+
+#-------------------------------------------------
+
+parser = ArgumentParser()
+
+parser.add_argument('samples', type=str, nargs='+')
+
+parser.add_argument('--ref-scale', type=float, nargs='+',
+    help='the reference scale at which the logarithmic derivative will be evaluated for violin plot')
+
+parser.add_argument('--title', default=None, type=str)
+
+parser.add_argument('--max-num-samples', default=None, type=int)
+
+parser.add_argument('--alpha', default=0.75, type=float)
+parser.add_argument('--fill', default=False, action='store_true')
+
+parser.add_argument('-v', '--verbose', default=False, action='store_true')
+parser.add_argument('-V', '--Verbose', default=False, action='store_true')
+
+parser.add_argument('-o', '--output-dir', default='.', type=str)
+parser.add_argument('-t', '--tag', default='', type=str)
+parser.add_argument('--figtype', default=[], type=str, action='append')
+parser.add_argument('--dpi', default=None, type=float)
+
+args = parser.parse_args()
+
+os.makedirs(args.output_dir, exist_ok=True)
+
+if args.tag:
+    args.tag = "_"+args.tag
+
+if not args.figtype:
+    args.figtype.append('png')
+
+args.verbose |= args.Verbose
+
+#-------------------------------------------------
+
+# load data
+
+data = dict()
+
+for path in args.samples:
+    posterior, _, _, _ = io.load_structure_function_ansatz_samples(path, verbose=args.verbose)
+
+    if args.max_num_samples is not None:
+        for ind in posterior.keys():
+            for key, val in posterior[ind].items():
+                posterior[ind][key] = val[-args.max_num_samples:]
+
+    data[path] = posterior
+
+#------------------------
+
+# plot violins
+
+for ref_scale in args.ref_scale:
+
+    fig = None
+
+    for ind, path in enumerate(args.samples):
+        color = 'C%d' % ind
+
+        fig = plt.structure_function_ansatz_violin(
+            data[path],
+            ref_scale,
+            color=color,
+            title=args.title,
+            legend=False,
+            alpha=args.alpha,
+            fill=args.fill,
+            verbose=args.Verbose,
+            fig=fig,
+        )
+
+        # FIXME? improve logic for labeling?
+        fig.text(0.15, 0.90-0.05*ind, os.path.basename(path), ha='left', va='top', color=color)
+
+    figtmp = os.path.join(
+        args.output_dir,
+        os.path.basename(__file__)+'-%03d%s.%s' % (ref_scale, args.tag, '%s'),
+    )
+    plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
+    plt.close(fig)

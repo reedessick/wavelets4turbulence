@@ -460,8 +460,13 @@ def structure_function_ansatz_violin(
     """
     if fig is None:
         fig = plt.figure()
+        ax = fig.gca()
+        ymin = +np.inf
+        ymax = -np.inf
 
-    ax = fig.gca()
+    else:
+        ax = fig.gca()
+        ymin, ymax = ax.get_ylim()
 
     #-------
 
@@ -470,9 +475,6 @@ def structure_function_ansatz_violin(
 
     xmin = +np.inf
     xmax = -np.inf
-
-    ymin = +np.inf
-    ymax = -np.inf
 
     for ind, index in enumerate(sorted(posterior.keys())):
         if verbose:

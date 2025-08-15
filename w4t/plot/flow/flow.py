@@ -70,6 +70,12 @@ def hist(
     if num_samples:
         xmin, xmax = ax.get_xlim()
         ymin, ymax = ax.get_ylim()
-        ax.text(xmax - 0.01*(xmax-xmin), ymax / (ymax/ymin)**0.01, '%d samples' % num, ha='right', va='top')
+        ax.text(
+            xmax - 0.01*(xmax-xmin),
+            ymax / (ymax/ymin)**0.01,
+            '%d samples\n$\mu = %s$\n$\sigma = %s$' % (num, np.mean(data), np.std(data)),
+            ha='right',
+            va='top',
+        )
 
     return ax

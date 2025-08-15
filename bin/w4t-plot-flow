@@ -55,6 +55,15 @@ parser.add_argument('--map2scalar', default=None, type=str,
 
 #---
 
+parser.add_argument('--threshold', default=None, type=float,
+    help='if supplied, denoise using this threshold before computing structure function')
+parser.add_argument('-q', '--quantile', default=None, type=float,
+    help='denoise using this quantile rather than the standard deviation')
+parser.add_argument('-m', '--max-scale', default=None, type=float)
+parser.add_argument('-s', '--smooth', default=False, action='store_true')
+
+#---
+
 parser.add_argument('--slice', nargs=2, type=int, default=[], action='append',
     help='take a slice of the data. Can be repeated. eg, --slice dim ind')
 
@@ -123,6 +132,20 @@ data, field = io.simplify(
     max_edgelength=args.max_edgelength,
     verbose=args.verbose,
 )
+
+#------------------------
+
+# denoise the data
+
+if args.threshold is not None: # denoise before computing structure function
+    if args.verbose:
+        print('denoising with\n    wavelet=%s\n    threshold=%.6f\n    max_scale=%s\n    smooth=%s\n    quantile=%s' % \
+            (args.wavelet, args.threshold, args.max_scale, args.smooth, args.quantile))
+
+    wa = pywt.PyWaveletArray(data, args.wavelet)
+    wa.denoise(args.threshold, map2scalar=map2scalar, max_scale=args.max_scale, smooth=args.smooth, quantile=args.quantile)
+    wa.idecompose() # make sure we're at full resolution before we save
+    data = wa.array
 
 #------------------------
 

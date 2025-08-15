@@ -122,7 +122,9 @@ def moments(
     ax.set_xticks(scales)
     ax.set_xticklabels(['%d'%_ for _ in ax.get_xticks()])
 
-    ax.set_yscale('log')
+    if np.any(mom > 0): # only plot log-scale if there are non-zero values
+        ax.set_yscale('log')
+
     if rescale:
         ax.set_ylabel('$\left<\left|d_{x,s}\\right|^p\\right>^{1/p}_x$')
     else:
@@ -215,7 +217,9 @@ def scaled_moments(
     ax.set_xticks(scales)
     ax.set_xticklabels(['%d'%_ for _ in ax.get_xticks()])
 
-    ax.set_yscale('log')
+    if np.any(mom > 0):
+        ax.set_yscale('log')
+
     if rescale:
         ax.set_ylabel('$\left<\left|d_{x,s}\\right|^p\\right>^{1/p}_x \left/ \left<d_{x,s}^2\\right>_x^{1/2} \\right.$')
     else:
@@ -310,8 +314,9 @@ def extended_intermittency(
 
     #---
 
-    ax.set_xscale('log')
-    ax.set_yscale('log')
+    if np.any(mom > 0):
+        ax.set_xscale('log')
+        ax.set_yscale('log')
 
     if rescale:
         ax.set_xlabel('$\left<d_{x,s}^2\\right>^{1/2}_x$')
@@ -382,7 +387,9 @@ def structure_function_ansatz_samples(
         for snd, scale in enumerate(scales):
             ax.plot([scale]*2, mom[snd,ind]+std[snd]*np.array([+1,-1]), color=color, alpha=alpha)
 
-    ax.set_yscale('log')
+    if np.any(mom > 0):
+        ax.set_yscale('log')
+
     ylim = ax.get_ylim()
 
     #---

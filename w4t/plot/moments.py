@@ -131,7 +131,7 @@ def moments(
     #---
 
     if legend:
-        ax.legend(loc='best', ncols=ncols)
+        ax.legend(loc='best', ncol=ncols)
 
     if grid:
         ax.grid(True, which='both')
@@ -224,7 +224,7 @@ def scaled_moments(
     #---
 
     if legend:
-        ax.legend(loc='best', ncols=ncols)
+        ax.legend(loc='best', ncol=ncols)
 
     if grid:
         ax.grid(True, which='both')
@@ -323,7 +323,7 @@ def extended_intermittency(
     #---
 
     if legend:
-        ax.legend(loc='best', ncols=ncols)
+        ax.legend(loc='best', ncol=ncols)
 
     if grid:
         ax.grid(True, which='both')

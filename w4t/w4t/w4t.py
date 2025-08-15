@@ -340,12 +340,12 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
         WARNING: this function modifies data in-place. Data will be lost for the coefficients that are set to zero.
         """
-        if max_scale is None:
-            max_scale = self.shape[0] # continue to denoise over all scales
-
         levels = copy.copy(self.levels) # make a copy so we can remember the level of decomposition
 
         self.idecompose() # start from the top
+
+        if max_scale is None:
+            max_scale = min(*self.shape[1:]) # continue to denoise over all scales
         max_scale = min(max_scale, min(*self.active)) # limit this to the size of the array
 
         ones = np.ones(self.nvec, dtype=bool)
@@ -363,7 +363,7 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
                 if quantile is not None:
                     stdv = np.percentile(np.abs(scalar), quantile*100) # convert from quantile to percentile
                 else:
-                    stdv = np.std(scalar)
+                    stdv = np.mean(scalar**2)**0.5 # do this because we expect the mean of the detail coeffs to always be zero
 
                 sel = np.abs(scalar) <= stdv * num_std # the small-amplitude detail coeffs
                 if smooth: # zero the high-amplitude detail coefficients
@@ -371,6 +371,7 @@ with absolute values less than a threshold. This threshold is taken as num_std*s
 
                 sel = np.outer(ones, sel).reshape((self.nvec,)+sel.shape)
                 self.array[s] *= np.where(sel, 0.0, 1.0)
+
 
         # zero the remaining approx coeffs
         if not smooth:

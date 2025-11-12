@@ -19,4 +19,4 @@ popd
 #------------------------
 
 # install this module
-pip install . --prefix $OPTDIR
+pip3 install . --prefix $OPTDIR

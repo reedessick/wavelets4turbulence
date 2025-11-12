@@ -9,10 +9,13 @@ import numpy as np
 
 ### non-standard libraries
 try:
-    from PLASMAtools.read_funcs.read import Fields
-    from PLASMAtools.funcs import derived_var_funcs as dv
+    from PLASMAtools.io.read import Fields
 except ImportError:
     Fields = None
+
+try:
+    from PLASMAtools.funcs import derived_vars as dv
+except ImportError:
     dv = None
 
 from w4t.w4t.w4t import Structure
@@ -64,7 +67,7 @@ def load(
 
         if flash_format:
             if Fields is None:
-                raise ImportError('could not import PLASMAtools.read_funcs.read.Fields')
+                raise ImportError('could not import PLASMAtools.io.read.Fields')
 
             parser = Fields(path, reformat=True)
 
@@ -100,7 +103,7 @@ def load(
 
         if compute_vort or compute_curr:
             if dv is None:
-                raise ImportError('could not import PLASMAtools.funcs.derived_var_funcs')
+                raise ImportError('could not import PLASMAtools.funcs.derived_vars')
 
             dvf = dv.DerivedVars()
 

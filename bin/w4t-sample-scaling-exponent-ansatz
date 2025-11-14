@@ -69,8 +69,8 @@ if args.verbose:
 
 posterior, prior = infer.sample_scaling_exponent_ansatz(
     scales[sel],
-    mom[sel], # (num_scales, num_ind)
-    cov[sel], # (num_scales, num_ind, num_ind)
+    jnp.array(mom[sel]), # (num_scales, num_ind)
+    jnp.array(cov[sel]), # (num_scales, num_ind, num_ind)
     indexes,
     args.ref_scale,
     mean_logamp=logamp,

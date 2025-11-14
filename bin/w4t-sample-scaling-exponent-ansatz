@@ -7,6 +7,7 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 #-------------------------------------------------
 
 import numpy as np
+from jax import numpy as jnp
 
 from argparse import ArgumentParser
 
@@ -61,13 +62,18 @@ if args.verbose:
 
 sel = (min_scale <= scales) * (scales <= max_scale)
 
+logamp = jnp.log(mom[sel,:])[np.argmin(scales[sel])]
+
+if args.verbose:
+    print('sampling She-Leveque parametrization for scaling exponents with indexes: %s' % indexes)
+
 posterior, prior = infer.sample_scaling_exponent_ansatz(
     scales[sel],
     mom[sel], # (num_scales, num_ind)
     cov[sel], # (num_scales, num_ind, num_ind)
     indexes,
     args.ref_scale,
-    mean_logamp=np.log(mom[sel]), # center this on the observed values
+    mean_logamp=logamp,
     stdv_logamp=1.0,
     num_warmup=args.num_warmup,
     num_samples=args.num_samples,

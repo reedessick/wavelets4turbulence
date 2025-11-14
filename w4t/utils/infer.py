@@ -290,7 +290,7 @@ def _sample_sfa_sbn_prior(
     s = numpyro.sample("s"+suffix, dist.LogNormal(mean_logs, stdv_logs))
     b = numpyro.sample("b"+suffix, dist.Normal(mean_b, stdv_b))
     n = numpyro.sample("n"+suffix, dist.Normal(mean_n, stdv_n))
-   return s, b, n
+    return s, b, n
 
 #---
 

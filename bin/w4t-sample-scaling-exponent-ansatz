@@ -68,7 +68,7 @@ if args.verbose:
     print('sampling She-Leveque parametrization for scaling exponents with indexes: %s' % indexes)
 
 posterior, prior = infer.sample_scaling_exponent_ansatz(
-    scales[sel],
+    jnp.array(scales[sel]),
     jnp.array(mom[sel]), # (num_scales, num_ind)
     jnp.array(cov[sel]), # (num_scales, num_ind, num_ind)
     indexes,

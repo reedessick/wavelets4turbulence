@@ -356,7 +356,7 @@ def write_scaling_exponent_ansatz_samples(posterior, prior, scales, index, ref_s
 
         for label, data in [('posterior', posterior), ('prior', prior)]:
             grp = obj.create_group(label)
-            for key, val in val.items():
+            for key, val in data.items():
                 grp.create_dataset(key, data=val)
 
 #------------------------

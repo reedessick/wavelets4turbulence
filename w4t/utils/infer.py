@@ -151,31 +151,30 @@ def sample_scaling_exponent_ansatz(
     if verbose:
         print('defining model')
 
+    num_scales = len(scales)
     num_indexes = len(indexes)
 
     def sample_posterior(obs):
         # draw from prior
         x, C0, beta, dlSdls, amp, xi, sl, bl, nl, sh, bh, nh = _sample_sea_prior(indexes, ref_scale, **prior_kwargs)
 
-        with numpyro.plate('sfa_data', num_indexes) as ind:
-            # compute expected value
-            sf = structure_function_ansatz(
-                scales,
-                amp[ind],
-                xi[ind],
-                sl[ind],
-                bl[ind],
-                nl[ind],
-                sh[ind],
-                bh[ind],
-                nh[ind],
-            )
+        with numpyro.plate('sfa_data', num_scales) as snd:
+            # compute expected value of structure function at all indexes for this scale
+            sf = structure_function_ansatz(scales[snd], amp, xi, sl, bl, nl, sh, bh, nh)
 
-            raise NotImplementedError('missing a batch dimension for "mom"?')
+            # compare to observed data (all indexes at this scale)
 
-            # compare to observed data
-            # FIXME? consider fitting a multivariate normal to include covariances between indexes?
-            numpyro.sample('mom', dist.Normal(sf, cov[:,ind,ind]**0.5), obs=obs[:,ind])
+            # FIXME?
+            # there are extremely strong correlations between mom at the same scale with different indexes
+            # this makes it difficult to sample from the joint MultivariateNormal distribution
+            # therefore, we fudge this and instead sample from the marginals as if they were independent
+
+#            ### assume correlated uncertainties
+#            numpyro.sample('mom', dist.MultivariateNormal(sf, cov[snd]), obs=obs[snd])
+
+            ### assume independent uncertainties for each index
+            with numpyro.plate('sfa_scale_index', num_indexes) as ind:
+                numpyro.sample('mom', dist.Normal(sf[ind], cov[snd,ind,ind]**0.5), obs=obs[snd,ind])
 
     #---
 

@@ -171,6 +171,8 @@ def sample_scaling_exponent_ansatz(
                 nh[ind],
             )
 
+            raise NotImplementedError('missing a batch dimension for "mom"?')
+
             # compare to observed data
             # FIXME? consider fitting a multivariate normal to include covariances between indexes?
             numpyro.sample('mom', dist.Normal(sf, cov[:,ind,ind]**0.5), obs=obs[:,ind])

@@ -355,10 +355,9 @@ def write_scaling_exponent_ansatz_samples(posterior, prior, scales, index, ref_s
         obj.create_dataset('scales', data=scales)
 
         for label, data in [('posterior', posterior), ('prior', prior)]:
-            for ind, val in data.items():
-                grp = obj.create_group('%s_%d' % (label, ind))
-                for key, val in val.items():
-                    grp.create_dataset(key, data=val)
+            grp = obj.create_group(label)
+            for key, val in val.items():
+                grp.create_dataset(key, data=val)
 
 #------------------------
 
@@ -371,13 +370,9 @@ def load_scaling_exponent_ansatz_samples(path, verbose=False):
         index = obj['index'][:]
         scales = obj['scales'][:]
 
-        posterior = dict()
-        prior = dict()
-        for ind in index:
-            for label, data in [('posterior', posterior), ('prior', prior)]:
-                key = '%s_%d' % (label, ind)
-                if key in obj.keys():
-                    data[ind] = dict((k, obj[key][k][:]) for k in obj[key].keys())
+        posterior = dict((key, obj['posterior'][key][:]) for key in obj['posterior'].keys())
+        prior = dict((key, obj['prior'][key][:]) for key in obj['prior'].keys())
 
     ref_scale = kwargs.pop('ref_scale')
+
     return posterior, prior, scales, index, ref_scale, kwargs

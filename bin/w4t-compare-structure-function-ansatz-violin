@@ -57,7 +57,7 @@ args.verbose |= args.Verbose
 data = dict()
 
 for path in args.samples:
-    posterior, _, _, _ = io.load_structure_function_ansatz_samples(path, verbose=args.verbose)
+    posterior, _, _, _, _ = io.load_structure_function_ansatz_samples(path, verbose=args.verbose)
 
     if args.max_num_samples is not None:
         for ind in posterior.keys():

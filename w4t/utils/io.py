@@ -270,7 +270,7 @@ def write_structure_function_ansatz_samples(posterior, prior, scales, index, pat
     """write posterior samples for structure function ansatz to disk
     """
     if verbose:
-        print('writing scaling exponent samples: '+path)
+        print('writing structure function ansatz samples: '+path)
 
     with h5py.File(path, 'w') as obj:
         for key, val in kwargs.items():
@@ -291,9 +291,10 @@ def load_structure_function_ansatz_samples(path, verbose=False):
     """load posterior samples for structure function ansatz from disk
     """
     if verbose:
-        print('loading scaling exponent samples: '+path)
+        print('loading structure function ansatz samples: '+path)
 
     with h5py.File(path, 'r') as obj:
+        kwargs = dict(obj.attrs.items())
         index = obj['index'][:]
         scales = obj['scales'][:]
 
@@ -305,7 +306,7 @@ def load_structure_function_ansatz_samples(path, verbose=False):
                 if key in obj.keys():
                     data[ind] = dict((k, obj[key][k][:]) for k in obj[key].keys())
 
-    return posterior, prior, scales, index
+    return posterior, prior, scales, index, kwargs
 
 #-------------------------------------------------
         
@@ -342,9 +343,41 @@ def load_scaling_exponent(path, verbose=False):
 #-------------------------------------------------
 
 def write_scaling_exponent_ansatz_samples(posterior, prior, scales, index, ref_scale, path, verbose=False, **kwargs):
-    raise NotImplementedError
+    if verbose:
+        print('writing scaling exponent ansatz samples: '+path)
+    
+    with h5py.File(path, 'w') as obj:
+        for key, val in kwargs.items():
+            obj.attrs.create(key, data=val)
+
+        obj.attrs.create('ref_scale', ref_scale)
+        obj.create_dataset('index', data=index)
+        obj.create_dataset('scales', data=scales)
+
+        for label, data in [('posterior', posterior), ('prior', prior)]:
+            for ind, val in data.items():
+                grp = obj.create_group('%s_%d' % (label, ind))
+                for key, val in val.items():
+                    grp.create_dataset(key, data=val)
 
 #------------------------
 
 def load_scaling_exponent_ansatz_samples(path, verbose=False):
-    raise NotImplementedError
+    if verbose:     
+        print('loading scaling exponent ansatz samples: '+path)
+
+    with h5py.File(path, 'r') as obj:
+        kwargs = dict(obj.attrs.items())
+        index = obj['index'][:]
+        scales = obj['scales'][:]
+
+        posterior = dict()
+        prior = dict()
+        for ind in index:
+            for label, data in [('posterior', posterior), ('prior', prior)]:
+                key = '%s_%d' % (label, ind)
+                if key in obj.keys():
+                    data[ind] = dict((k, obj[key][k][:]) for k in obj[key].keys())
+
+    ref_scale = kwargs.pop('ref_scale')
+    return posterior, prior, scales, index, ref_scale, kwargs

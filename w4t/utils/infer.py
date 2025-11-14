@@ -51,13 +51,15 @@ def _sample_sea_prior(
         max_C0=3,
         min_beta=0,
         max_beta=1,
-        mean_logsl=np.log(10),
+        mean_logamp=-10.0,
+        stdv_logamp=10.0,
+        mean_logsl=np.log(10), # FIXME should be an array of the same length as indexes
         stdv_logsl=1.0,
         mean_bl=0.0,
         stdv_bl=3.0,
-        mean_nl=0.0, ### FIXME may want to force this to be a roll-off --> nl, bl > 0 ?
+        mean_nl=0.0,
         stdv_nl=3.0,
-        mean_logsh=np.log(128),
+        mean_logsh=np.log(128), # FIXME should be an array of the same length as indexes
         stdv_logsh=1.0,
         mean_bh=0.0,
         stdv_bh=3.0,
@@ -82,7 +84,7 @@ def _sample_sea_prior(
     # set up a plate for all indexes
     with numpyro.plate('sfa', len(indexes)) as ind:
         # sample for all but 1 of the parameters of the structure function ansatz
-        amp = _sample_sfa_amp_prior(mean_logamp=mean_logamp, stdv_logamp=stdv_logamp)
+        amp = _sample_sfa_amp_prior(mean_logamp=mean_logamp[ind], stdv_logamp=stdv_logamp)
 
         sl, bl, nl = _sample_sfa_sbn_prior(
             mean_logs=mean_logsl,
@@ -131,7 +133,7 @@ def _sample_sea_xcb_prior(
 def sample_scaling_exponent_ansatz(
         scales,
         mom,
-        std,
+        cov,
         indexes,
         ref_scale,
         num_warmup=DEFAULT_NUM_WARMUP,
@@ -149,18 +151,29 @@ def sample_scaling_exponent_ansatz(
     if verbose:
         print('defining model')
 
+    num_indexes = len(indexes)
+
     def sample_posterior(obs):
         # draw from prior
         x, C0, beta, dlSdls, amp, xi, sl, bl, nl, sh, bh, nh = _sample_sea_prior(indexes, ref_scale, **prior_kwargs)
 
-        with numpyro.plate('sfa_data', num_indexes):
-            raise NotImplementedError('''
+        with numpyro.plate('sfa_data', num_indexes) as ind:
             # compute expected value
-            sf = structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh)
+            sf = structure_function_ansatz(
+                scales,
+                amp[ind],
+                xi[ind],
+                sl[ind],
+                bl[ind],
+                nl[ind],
+                sh[ind],
+                bh[ind],
+                nh[ind],
+            )
 
             # compare to observed data
-            numpyro.sample('mom', dist.Normal(sf, std), obs=obs)
-            ''')
+            # FIXME? consider fitting a multivariate normal to include covariances between indexes?
+            numpyro.sample('mom', dist.Normal(sf, cov[:,ind,ind]**0.5), obs=obs[:,ind])
 
     #---
 

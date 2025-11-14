@@ -54,7 +54,7 @@ args.verbose |= args.Verbose
 scales, index, mom, cov = io.load_structure_function(args.structure_function, verbose=args.verbose)
 
 # load samples
-posterior, prior, _, _ = io.load_structure_function_ansatz_samples(args.samples, verbose=args.verbose)
+posterior, prior, _, _, _ = io.load_structure_function_ansatz_samples(args.samples, verbose=args.verbose)
 
 if args.max_num_samples is not None:
     for data in [posterior, prior]:

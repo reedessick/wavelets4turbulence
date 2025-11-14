@@ -63,11 +63,11 @@ sel = (min_scale <= scales) * (scales <= max_scale)
 
 posterior, prior = infer.sample_scaling_exponent_ansatz(
     scales[sel],
-    mom[sel], # shape: (num_scales, num_indexes)
-    cov[sel,ind,ind]**0.5, ### FIXME
+    mom[sel], # (num_scales, num_ind)
+    cov[sel], # (num_scales, num_ind, num_ind)
     indexes,
     args.ref_scale,
-    mean_logamp=np.log(mom[sel,ind][0]), # FIXME
+    mean_logamp=np.log(mom[sel]), # center this on the observed values
     stdv_logamp=1.0,
     num_warmup=args.num_warmup,
     num_samples=args.num_samples,

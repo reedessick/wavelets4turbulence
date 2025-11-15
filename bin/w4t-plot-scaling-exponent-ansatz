@@ -95,6 +95,7 @@ plt.close(fig)
 # plot dlogSdlogs vs. p with violins and inferred She-Leveque curves
 
 fig = plt.scaling_exponent_ansatz_violin(
+    index,
     posterior,
     ref_scale,
     sfa_posterior=sfa_post,

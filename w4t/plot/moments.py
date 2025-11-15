@@ -6,7 +6,7 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 from .plot import *
 
-from w4t.utils.infer import (structure_function_ansatz, logarithmic_derivative_ansatz)
+from w4t.utils.infer import (scaling_exponent_ansatz, structure_function_ansatz, logarithmic_derivative_ansatz)
 
 #-------------------------------------------------
 
@@ -457,10 +457,12 @@ def structure_function_ansatz_violin(
         hatch=None,
         alpha=0.5,
         fill=True,
+        which='both', # either 'left', 'right', or 'both'
         num_grid=101,
         verbose=False,
         grid=True,
         legend=True,
+        label=True,
         fig=None,
     ):
     """violin plots of ansatz parameters as a function of structure function order
@@ -515,11 +517,25 @@ def structure_function_ansatz_violin(
 
         x *= 0.25/np.max(x)
 
-        if fill:
-            ax.fill_betweenx(y, index-x, index+x, color=c, hatch=hatch, alpha=alpha, label='$p=%d$'%index)
+        if which == 'left':
+            xlow = index-x
+            xhgh = index*np.ones_like(x, dtype=float)
+        elif which == 'right':
+            xlow = index*np.ones_like(x, dtype=float)
+            xhgh = index+x
+        elif which == 'both':
+            xlow = index-x
+            xhgh = index+x
         else:
-            ax.plot(index-x, y, color=c, alpha=alpha, label='$p=%d$'%index)
-            ax.plot(index+x, y, color=c, alpha=alpha)
+            raise ValueError('which=%s not understood' % which)
+
+        lab = '$p=%d$'%index if label else None
+
+        if fill:
+            ax.fill_betweenx(y, xlow, xhgh, color=c, hatch=hatch, alpha=alpha, label=lab)
+        else:
+            ax.plot(xlow, y, color=c, alpha=alpha, label=lab)
+            ax.plot(xhgh, y, color=c, alpha=alpha)
 
         ymin = min(np.min(y), ymin)
         ymax = max(np.max(y), ymax)
@@ -537,8 +553,8 @@ def structure_function_ansatz_violin(
     # add reference lines
 
     x = np.linspace(xmin, xmax, 11)
-    ax.plot(x, x/3, color='k', linestyle='dashed', label='$p/3$')
-    ax.plot(x, x/4, color='k', linestyle='dotted', label='$p/4$')
+    ax.plot(x, x/3, color='k', linestyle='dashed', label='$p/3$' if label else None)
+    ax.plot(x, x/4, color='k', linestyle='dotted', label='$p/4$' if label else None)
 
     #---
 
@@ -567,6 +583,12 @@ def structure_function_ansatz_violin(
 
 #-------------------------------------------------
 
+def _sea_post_2_sfa_post(index, samples):
+    posterior = dict()
+    for ind, _index in enumerate(index):
+        posterior[_index] = dict((key, samples[key][:,ind]) for key in ['amp', 'xi', 'sl', 'bl', 'nl', 'sh', 'bh', 'nh'])
+    return posterior
+
 def scaling_exponent_ansatz_samples(
         scales,
         index,
@@ -578,17 +600,63 @@ def scaling_exponent_ansatz_samples(
     """make a plot of structure functions vs. scale similar to structure_function_ansatz_samples but with a \
 different format for posterior
     """
-    posterior = dict()
-    for ind, _index in enumerate(index):
-        posterior[_index] = dict((key, samples[key][:,ind]) for key in ['amp', 'xi', 'sl', 'bl', 'nl', 'sh', 'bh', 'nh'])
-
-    return structure_function_ansatz_samples(scales, index, mom, cov, posterior, **kwargs)
+    return structure_function_ansatz_samples(scales, index, mom, cov, _sea_post_2_sfa_post(index, samples), **kwargs)
 
 #---
 
-def scaling_exponent_ansatz_violin(sea_posterior, ref_scale, sfa_posterior=None, verbose=False):
+def scaling_exponent_ansatz_violin(
+        index,
+        sea_posterior,
+        ref_scale,
+        sfa_posterior=None,
+        title=None,
+        num_grid=101,
+        verbose=False,
+    ):
     """make violins of scaling exponents at ref_scale
     sea_posterior <-- posterior from sample_scaling_exponent_ansatz
     sfa_posterior <-- posterior from sample_structure_function_ansatz 
     """
-    raise NotImplementedError
+
+    # plot violins
+    fig = structure_function_ansatz_violin(
+        _sea_post_2_sfa_post(index, sea_posterior),
+        ref_scale,
+        which='right',
+        fill=True,
+        verbose=verbose,
+    )
+
+    if sfa_posterior is not None:
+        fig = structure_function_ansatz_violin(
+            sfa_posterior,
+            ref_scale,
+            which='left',
+            fill=False,
+            label=False,
+            verbose=verbose,
+            fig=fig,
+        )
+
+    # plot She-Leveque curves
+    ax = fig.gca()
+
+    index_grid = np.linspace(*ax.get_xlim(), num_grid)
+    _alpha = max(0.01, 1./len(sea_posterior['x']))
+    for x, C0, beta in zip(sea_posterior['x'], sea_posterior['C0'], sea_posterior['beta']):
+        ax.plot(
+            index_grid,
+            scaling_exponent_ansatz(index_grid, x, C0, beta),
+            alpha=_alpha,
+            color='k',
+            zorder=-1,
+        )
+
+    ax.set_xlim(xmin=index_grid[0], xmax=index_grid[-1])
+
+    # decorate
+    if title is not None:
+        fig.suptitle(title)
+
+    # return
+    return fig

@@ -61,12 +61,12 @@ def scaling_exponent_ansatz(index, x, C0, beta):
 def _sample_sea_prior(
         indexes,
         ref_scale,
-        min_x=0,
-        max_x=1,
-        min_C0=0,
-        max_C0=3,
-        min_beta=0,
-        max_beta=1,
+        mean_logx=0.0,
+        stdv_logx=1.0,
+        mean_logC0=np.log(1.0),
+        stdv_logC0=1.0,
+        mean_logbeta=0.0,
+        stdv_logbeta=1.0,
         mean_logamp=-10.0,
         stdv_logamp=10.0,
         mean_logsl=np.log(10), # FIXME should be an array of the same length as indexes
@@ -86,12 +86,12 @@ def _sample_sea_prior(
 
     # sample the She-Leveque parametrization
     x, C0, beta = _sample_sea_xcb_prior(
-        min_x=min_x,
-        max_x=max_x,
-        min_C0=min_C0,
-        max_C0=max_C0,
-        min_beta=min_beta,
-        max_beta=max_beta,
+        mean_logx=mean_logx,
+        stdv_logx=stdv_logx,
+        mean_logC0=mean_logC0,
+        stdv_logC0=stdv_logC0,
+        mean_logbeta=mean_logbeta,
+        stdv_logbeta=stdv_logbeta,
     )
 
     # compute the predicted logarithmic derivative
@@ -132,16 +132,16 @@ def _sample_sea_prior(
     return x, C0, beta, dlSdls, amp, xi, sl, bl, nl, sh, bh, nh
 
 def _sample_sea_xcb_prior(
-        min_x=0,
-        max_x=1,
-        min_C0=0,
-        max_C0=3,
-        min_beta=0,
-        max_beta=1,
+        mean_logx=0.0,
+        stdv_logx=1.0,
+        mean_logC0=0.0,
+        stdv_logC0=1.0,
+        mean_logbeta=0.0,
+        stdv_logbeta=1.0,
     ):
-    x = numpyro.sample("x", dist.Uniform(min_x, max_x))
-    C0 = numpyro.sample("C0", dist.Uniform(min_C0, max_C0))
-    beta = numpyro.sample("beta", dist.Uniform(min_beta, max_beta))
+    x = numpyro.sample("x", dist.LogNormal(mean_logx, stdv_logx))
+    C0 = numpyro.sample("C0", dist.LogNormal(mean_logx, stdv_logx))
+    beta = numpyro.sample("beta", dist.LogNormal(mean_logbeta, stdv_logbeta))
     return x, C0, beta
 
 #-----------

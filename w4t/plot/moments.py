@@ -564,3 +564,31 @@ def structure_function_ansatz_violin(
     #-------
 
     return fig
+
+#-------------------------------------------------
+
+def scaling_exponent_ansatz_samples(
+        scales,
+        index,
+        mom,
+        cov,
+        samples,
+        **kwargs
+    ):
+    """make a plot of structure functions vs. scale similar to structure_function_ansatz_samples but with a \
+different format for posterior
+    """
+    posterior = dict()
+    for ind, _index in enumerate(index):
+        posterior[_index] = dict((key, samples[key][:,ind]) for key in ['amp', 'xi', 'sl', 'bl', 'nl', 'sh', 'bh', 'nh'])
+
+    return structure_function_ansatz_samples(scales, index, mom, cov, posterior, **kwargs)
+
+#---
+
+def scaling_exponent_ansatz_violin(sea_posterior, ref_scale, sfa_posterior=None, verbose=False):
+    """make violins of scaling exponents at ref_scale
+    sea_posterior <-- posterior from sample_scaling_exponent_ansatz
+    sfa_posterior <-- posterior from sample_structure_function_ansatz 
+    """
+    raise NotImplementedError

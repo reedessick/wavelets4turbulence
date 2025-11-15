@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""a simple script to plot the fits for the structure function ansatz
+"""a simple script to plot the fits for the scaling exponent ansatz
 """
 __author__ = "Reed Essick (reed.essick@gmail.com)"
 
@@ -21,8 +21,8 @@ parser = ArgumentParser()
 parser.add_argument('structure_function', type=str)
 parser.add_argument('samples', type=str)
 
-parser.add_argument('ref_scale', type=float, nargs='+',
-    help='the reference scale at which the logarithmic derivative will be evaluated for violin plot')
+parser.add_argument('--structure-function-samples', default=None, type=str,
+    help='if supplied, compare the posterios that include scaling exponent functional form to "independent" fits')
 
 parser.add_argument('--title', default=None, type=str)
 
@@ -54,20 +54,26 @@ args.verbose |= args.Verbose
 scales, index, mom, cov = io.load_structure_function(args.structure_function, verbose=args.verbose)
 
 # load samples
-posterior, prior, _, _, _ = io.load_structure_function_ansatz_samples(args.samples, verbose=args.verbose)
+posterior, prior, _, _, ref_scale, _ = io.load_scaling_exponent_ansatz_samples(args.samples, verbose=args.verbose)
 
 if args.max_num_samples is not None:
     if args.verbose:
         print('retaining only the last %d samples' % args.max_num_samples)
 
     for data in [posterior, prior]:
-        for ind in data.keys():
-            for key, val in data[ind].items():
-                data[ind][key] = val[-args.max_num_samples:]
+        for key, val in data.items():
+            data[key] = val[-args.max_num_samples:]
+
+# load structure function samples from "independent fit"
+if args.structure_function_samples:
+    sfa_post = io.load_structure_function_ansatz_samples(args.structure_function_samples, verbose=args.verbose)[0]
+else:
+    sfa_post = None
 
 #------------------------
 
-fig = plt.structure_function_ansatz_samples(
+# plot inferred structure functions against data 
+fig = plt.scaling_exponent_ansatz_samples(
     scales,
     index,
     mom,
@@ -86,18 +92,19 @@ plt.close(fig)
 
 #------------------------
 
-for ref_scale in args.ref_scale:
+# plot dlogSdlogs vs. p with violins and inferred She-Leveque curves
 
-    fig = plt.structure_function_ansatz_violin(
-        posterior,
-        ref_scale,
-        title=args.title,
-        verbose=args.Verbose,
-    )
+fig = plt.scaling_exponent_ansatz_violin(
+    posterior,
+    ref_scale,
+    sfa_posterior=sfa_post,
+    title=args.title,
+    verbose=args.Verbose,
+)
 
-    figtmp = os.path.join(
-        args.output_dir,
-        os.path.basename(__file__)+'-violin-%03d%s.%s' % (ref_scale, args.tag, '%s'),
-    )
-    plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
-    plt.close(fig)
+figtmp = os.path.join(
+    args.output_dir,
+    os.path.basename(__file__)+'-violin-%03d%s.%s' % (ref_scale, args.tag, '%s'),
+)
+plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
+plt.close(fig)

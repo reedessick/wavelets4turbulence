@@ -58,7 +58,9 @@ if args.verbose:
 
 sel = (min_scale <= scales) * (scales <= max_scale)
 
-logamp = np.log(mom[sel,:])[np.argmin(scales[sel])]
+# center this on the observed value at the smallest scale
+#logamp = np.log(mom[sel,:])[np.argmin(scales[sel])]
+logamp = np.log(mom)[0]
 
 posterior = dict()
 prior = dict()
@@ -75,7 +77,7 @@ for ind, index in enumerate(indexes):
         scales[sel],
         mom[sel,ind],
         cov[sel,ind,ind]**0.5,
-        mean_logamp=logamp[ind], # center this on the observed value at the smallest scale
+        mean_logamp=logamp[ind],
         stdv_logamp=1.0,
         num_warmup=args.num_warmup,
         num_samples=args.num_samples,

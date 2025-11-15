@@ -33,6 +33,22 @@ DEFAULT_NUM_RETAINED = np.inf
 
 #-------------------------------------------------
 
+def structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh):
+    """
+    SF(s, p) = <d_{x,s}^p>_x = amp * s**xi * (1 + (sl/s)**nl)**(bl/nl) * (1 + (s/sh)**nh)**(bh/nh)
+    """
+    return amp * scales**xi * (1 + (sl/scales)**nl)**(bl/nl) * (1 + (scales/sh)**nh)**(bh/nh)
+
+#---
+
+def logarithmic_derivative_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh):
+    """
+    logarithmic derivative of structure_function_ansatz with respect to scales
+    """
+    return xi - bl/(1 + (sl/scales)**-nl) + bh/(1 + (scales/sh)**-nh)
+
+#---
+
 def scaling_exponent_ansatz(index, x, C0, beta):
     """She-Leveque formula for the scaling exponents of structure function
     xi = (index/3)*(1-x) + C0*(1-beta**(index/3))
@@ -40,7 +56,7 @@ def scaling_exponent_ansatz(index, x, C0, beta):
     """
     return (index/3)*(1-x) + C0*(1-beta**(index/3))
 
-#------------------------
+#-------------------------------------------------
 
 def _sample_sea_prior(
         indexes,
@@ -130,6 +146,11 @@ def _sample_sea_xcb_prior(
 
 #-----------
 
+_vmap_structure_function_ansatz = jax.vmap(
+    structure_function_ansatz,
+    in_axes=[0]+[None]*8,
+)
+
 def sample_scaling_exponent_ansatz(
         scales,
         mom,
@@ -154,27 +175,26 @@ def sample_scaling_exponent_ansatz(
     num_scales = len(scales)
     num_indexes = len(indexes)
 
+    stdv = jnp.array([np.diag(cov[snd])**0.5 for snd in range(num_scales)], dtype=float)
+
     def sample_posterior(obs):
         # draw from prior
         x, C0, beta, dlSdls, amp, xi, sl, bl, nl, sh, bh, nh = _sample_sea_prior(indexes, ref_scale, **prior_kwargs)
 
-        with numpyro.plate('sfa_data', num_scales) as snd:
-            # compute expected value of structure function at all indexes for this scale
-            sf = structure_function_ansatz(scales[snd], amp, xi, sl, bl, nl, sh, bh, nh)
+        # compute expected value of structure function at all indexes for this scale
+        sf = _vmap_structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh)
 
-            # compare to observed data (all indexes at this scale)
+        # compare to observed data (all indexes at this scale)
+        ### assume independent uncertainties for each index
+        numpyro.sample('mom', dist.Normal(sf, stdv), obs=obs)
 
-            # FIXME?
-            # there are extremely strong correlations between mom at the same scale with different indexes
-            # this makes it difficult to sample from the joint MultivariateNormal distribution
-            # therefore, we fudge this and instead sample from the marginals as if they were independent
+        # FIXME?
+        # there are extremely strong correlations between mom at the same scale with different indexes
+        # this makes it difficult to sample from the joint MultivariateNormal distribution
+        # therefore, we fudge this and instead sample from the marginals as if they were independent
 
-#            ### assume correlated uncertainties
-#            numpyro.sample('mom', dist.MultivariateNormal(sf, cov[snd]), obs=obs[snd])
-
-            ### assume independent uncertainties for each index
-            with numpyro.plate('sfa_scale_index', num_indexes) as ind:
-                numpyro.sample('mom', dist.Normal(sf[ind], cov[snd,ind,ind]**0.5), obs=obs[snd,ind])
+#        ### assume correlated uncertainties
+#        numpyro.sample('mom', dist.MultivariateNormal(sf, cov[snd]), obs=obs[snd])
 
     #---
 
@@ -225,22 +245,6 @@ def sample_scaling_exponent_ansatz(
 
 #-------------------------------------------------
 
-def structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh):
-    """
-    SF(s, p) = <d_{x,s}^p>_x = amp * s**xi * (1 + (sl/s)**nl)**(bl/nl) * (1 + (s/sh)**nh)**(bh/nh)
-    """
-    return amp * scales**xi * (1 + (sl/scales)**nl)**(bl/nl) * (1 + (scales/sh)**nh)**(bh/nh)
-
-#---
-
-def logarithmic_derivative_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh):
-    """
-    logarithmic derivative of structure_function_ansatz with respect to scales
-    """
-    return xi - bl/(1 + (sl/scales)**-nl) + bh/(1 + (scales/sh)**-nh)
-
-#------------------------
-
 def _sample_sfa_prior(
         mean_logamp=-10.0,
         stdv_logamp=10.0,
@@ -250,7 +254,7 @@ def _sample_sfa_prior(
         stdv_logsl=1.0,
         mean_bl=0.0,
         stdv_bl=3.0,
-        mean_nl=0.0, ### FIXME may want to force this to be a roll-off --> nl, bl > 0 ?
+        mean_nl=0.0,
         stdv_nl=3.0,
         mean_logsh=np.log(128),
         stdv_logsh=1.0,

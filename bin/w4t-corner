@@ -35,6 +35,9 @@ parser.add_argument('--root', default=None, type=str,
 
 parser.add_argument('--title', default=None, type=str)
 
+parser.add_argument('--label', nargs=2, default=[], action='append', type=str,
+    help='change the field label in the plot to this. Can be repeated. eg: --label old new')
+
 parser.add_argument('-v', '--verbose', default=False, action='store_true')
 
 parser.add_argument('-o', '--output-dir', default='.', type=str)
@@ -51,6 +54,8 @@ if args.tag:
 
 if not args.figtype:
     args.figtype.append('png')
+
+labels = dict(args.label)
 
 #-------------------------------------------------
 
@@ -77,6 +82,8 @@ with h5py.File(args.samples, 'r') as obj:
                     samples['%s_%d'%(key, ind)] = val[:,ind]
             else:
                 raise RuntimeError('do not know how to parse dataset with shape=%s' % str(val.shape))
+        elif (key not in args.fields) and args.verbose:
+            print('    skipping key=%s' % key)
 
 #---
 
@@ -97,11 +104,11 @@ fields = list(samples.keys())
 #------------------------
 
 if args.verbose:
-    print('plotting corner\n    %s' % ('\n    '.join(fields)))
+    print('plotting corner\n    ' + '\n    '.join(['%s -> %s' % (_, labels.get(_, _)) for _ in fields]))
 
 fig = corner.corner(
     np.transpose([samples[key] for key in fields]),
-    labels=fields,
+    labels=[labels.get(field, field) for field in fields],
     show_titles=True,
 )
 

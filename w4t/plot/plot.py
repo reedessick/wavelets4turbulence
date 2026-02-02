@@ -7,12 +7,12 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 import numpy as np
 
 import matplotlib
-try:
-    matplotlib.use("TkAgg")
-    from matplotlib import pyplot as plt
-except:
-    matplotlib.use("Agg")
-    from matplotlib import pyplot as plt
+#try:
+#    matplotlib.use("TkAgg")
+#except:
+#    matplotlib.use("Agg")
+matplotlib.use("Agg")
+from matplotlib import pyplot as plt
 
 plt.rcParams['text.usetex'] = True
 

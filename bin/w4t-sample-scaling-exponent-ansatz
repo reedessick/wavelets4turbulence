@@ -49,6 +49,11 @@ args = parser.parse_args()
 # load structure functions
 scales, indexes, mom, cov = io.load_structure_function(args.source, verbose=args.verbose)
 
+if args.index is None:
+    args.index = indexes
+else:
+    raise NotImplementedError('need to figure out how to correctly downselect data to just use the requested indexes')
+
 #-----------
 
 # compute scaling exponents
@@ -65,13 +70,13 @@ sel = (min_scale <= scales) * (scales <= max_scale)
 logamp = jnp.log(mom[sel,:])[np.argmin(scales[sel])]
 
 if args.verbose:
-    print('sampling She-Leveque parametrization for scaling exponents with indexes: %s' % indexes)
+    print('sampling She-Leveque parametrization for scaling exponents with indexes: %s' % args.index)
 
 posterior, prior = infer.sample_scaling_exponent_ansatz(
     jnp.array(scales[sel]),
     jnp.array(mom[sel]), # (num_scales, num_ind)
     jnp.array(cov[sel]), # (num_scales, num_ind, num_ind)
-    indexes,
+    args.index,
     args.ref_scale,
     mean_logamp=logamp,
     stdv_logamp=1.0,
@@ -89,7 +94,7 @@ io.write_scaling_exponent_ansatz_samples(
     posterior,
     prior,
     scales,
-    indexes,
+    args.index,
     args.ref_scale,
     args.target,
     verbose=args.verbose,

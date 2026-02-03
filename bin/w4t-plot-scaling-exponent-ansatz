@@ -8,6 +8,8 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 import os
 
+import numpy as np
+
 from argparse import ArgumentParser
 
 ### non-standard libararies
@@ -54,7 +56,10 @@ args.verbose |= args.Verbose
 scales, index, mom, cov = io.load_structure_function(args.structure_function, verbose=args.verbose)
 
 # load samples
-posterior, prior, _, _, ref_scale, _ = io.load_scaling_exponent_ansatz_samples(args.samples, verbose=args.verbose)
+posterior, prior, _scales, _index, ref_scale, _ = io.load_scaling_exponent_ansatz_samples(
+    args.samples,
+    verbose=args.verbose,
+)
 
 if args.max_num_samples is not None:
     if args.verbose:
@@ -72,7 +77,25 @@ else:
 
 #------------------------
 
-# plot inferred structure functions against data 
+# plot inferred structure functions against data
+
+### downselect data as needed
+if not ((len(scales)==len(_scales)) and np.all(scales == _scales)):
+    keep = np.array([(scale in _scales) for scale in scales], dtype=bool)
+
+    scales = scales[keep]
+    mom = mom[keep]
+    cov = cov[keep]
+
+if not ((len(index)==len(_index)) and np.all(index == _index)):
+    keep = np.array([(ind in _index) for ind in index], dtype=bool)
+
+    index = index[keep]
+    mom = mom[:,keep]
+    cov = cov[:,keep,:][:,:,keep]
+
+#---
+
 fig = plt.scaling_exponent_ansatz_samples(
     scales,
     index,
@@ -95,7 +118,7 @@ plt.close(fig)
 # plot dlogSdlogs vs. p with violins and inferred She-Leveque curves
 
 fig = plt.scaling_exponent_ansatz_violin(
-    index,
+    _index,
     posterior,
     ref_scale,
     sfa_posterior=sfa_post,

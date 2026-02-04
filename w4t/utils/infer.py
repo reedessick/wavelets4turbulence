@@ -47,6 +47,12 @@ def logarithmic_derivative_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh):
     """
     return xi - bl/(1 + (sl/scales)**-nl) + bh/(1 + (scales/sh)**-nh)
 
+def averaged_logarithmic_derivative_ansatz(min_scale, max_scale, amp, xi, sl, bl, nl, sh, bh, nh):
+    """computes the average of the logarithmic derivative between min_scale, max_scale
+    """
+    raise NotImplementedError('code up the averaged difference in logS')
+#    return xi - 
+
 #---
 
 def scaling_exponent_ansatz(index, x, C0, beta):
@@ -123,10 +129,21 @@ def _sample_sea_prior(
         )
 
         # solve for the remaining parameter to match dlogSdlogs
-        xi = numpyro.deterministic(
-            'xi',
-            dlSdls - logarithmic_derivative_ansatz(ref_scale, amp, 0.0, sl, bl, nl, sh, bh, nh),
-        )
+
+        if isinstance(ref_scale, (int, float)): # a single reference scale
+            xi = numpyro.deterministic(
+                'xi',
+                dlSdls - logarithmic_derivative_ansatz(ref_scale, amp, 0.0, sl, bl, nl, sh, bh, nh),
+            )
+
+        elif len(ref_scale) == 2: # defines a range over which we average
+            xi = numpyro.deterministic(
+                'xi',
+                dlSdls - averaged_logarithmic_derivative_ansatz(*ref_scale, amp, 0.0, sl, bl, nl, sh, bh, nh),
+            )
+
+        else:
+            raise ValueError('ref_scale=%s not understood!' % ref_scale)
 
     # return
     return x, C0, beta, dlSdls, amp, xi, sl, bl, nl, sh, bh, nh

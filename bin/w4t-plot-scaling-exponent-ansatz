@@ -29,6 +29,7 @@ parser.add_argument('--structure-function-samples', default=None, type=str,
 parser.add_argument('--title', default=None, type=str)
 
 parser.add_argument('--max-num-samples', default=None, type=int)
+parser.add_argument('--dlogSdlogs-ylim', nargs=2, type=float, default=None)
 
 parser.add_argument('-v', '--verbose', default=False, action='store_true')
 parser.add_argument('-V', '--Verbose', default=False, action='store_true')
@@ -109,6 +110,26 @@ fig = plt.scaling_exponent_ansatz_samples(
 figtmp = os.path.join(
     args.output_dir,
     os.path.basename(__file__)+'%s.%s' % (args.tag, '%s'),
+)
+plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
+plt.close(fig)
+
+#-----------
+
+# plot inferred logarithmic derivative as a function of scale
+
+fig = plt.scaling_exponent_logarithmic_derivative_ansatz_samples(
+    scales,
+    index,
+    posterior,
+    title=args.title,
+    verbose=args.Verbose,
+    ylim=args.dlogSdlogs_ylim,
+)   
+    
+figtmp = os.path.join(
+    args.output_dir,
+    os.path.basename(__file__)+'-dlogSdlogs%s.%s' % (args.tag, '%s'),
 )
 plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
 plt.close(fig)

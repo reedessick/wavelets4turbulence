@@ -447,6 +447,78 @@ def structure_function_ansatz_samples(
 
     return fig
 
+def structure_function_logarithmic_derivative_ansatz_samples(
+        scales,
+        indexes,
+        samples, 
+        alpha=0.75,
+        legend=False,
+        grid=True,
+        title=None,
+        verbose=False,
+        ylim=None,
+    ):
+
+    fig = plt.figure()
+
+    ax = fig.gca()
+
+    #---
+
+    # plot the inferred ansatz
+
+    if verbose:
+        print('plotting inferred logarithmic derivative of ansatz')
+
+    dense_scales = np.logspace(np.log10(np.min(scales)), np.log10(np.max(scales)), 1001)
+
+    for ind, index in enumerate(indexes):
+        color = 'C%d' % ind
+
+        if index not in samples: # no fit for this index
+            if verbose:
+                print('    index=%d not in samples; skipping...' % index)
+            continue
+
+        elif verbose:
+            print('    index=%d' % index)
+
+        samp = samples[index]
+        _alpha = max(0.01, 1./len(samp['amp']))
+
+        for amp, xi, sl, bl, nl, sh, bh, nh in zip(*[samp[key] for key in ['amp', 'xi', 'sl', 'bl', 'nl', 'sh', 'bh', 'nh']]):
+            ax.plot(dense_scales, logarithmic_derivative_ansatz(dense_scales, amp, xi, sl, bl, nl, sh, bh, nh), color=color, alpha=_alpha)
+
+    #---
+
+    ax.set_xlabel('scale')
+    ax.set_xscale('log')
+    ax.set_xlim(xmin=scales[-1]*1.1, xmax=scales[0]/1.1)
+    ax.set_xticks([], minor=True)
+    ax.set_xticks(scales)
+    ax.set_xticklabels(['%d'%_ for _ in ax.get_xticks()])
+
+    if ylim is not None:
+        ax.set_ylim(ylim)
+
+    ax.set_ylabel('$d\log S_s^p / d\log s$')
+
+    if legend:
+        ax.legend(loc='best')
+
+    if grid:
+        ax.grid(True, which='both')
+
+    if title:
+        ax.set_title(title)
+
+    ax.tick_params(**TICK_PARAMS)
+    plt.subplots_adjust(**SUBPLOTS_ADJUST)
+
+    #---
+
+    return fig
+
 #-------------------------------------------------
 
 def structure_function_ansatz_violin(
@@ -601,6 +673,14 @@ def scaling_exponent_ansatz_samples(
 different format for posterior
     """
     return structure_function_ansatz_samples(scales, index, mom, cov, _sea_post_2_sfa_post(index, samples), **kwargs)
+
+def scaling_exponent_logarithmic_derivative_ansatz_samples(
+        scales,
+        index,
+        samples,
+        **kwargs
+    ):
+    return structure_function_logarithmic_derivative_ansatz_samples(scales, index, _sea_post_2_sfa_post(index, samples), **kwargs)
 
 #---
 

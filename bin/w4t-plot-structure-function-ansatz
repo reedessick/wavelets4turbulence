@@ -84,6 +84,23 @@ figtmp = os.path.join(
 plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
 plt.close(fig)
 
+#-----------
+
+fig = plt.structure_function_logarithmic_derivative_ansatz_samples(
+    scales,
+    index,
+    posterior,
+    title=args.title,
+    verbose=args.Verbose,
+)   
+    
+figtmp = os.path.join(
+    args.output_dir,
+    os.path.basename(__file__)+'-dlogSdlogs%s.%s' % (args.tag, '%s'),
+)
+plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
+plt.close(fig)
+
 #------------------------
 
 for ref_scale in args.ref_scale:

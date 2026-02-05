@@ -552,7 +552,7 @@ def structure_function_ansatz_violin(
     #-------
 
     if verbose:
-        print('plotting violins for logarithmic derivative at scale=%s' % (scale))
+        print('plotting violins for logarithmic derivative')
 
     xmin = +np.inf
     xmax = -np.inf
@@ -565,6 +565,9 @@ def structure_function_ansatz_violin(
 
         # plot a quick KDE of the logarithmic derivative at a reference scale
         if isinstance(scale, (int, float)):
+            if verbose:
+                print('        estimating scaling exponent at a single reference scale: %.1f' % scale)
+
             samp = logarithmic_derivative_ansatz(
                 scale,
                 posterior[index]['amp'],
@@ -578,6 +581,9 @@ def structure_function_ansatz_violin(
             )
 
         elif len(scale) == 2:
+            if verbose:
+                print('        estimating scaling exponent as an average over scales within [%.1f, %.1f]' % tuple(scale))
+
             samp = averaged_logarithmic_derivative_ansatz(
                 *scale,
                 posterior[index]['amp'],
@@ -733,6 +739,9 @@ def scaling_exponent_ansatz_violin(
     )
 
     if sfa_posterior is not None:
+        if verbose:
+            print('adding independent fits')
+
         fig = structure_function_ansatz_violin(
             sfa_posterior,
             ref_scale,

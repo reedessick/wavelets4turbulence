@@ -147,9 +147,20 @@ fig = plt.scaling_exponent_ansatz_violin(
     verbose=args.Verbose,
 )
 
-figtmp = os.path.join(
-    args.output_dir,
-    os.path.basename(__file__)+'-violin-%03d%s.%s' % (ref_scale, args.tag, '%s'),
-)
+if isinstance(ref_scale, (int, float)):
+    figtmp = os.path.join(
+        args.output_dir,
+        os.path.basename(__file__)+'-violin-%03d%s.%s' % (ref_scale, args.tag, '%s'),
+    )
+
+elif len(ref_scale) == 2:
+    figtmp = os.path.join(
+        args.output_dir,
+        os.path.basename(__file__)+'-violin-%03d-%03d%s.%s' % (ref_scale[0], ref_scale[1], args.tag, '%s'),
+    )
+
+else:
+    raise ValueError('ref_scale=%s not understood!' % ref_scale)
+
 plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
 plt.close(fig)

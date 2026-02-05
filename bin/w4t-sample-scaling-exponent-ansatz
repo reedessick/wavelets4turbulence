@@ -47,6 +47,12 @@ args = parser.parse_args()
 if len(args.ref_scale) == 1:
     args.ref_scale = args.ref_scale[0]
 
+elif len(args.ref_scale) == 2:
+    args.ref_scale = sorted(args.ref_scale) # smallest to largest
+
+else:
+    raise ValueError('ref_scale=%s not understood!' % args.ref_scale)
+
 #-------------------------------------------------
 
 # load structure functions

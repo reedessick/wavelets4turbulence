@@ -22,7 +22,7 @@ parser = ArgumentParser()
 parser.add_argument('source', type=str)
 parser.add_argument('target', type=str)
 
-parser.add_argument('ref_scale', type=float,
+parser.add_argument('ref_scale', type=float, nargs='+',
     help='the reference scale at which the logarithmic derivative will be evaluated')
 
 parser.add_argument('-m', '--min-scale', default=0.0, type=float,
@@ -43,6 +43,9 @@ parser.add_argument('--seed', default=infer.DEFAULT_SEED, type=int)
 parser.add_argument('-v', '--verbose', default=False, action='store_true')
 
 args = parser.parse_args()
+
+if len(args.ref_scale) == 1:
+    args.ref_scale = args.ref_scale[0]
 
 #-------------------------------------------------
 
@@ -74,7 +77,7 @@ sel = (min_scale <= scales) * (scales <= max_scale)
 logamp = jnp.log(mom[sel,:])[np.argmin(scales[sel])]
 
 if args.verbose:
-    print('sampling She-Leveque parametrization for scaling exponents with indexes: %s' % indexes)
+    print('sampling She-Leveque parametrization for scaling exponents with\n    ref_scale: %s\n    indexes: %s' % (args.ref_scale, indexes))
 
 posterior, prior = infer.sample_scaling_exponent_ansatz(
     jnp.array(scales[sel]),

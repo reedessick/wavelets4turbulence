@@ -50,8 +50,7 @@ def logarithmic_derivative_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh):
 def averaged_logarithmic_derivative_ansatz(min_scale, max_scale, amp, xi, sl, bl, nl, sh, bh, nh):
     """computes the average of the logarithmic derivative between min_scale, max_scale
     """
-    raise NotImplementedError('code up the averaged difference in logS')
-#    return xi - 
+    return xi + ( -(bl/nl)*jnp.log((1+(sl/max_scale)**nl)/(1+(sl/min_scale)**nl)) + (bh/nh)*jnp.log((1+(max_scale/sh)**nh)/(1+(min_scale/sh)**nh)) ) / jnp.log(max_scale/min_scale)
 
 #---
 

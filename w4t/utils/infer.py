@@ -15,7 +15,7 @@ try:
 
     import numpyro
     import numpyro.distributions as dist
-    from numpyro.infer import (MCMC, NUTS)
+    from numpyro.infer import (MCMC, NUTS, init_to_value)
 
     numpyro.enable_x64() # improve default numerical precision
 
@@ -69,7 +69,7 @@ def _sample_sea_prior(
         mean_logx=0.0,
         stdv_logx=0.5,
         mean_logC0=0.0,
-        stdv_logC0=1.0,
+        stdv_logC0=0.5,
         mean_logbeta=0.0,
         stdv_logbeta=1.0,
         mean_logamp=-10.0,
@@ -167,6 +167,12 @@ _vmap_structure_function_ansatz = jax.vmap(
     in_axes=[0]+[None]*8,
 )
 
+init_xcb_values = dict( # guesses to land on the mode we want
+    C0=1.25,
+    beta=0.33,
+    x=0.75,
+)
+
 def sample_scaling_exponent_ansatz(
         scales,
         mom,
@@ -219,7 +225,11 @@ def sample_scaling_exponent_ansatz(
     if verbose:
         print('running sampler for prior with seed=%d for %d warmup and %d samples' % (seed, num_warmup, num_samples))
 
-    mcmc = MCMC(NUTS(_sample_sea_prior), num_warmup=num_warmup, num_samples=num_samples)
+    mcmc = MCMC(
+        NUTS(_sample_sea_prior, init_strategy=init_to_value(values=init_xcb_values)),
+        num_warmup=num_warmup,
+        num_samples=num_samples,
+    )
     mcmc.run(random.PRNGKey(seed), indexes, ref_scale, **prior_kwargs)
     prior = mcmc.get_samples()
 
@@ -235,7 +245,11 @@ def sample_scaling_exponent_ansatz(
     if verbose:
         print('running sampler for posterior with seed=%d for %d warmup and %d samples' % (seed, num_warmup, num_samples))
 
-    mcmc = MCMC(NUTS(sample_posterior), num_warmup=num_warmup, num_samples=num_samples)
+    mcmc = MCMC(
+        NUTS(sample_posterior, init_strategy=init_to_value(values=init_xcb_values)),
+        num_warmup=num_warmup,
+        num_samples=num_samples,
+    )
     mcmc.run(random.PRNGKey(seed), mom)
     posterior = mcmc.get_samples()
 

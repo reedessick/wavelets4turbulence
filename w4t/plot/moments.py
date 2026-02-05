@@ -6,7 +6,7 @@ __author__ = "Reed Essick (reed.essick@gmail.com)"
 
 from .plot import *
 
-from w4t.utils.infer import (scaling_exponent_ansatz, structure_function_ansatz, logarithmic_derivative_ansatz)
+from w4t.utils.infer import (scaling_exponent_ansatz, structure_function_ansatz, logarithmic_derivative_ansatz, averaged_logarithmic_derivative_ansatz)
 
 #-------------------------------------------------
 
@@ -552,7 +552,7 @@ def structure_function_ansatz_violin(
     #-------
 
     if verbose:
-        print('plotting violins for logarithmic derivative at scale=%.3f' % scale)
+        print('plotting violins for logarithmic derivative at scale=%s' % (scale))
 
     xmin = +np.inf
     xmax = -np.inf
@@ -564,17 +564,34 @@ def structure_function_ansatz_violin(
         c = 'C%d' % ind if color is None else color
 
         # plot a quick KDE of the logarithmic derivative at a reference scale
-        samp = logarithmic_derivative_ansatz(
-            scale,
-            posterior[index]['amp'],
-            posterior[index]['xi'],
-            posterior[index]['sl'],
-            posterior[index]['bl'],
-            posterior[index]['nl'],
-            posterior[index]['sh'],
-            posterior[index]['bh'],
-            posterior[index]['nh'],
-        )
+        if isinstance(scale, (int, float)):
+            samp = logarithmic_derivative_ansatz(
+                scale,
+                posterior[index]['amp'],
+                posterior[index]['xi'],
+                posterior[index]['sl'],
+                posterior[index]['bl'],
+                posterior[index]['nl'],
+                posterior[index]['sh'],
+                posterior[index]['bh'],
+                posterior[index]['nh'],
+            )
+
+        elif len(scale) == 2:
+            samp = averaged_logarithmic_derivative_ansatz(
+                *scale,
+                posterior[index]['amp'],
+                posterior[index]['xi'],
+                posterior[index]['sl'],
+                posterior[index]['bl'],
+                posterior[index]['nl'],
+                posterior[index]['sh'],
+                posterior[index]['bh'],
+                posterior[index]['nh'],
+            )
+
+        else:
+            raise ValueError('scale=%s not understood!' % scale)
 
         smin = np.min(samp)
         smax = np.max(samp)
@@ -634,7 +651,15 @@ def structure_function_ansatz_violin(
     ax.set_xlim(xmin=xmin, xmax=xmax)
     ax.set_xticks(range(int(xmin), int(xmax)+1))
 
-    ax.set_ylabel('$d\log S^P_\\tau/d\log \\tau \ @ \ \\tau=%.1f$' % scale)
+    if isinstance(scale, (int, float)):
+        ax.set_ylabel('$d\log S^P_\\tau/d\log \\tau \ @ \ \\tau=%.1f$' % scale)
+
+    elif len(scale) == 2:
+        ax.set_ylabel('$\left<d\log S^P_\\tau/d\log \\tau\\right> between \ \\tau \in [%.1f, %.1f]$' % tuple(scale))
+
+    else:
+        raise NotImplementedError('scale=%s not understood!' % scale)
+
     ax.set_ylim(ymin=ymin, ymax=ymax)
 
     if legend:

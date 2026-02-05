@@ -67,8 +67,8 @@ def _sample_sea_prior(
         indexes,
         ref_scale,
         mean_logx=0.0,
-        stdv_logx=1.0,
-        mean_logC0=np.log(1.0),
+        stdv_logx=0.5,
+        mean_logC0=0.0,
         stdv_logC0=1.0,
         mean_logbeta=0.0,
         stdv_logbeta=1.0,
@@ -156,7 +156,7 @@ def _sample_sea_xcb_prior(
         stdv_logbeta=1.0,
     ):
     x = numpyro.sample("x", dist.LogNormal(mean_logx, stdv_logx))
-    C0 = numpyro.sample("C0", dist.LogNormal(mean_logx, stdv_logx))
+    C0 = numpyro.sample("C0", dist.LogNormal(mean_logC0, stdv_logC0))
     beta = numpyro.sample("beta", dist.LogNormal(mean_logbeta, stdv_logbeta))
     return x, C0, beta
 

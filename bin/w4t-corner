@@ -131,3 +131,37 @@ figtmp = os.path.join(
 )
 plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
 plt.close(fig)
+
+#------------------------
+
+if args.verbose:
+    print('plotting full chains')
+
+for key in fields:
+    fig = plt.plt.figure(figsize=(10,4))
+    ax = fig.add_axes([0.05, 0.05, 0.93, 0.85])
+
+    ax.plot(samples[key], alpha=0.75)
+
+    ax.set_xlim(xmin=0, xmax=len(samples[key]))
+
+    ax.set_ylabel(labels.get(key, key))
+
+    ax.tick_params(
+        left=True,
+        right=True,
+        bottom=True,
+        top=True,
+        which='both',
+        direction='in',
+    )
+
+    if args.title is not None:
+        fig.suptitle(args.title)
+
+    figtmp = os.path.join(
+        args.output_dir,
+        os.path.basename(__file__)+'-%s%s'%(key, args.tag)+'.%s',
+    )
+    plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
+    plt.close(fig)

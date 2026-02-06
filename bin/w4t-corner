@@ -112,6 +112,16 @@ fig = corner.corner(
     show_titles=True,
 )
 
+for ax in fig.axes:
+    ax.tick_params(
+        left=True,
+        right=True,
+        bottom=True,
+        top=True,
+        which='both',
+        direction='in',
+    )
+
 if args.title is not None:
     fig.suptitle(args.title)
 

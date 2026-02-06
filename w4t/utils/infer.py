@@ -172,8 +172,8 @@ _vmap_structure_function_ansatz = jax.vmap(
 )
 
 init_xcb_values = dict( # guesses to land on the mode we want
-#    C0=1.25,
-#    beta=0.33,
+    C0=1.00,
+    beta=0.33,
 #    x=0.75,
 )
 

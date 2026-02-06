@@ -66,12 +66,6 @@ def scaling_exponent_ansatz(index, x, C0, beta):
 def _sample_sea_prior(
         indexes,
         ref_scale,
-        mean_logx=0.0,
-        stdv_logx=0.5,
-        mean_logC0=0.0,
-        stdv_logC0=0.5,
-        mean_logbeta=0.0,
-        stdv_logbeta=1.0,
         mean_logamp=-10.0,
         stdv_logamp=10.0,
         mean_logsl=np.log(10), # FIXME should be an array of the same length as indexes
@@ -86,18 +80,11 @@ def _sample_sea_prior(
         stdv_bh=3.0,
         mean_nh=0.0,
         stdv_nh=3.0,
-        **ignored
+        **xcb_prior_kwargs
     ):
 
     # sample the She-Leveque parametrization
-    x, C0, beta = _sample_sea_xcb_prior(
-        mean_logx=mean_logx,
-        stdv_logx=stdv_logx,
-        mean_logC0=mean_logC0,
-        stdv_logC0=stdv_logC0,
-        mean_logbeta=mean_logbeta,
-        stdv_logbeta=stdv_logbeta,
-    )
+    x, C0, beta = _sample_sea_xcb_prior(**xcb_prior_kwargs)
 
     # compute the predicted logarithmic derivative
     dlSdls = numpyro.deterministic('dlogSdlogs', scaling_exponent_ansatz(indexes, x, C0, beta)) 
@@ -148,17 +135,34 @@ def _sample_sea_prior(
     return x, C0, beta, dlSdls, amp, xi, sl, bl, nl, sh, bh, nh
 
 def _sample_sea_xcb_prior(
+        min_C0=0.0, # these are based on physics at least a bit
+        max_C0=3.0,
+        min_x=0.0,  # these are wild guesses
+        max_x=3.0,
+        min_beta=0.0, # as are these
+        max_beta=3.0,
+        **ignored
+    ):
+    C0 = numpyro.sample("C0", dist.Uniform(0.1, +3.0))
+    x = numpyro.sample("x", dist.Uniform(0.1, +3.0))
+    beta = numpyro.sample("beta", dist.Uniform(0.0, 2.0))
+    return x, C0, beta
+
+'''
+def _sample_sea_xcb_prior(
         mean_logx=0.0,
         stdv_logx=1.0,
         mean_logC0=0.0,
         stdv_logC0=1.0,
         mean_logbeta=0.0,
         stdv_logbeta=1.0,
+        **ignored
     ):
     x = numpyro.sample("x", dist.LogNormal(mean_logx, stdv_logx))
     C0 = numpyro.sample("C0", dist.LogNormal(mean_logC0, stdv_logC0))
     beta = numpyro.sample("beta", dist.LogNormal(mean_logbeta, stdv_logbeta))
     return x, C0, beta
+'''
 
 #-----------
 
@@ -168,9 +172,9 @@ _vmap_structure_function_ansatz = jax.vmap(
 )
 
 init_xcb_values = dict( # guesses to land on the mode we want
-    C0=1.25,
-    beta=0.33,
-    x=0.75,
+#    C0=1.25,
+#    beta=0.33,
+#    x=0.75,
 )
 
 def sample_scaling_exponent_ansatz(

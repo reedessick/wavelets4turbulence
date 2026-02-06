@@ -137,15 +137,15 @@ def _sample_sea_prior(
 def _sample_sea_xcb_prior(
         min_C0=0.0, # these are based on physics at least a bit
         max_C0=3.0,
-        min_x=0.0,  # these are wild guesses
-        max_x=3.0,
+        min_x=0.1,  # these are wild guesses
+        max_x=2.0,
         min_beta=0.0, # as are these
-        max_beta=3.0,
+        max_beta=1.0,
         **ignored
     ):
-    C0 = numpyro.sample("C0", dist.Uniform(0.1, +3.0))
-    x = numpyro.sample("x", dist.Uniform(0.1, +3.0))
-    beta = numpyro.sample("beta", dist.Uniform(0.0, 2.0))
+    C0 = numpyro.sample("C0", dist.Uniform(min_C0, max_C0))
+    x = numpyro.sample("x", dist.Uniform(min_x, max_x))
+    beta = numpyro.sample("beta", dist.Uniform(min_beta, max_beta))
     return x, C0, beta
 
 '''

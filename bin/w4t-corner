@@ -139,7 +139,7 @@ if args.verbose:
 
 for key in fields:
     fig = plt.plt.figure(figsize=(10,4))
-    ax = fig.add_axes([0.05, 0.05, 0.93, 0.85])
+    ax = fig.add_axes([0.10, 0.05, 0.85, 0.85])
 
     ax.plot(samples[key], alpha=0.75)
 

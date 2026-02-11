@@ -16,6 +16,7 @@ try:
     import numpyro
     import numpyro.distributions as dist
     from numpyro.infer import (MCMC, NUTS, init_to_value)
+    from numpyro.diagnostics import effective_sample_size
 
     numpyro.enable_x64() # improve default numerical precision
 
@@ -39,6 +40,11 @@ def structure_function_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh):
     """
     return amp * scales**xi * (1 + (sl/scales)**nl)**(bl/nl) * (1 + (scales/sh)**nh)**(bh/nh)
 
+_vmap_structure_function_ansatz = jax.vmap(
+    structure_function_ansatz,
+    in_axes=[0]+[None]*8,
+)
+
 #---
 
 def logarithmic_derivative_ansatz(scales, amp, xi, sl, bl, nl, sh, bh, nh):
@@ -57,9 +63,60 @@ def averaged_logarithmic_derivative_ansatz(min_scale, max_scale, amp, xi, sl, bl
 def scaling_exponent_ansatz(index, x, C0, beta):
     """She-Leveque formula for the scaling exponents of structure function
     xi = (index/3)*(1-x) + C0*(1-beta**(index/3))
-    based on Eq 7.64 of "Magnetohydrodynamic Turbulence" (Dieter Biskamp)
+    based on Eq 7.64 of vi"Magnetohydrodynamic Turbulence" (Dieter Biskamp)
     """
     return (index/3)*(1-x) + C0*(1-beta**(index/3))
+
+#-------------------------------------------------
+
+def thin(num_samples, samples, keys, num_segs=1, verbose=False):
+    """downsample based on estimate of effective sample size
+    can downsample different parts of the chains differently, and will divide the chain into "num_segs" segments
+    """
+    # figure out boundaries for different segments
+    if verbose:
+        print('splitting chains of length %d into %d segments' % (num_samples, num_segs))
+    step = num_samples / num_segs
+    segs = []
+    start = 0
+    stop = start+step
+    while stop < num_samples:
+        segs.append((start, stop))
+        start = stop
+        stop += step
+
+    if verbose:
+        print('thinning separately in %d segments' % len(segs))
+    ans = dict((k, []) for k in keys)
+    num = 0
+    for start, end in segs:
+        ber, wer = _thin(end-start, dict((k, v[start:stop]) for k, v in samples.items()), keys, verbose=verbose)
+        num += ber
+        for k in keys:
+            ans[k].append(wer[k])
+
+    if verbose:
+        print('retained a total of %d samples' % num)
+    return dict((k, np.concatenate(tuple(v))) for k, v in ans.items())
+
+#---
+
+def _thin(num_samples, samples, keys, verbose=False):
+    min_neff = num_samples
+    for k in keys:
+        neff = effective_sample_size(samples[k].reshape((1,num_samples)))
+        if verbose:
+            print('    neff(%s) = %.3f' % (k, neff))
+        min_neff = min(neff, min_neff)
+    if verbose:
+        print('    min neff = %.3f' % min_neff)
+
+    skip = int(np.ceil(num_samples/min_neff))
+    num = num_samples/skip
+    if verbose:
+        print('    retaining 1 out of every %d steps --> %d samples' % (skip, num))
+    # do this fancy indexing to prefer later samples over earlier samples
+    return num, dict((k, v[::-skip][::-1]) for k, v in samples.items())
 
 #-------------------------------------------------
 
@@ -134,10 +191,12 @@ def _sample_sea_prior(
     # return
     return x, C0, beta, dlSdls, amp, xi, sl, bl, nl, sh, bh, nh
 
-def _sample_sea_xcb_prior(
-        min_C0=0.0, # these are based on physics at least a bit
-        max_C0=3.0,
-        min_x=0.1,  # these are wild guesses
+#-----------
+
+def _sample_sea_xcb_prior_uniform(
+        min_C0=-1.0, # these are based on physics at least a bit
+        max_C0=4.0,
+        min_x=-1.0,  # these are wild guesses
         max_x=2.0,
         min_beta=0.0, # as are these
         max_beta=1.0,
@@ -148,8 +207,9 @@ def _sample_sea_xcb_prior(
     beta = numpyro.sample("beta", dist.Uniform(min_beta, max_beta))
     return x, C0, beta
 
-'''
-def _sample_sea_xcb_prior(
+#---
+
+def _sample_sea_xcb_prior_lognormal(
         mean_logx=0.0,
         stdv_logx=1.0,
         mean_logC0=0.0,
@@ -162,20 +222,54 @@ def _sample_sea_xcb_prior(
     C0 = numpyro.sample("C0", dist.LogNormal(mean_logC0, stdv_logC0))
     beta = numpyro.sample("beta", dist.LogNormal(mean_logbeta, stdv_logbeta))
     return x, C0, beta
-'''
+
+#---
+
+def _sample_sea_xcb_prior_fancy(
+        **ignored
+    ):
+    # sample in "more independent" basis
+    C0 = numpyro.sample('C0', dist.Uniform(0.0, 3.0))   # the co-dimension
+    xi3 = numpyro.sample('xi3', dist.Uniform(0.5, 1.5)) # the value of xi(p=3)
+    r6 = numpyro.sample('r6', dist.Uniform(0.0, 2.0))   # the ratio of xi(p=6)/xi(p=3)
+
+    beta = numpyro.deterministic('beta', 1 - ((2-r6)*xi3/C0)**0.5)
+    x = numpyro.deterministic('x', 1-xi3+C0*(1-beta))
+        
+    # return
+    return x, C0, beta
+
+#---
+
+_sample_sea_xcb_prior = _sample_sea_xcb_prior_uniform
+#_sample_sea_xcb_prior = _sample_sea_xcb_prior_lognormal
+#_sample_sea_xcb_prior = _sample_sea_xcb_prior_fancy
+
+#------------------------
+
+init_xcb_values = dict( # guesses to land on the mode we want
+#    C0=1.00,
+#    beta=0.33,
+#    x=0.75,
+) 
 
 #-----------
 
-_vmap_structure_function_ansatz = jax.vmap(
-    structure_function_ansatz,
-    in_axes=[0]+[None]*8,
-)
+def simple_sample_scaling_exponent_ansatz(*args, **kwargs):
+    """sample the distribution of scaling exponents using a KDE model of marginal likelihoods
+    """
+    raise NotImplementedError("""WRITE ME!""")
 
-init_xcb_values = dict( # guesses to land on the mode we want
-    C0=1.00,
-    beta=0.33,
-#    x=0.75,
-)
+
+
+
+
+
+
+
+
+
+#-----------
 
 def sample_scaling_exponent_ansatz(
         scales,
@@ -188,6 +282,7 @@ def sample_scaling_exponent_ansatz(
         num_retained=DEFAULT_NUM_RETAINED,
         seed=DEFAULT_SEED,
         verbose=False,
+        num_segs=1,
         **prior_kwargs
     ):
     """sample for the distribution of scaling exponents
@@ -235,10 +330,13 @@ def sample_scaling_exponent_ansatz(
         num_samples=num_samples,
     )
     mcmc.run(random.PRNGKey(seed), indexes, ref_scale, **prior_kwargs)
-    prior = mcmc.get_samples()
 
     if verbose:
         mcmc.print_summary(exclude_deterministic=False)
+
+    prior = mcmc.get_samples()
+    prior = thin(num_samples, prior, prior.keys(), num_segs=num_segs, verbose=verbose)
+
     if num_retained < np.inf:
         if verbose:
             print('retaining the final %d samples' % num_retained)
@@ -255,22 +353,23 @@ def sample_scaling_exponent_ansatz(
         num_samples=num_samples,
     )
     mcmc.run(random.PRNGKey(seed), mom)
-    posterior = mcmc.get_samples()
-
-    # record the likelihood of each sample
-
-    if verbose:
-        print('computing likelihood at samples')
-
-    posterior.update(numpyro.infer.log_likelihood(sample_posterior, posterior, mom))
 
     if verbose:
         mcmc.print_summary(exclude_deterministic=False)
+
+    posterior = mcmc.get_samples()
+    posterior = thin(num_samples, posterior, posterior.keys(), num_segs=num_segs, verbose=verbose)
 
     if num_retained < np.inf:
         if verbose:
             print('retaining the final %d samples' % num_retained)
         posterior = dict((key, val[-num_retained:]) for key, val in posterior.items())
+
+    # record the likelihood of each sample
+    if verbose:
+        print('computing likelihood at samples')
+
+    posterior.update(numpyro.infer.log_likelihood(sample_posterior, posterior, mom))
 
     #---
 
@@ -355,6 +454,7 @@ def sample_structure_function_ansatz(
         num_retained=DEFAULT_NUM_RETAINED,
         seed=DEFAULT_SEED,
         verbose=False,
+        num_segs=1,
         **prior_kwargs
     ):
     """sample for parameters of a simple model for structure function scaling
@@ -384,10 +484,12 @@ def sample_structure_function_ansatz(
 
     mcmc = MCMC(NUTS(_sample_sfa_prior), num_warmup=num_warmup, num_samples=num_samples)
     mcmc.run(random.PRNGKey(seed), **prior_kwargs)
-    prior = mcmc.get_samples()
 
     if verbose:
         mcmc.print_summary(exclude_deterministic=False)
+
+    prior = mcmc.get_samples()
+    prior = thin(num_samples, prior, prior.keys(), num_segs=num_segs, verbose=verbose)
 
     if num_retained < np.inf:
         if verbose:
@@ -401,7 +503,18 @@ def sample_structure_function_ansatz(
 
     mcmc = MCMC(NUTS(sample_posterior), num_warmup=num_warmup, num_samples=num_samples)
     mcmc.run(random.PRNGKey(seed), mom)
+
+    if verbose:
+        mcmc.print_summary(exclude_deterministic=False)
+
     posterior = mcmc.get_samples()
+    posterior = thin(num_samples, prior, posterior.keys(), num_segs=num_segs, verbose=verbose)
+
+
+    if num_retained < np.inf:
+        if verbose:
+            print('retaining the final %d samples' % num_retained)
+        posterior = dict((key, val[-num_retained:]) for key, val in posterior.items())
 
     # record the likelihood of each sample
 
@@ -409,14 +522,6 @@ def sample_structure_function_ansatz(
         print('computing likelihood at samples')
 
     posterior.update(numpyro.infer.log_likelihood(sample_posterior, posterior, mom))
-
-    if verbose:
-        mcmc.print_summary(exclude_deterministic=False)
-
-    if num_retained < np.inf:
-        if verbose:
-            print('retaining the final %d samples' % num_retained)
-        posterior = dict((key, val[-num_retained:]) for key, val in posterior.items())
 
     #---
 

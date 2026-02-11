@@ -87,12 +87,12 @@ def thin(num_samples, samples, keys, num_segs=1, verbose=False):
 
     if verbose:
         print('thinning separately in %d segments' % len(segs))
-    ans = dict((k, []) for k in keys)
+    ans = dict((k, []) for k in samples.keys())
     num = 0
     for start, end in segs:
         ber, wer = _thin(end-start, dict((k, v[start:stop]) for k, v in samples.items()), keys, verbose=verbose)
         num += ber
-        for k in keys:
+        for k in ans.keys():
             ans[k].append(wer[k])
 
     if verbose:
@@ -101,8 +101,12 @@ def thin(num_samples, samples, keys, num_segs=1, verbose=False):
 
 #---
 
-def _thin(num_samples, samples, keys, verbose=False):
+def _thin(num_samples, samples, keys=None, verbose=False):
+    if keys is None:
+        keys = list(samples.keys())
+
     min_neff = num_samples
+
     for k in keys:
         neff = effective_sample_size(samples[k].reshape((1,num_samples)))
         if verbose:
@@ -509,7 +513,6 @@ def sample_structure_function_ansatz(
 
     posterior = mcmc.get_samples()
     posterior = thin(num_samples, prior, posterior.keys(), num_segs=num_segs, verbose=verbose)
-
 
     if num_retained < np.inf:
         if verbose:

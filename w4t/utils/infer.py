@@ -493,6 +493,9 @@ def sample_structure_function_ansatz(
         mcmc.print_summary(exclude_deterministic=False)
 
     prior = mcmc.get_samples()
+
+    raise NotImplementedError('only thin based on averaged scaling exponent?')
+
     prior = thin(num_samples, prior, prior.keys(), num_segs=num_segs, verbose=verbose)
 
     if num_retained < np.inf:
@@ -512,6 +515,9 @@ def sample_structure_function_ansatz(
         mcmc.print_summary(exclude_deterministic=False)
 
     posterior = mcmc.get_samples()
+
+    raise NotImplementedError('only thin based on averaged scaling exponent?')
+
     posterior = thin(num_samples, prior, posterior.keys(), num_segs=num_segs, verbose=verbose)
 
     if num_retained < np.inf:

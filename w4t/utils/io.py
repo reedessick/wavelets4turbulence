@@ -376,3 +376,38 @@ def load_scaling_exponent_ansatz_samples(path, verbose=False):
     ref_scale = kwargs.pop('ref_scale')
 
     return posterior, prior, scales, index, ref_scale, kwargs
+
+#-------------------------------------------------
+
+def write_simple_scaling_exponent_ansatz_samples(posterior, prior, index, ref_scale, path, verbose=False, **kwargs):
+    if verbose:
+        print('writing scaling exponent ansatz samples: '+path)
+
+    with h5py.File(path, 'w') as obj:
+        for key, val in kwargs.items():
+            obj.attrs.create(key, data=val)
+
+        obj.attrs.create('ref_scale', ref_scale)
+        obj.create_dataset('index', data=index)
+            
+        for label, data in [('posterior', posterior), ('prior', prior)]:
+            grp = obj.create_group(label)
+            for key, val in data.items():
+                grp.create_dataset(key, data=val)
+        
+#------------------------
+        
+def load_simple_scaling_exponent_ansatz_samples(path, verbose=False):
+    if verbose:     
+        print('loading scaling exponent ansatz samples: '+path)
+        
+    with h5py.File(path, 'r') as obj:
+        kwargs = dict(obj.attrs.items())
+        index = obj['index'][:]
+    
+        posterior = dict((key, obj['posterior'][key][:]) for key in obj['posterior'].keys())
+        prior = dict((key, obj['prior'][key][:]) for key in obj['prior'].keys())
+    
+    ref_scale = kwargs.pop('ref_scale')
+            
+    return posterior, prior, index, ref_scale, kwargs

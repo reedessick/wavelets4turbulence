@@ -1,0 +1,106 @@
+#!/usr/bin/env python3
+
+"""a simple executable to fit the She-Leveque parameterization for scaling exponents from structure functions
+"""
+__author__ = "Reed Essick (reed.essick@gmail.com)"
+
+#-------------------------------------------------
+
+import numpy as np
+from jax import numpy as jnp
+
+from argparse import ArgumentParser
+
+### non-standard libraries
+from w4t.utils import io
+from w4t.utils import infer
+
+#-------------------------------------------------
+
+parser = ArgumentParser()
+
+parser.add_argument('source', type=str)
+parser.add_argument('target', type=str)
+
+parser.add_argument('ref_scale', type=float, nargs='+',
+    help='the reference scale at which the logarithmic derivative will be evaluated')
+
+parser.add_argument('-i', '--index', nargs='*', type=int, default=None,
+    help='only fit these indexes. eg: --index 1 2 3')
+
+parser.add_argument('--num-warmup', default=infer.DEFAULT_NUM_WARMUP, type=int)
+parser.add_argument('--num-samples', default=infer.DEFAULT_NUM_SAMPLES, type=int)
+
+parser.add_argument('--num-retained', default=infer.DEFAULT_NUM_RETAINED, type=int)
+
+parser.add_argument('--seed', default=[], type=int, action='append')
+
+parser.add_argument('--num-segs', default=1, type=int,
+    help='the number of segments to use when thinning chains')
+
+parser.add_argument('-v', '--verbose', default=False, action='store_true')
+
+args = parser.parse_args()
+
+if not args.seed:
+    args.seed.append(infer.DEFAULT_SEED)
+
+if len(args.ref_scale) == 1:
+    args.ref_scale = args.ref_scale[0]
+
+elif len(args.ref_scale) == 2:
+    args.ref_scale = sorted(args.ref_scale) # smallest to largest
+
+else:
+    raise ValueError('ref_scale=%s not understood!' % args.ref_scale)
+
+#-------------------------------------------------
+
+# load structure function samples
+indep_posterior, _, _, index, kwargs = io.load_structure_function_ansatz_samples(args.source, verbose=args.verbose)
+
+if args.index is not None:
+    keep = np.array([(index in args.index) for index in indexes], dtype=bool)
+    assert np.any(keep), 'no indexes from (%s) retained in --index=%s' % (indexes, args.index)
+
+    # only keep the requested indexes
+    indexes = indexes[keep]
+
+#-----------
+
+# compute scaling exponents
+
+if args.verbose:
+    print('sampling She-Leveque parametrization for scaling exponents with\n    ref_scale: %s\n    indexes: %s' % (args.ref_scale, indexes))
+
+posterior, prior = infer.simple_sample_scaling_exponent_ansatz(
+    jnp.array(indexes),
+    indep_posterior,
+    args.ref_scale,
+    num_warmup=args.num_warmup,
+    num_samples=args.num_samples,
+    num_retained=args.num_retained,
+    seed=args.seed,
+    num_segs=args.num_segs,
+    verbose=args.verbose,
+)
+
+#-----------
+
+# save scaling exponents
+io.write_simple_scaling_exponent_ansatz_samples(
+    posterior,
+    prior,
+    indexes,
+    args.ref_scale,
+    args.target,
+    verbose=args.verbose,
+    source=args.source,
+    min_scale=min_scale,
+    max_scale=max_scale,
+    num_warmup=args.num_warmup,
+    num_sapmles=args.num_samples,
+    num_retained=args.num_retained,
+    seed=args.seed,
+    num_segs=args.num_segs,
+)

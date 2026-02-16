@@ -73,24 +73,34 @@ def thin(num_samples, samples, keys, num_segs=1, verbose=False):
     """downsample based on estimate of effective sample size
     can downsample different parts of the chains differently, and will divide the chain into "num_segs" segments
     """
+    samples = dict((k, np.array(v)) for k, v in samples.items()) # cast to numpy array
+
     # figure out boundaries for different segments
-    if verbose:
-        print('splitting chains of length %d into %d segments' % (num_samples, num_segs))
-    step = num_samples / num_segs
-    segs = []
-    start = 0
-    stop = start+step
-    while stop < num_samples:
-        segs.append((start, stop))
-        start = stop
-        stop += step
+    if num_segs > 1:
+        if verbose:
+            print('splitting chains of length %d into %d segments' % (num_samples, num_segs))
+        step = num_samples // num_segs
+        segs = []
+        start = 0
+        stop = start+step
+        while stop < num_samples:
+            segs.append((start, stop))
+            start = stop
+            stop += step
+        segs.append((start, num_samples))
+
+    else:
+        segs = [(0, num_samples)]
 
     if verbose:
         print('thinning separately in %d segments' % len(segs))
     ans = dict((k, []) for k in samples.keys())
     num = 0
     for start, end in segs:
-        ber, wer = _thin(end-start, dict((k, v[start:stop]) for k, v in samples.items()), keys, verbose=verbose)
+        if verbose:
+            print('    %d -> %d' % (start, end))
+
+        ber, wer = _thin(end-start, dict((k, v[start:end]) for k, v in samples.items()), keys, verbose=verbose)
         num += ber
         for k in ans.keys():
             ans[k].append(wer[k])
@@ -284,7 +294,7 @@ def sample_scaling_exponent_ansatz(
         num_warmup=DEFAULT_NUM_WARMUP,
         num_samples=DEFAULT_NUM_SAMPLES,
         num_retained=DEFAULT_NUM_RETAINED,
-        seed=DEFAULT_SEED,
+        seed=[DEFAULT_SEED],
         verbose=False,
         num_segs=1,
         **prior_kwargs
@@ -323,62 +333,86 @@ def sample_scaling_exponent_ansatz(
 
     #---
 
-    # run the sampler
+    Prior = None
+    Posterior = None
 
-    if verbose:
-        print('running sampler for prior with seed=%d for %d warmup and %d samples' % (seed, num_warmup, num_samples))
+    for s in seed:
 
-    mcmc = MCMC(
-        NUTS(_sample_sea_prior, init_strategy=init_to_value(values=init_xcb_values)),
-        num_warmup=num_warmup,
-        num_samples=num_samples,
-    )
-    mcmc.run(random.PRNGKey(seed), indexes, ref_scale, **prior_kwargs)
+        # run the sampler
 
-    if verbose:
-        mcmc.print_summary(exclude_deterministic=False)
-
-    prior = mcmc.get_samples()
-    prior = thin(num_samples, prior, prior.keys(), num_segs=num_segs, verbose=verbose)
-
-    if num_retained < np.inf:
         if verbose:
-            print('retaining the final %d samples' % num_retained)
-        prior = dict((key, val[-num_retained:]) for key, val in prior.items())
+            print('running sampler for prior with seed=%d for %d warmup and %d samples' % \
+                (s, num_warmup, num_samples))
+
+        mcmc = MCMC(
+            NUTS(_sample_sea_prior, init_strategy=init_to_value(values=init_xcb_values)),
+            num_warmup=num_warmup,
+            num_samples=num_samples,
+        )
+        mcmc.run(random.PRNGKey(s), indexes, ref_scale, **prior_kwargs)
+
+        if verbose:
+            mcmc.print_summary(exclude_deterministic=False)
+
+        prior = mcmc.get_samples()
+        prior = thin(num_samples, prior, prior.keys(), num_segs=num_segs, verbose=verbose)
+
+        if num_retained < np.inf:
+            if verbose:
+                print('retaining the final %d samples' % num_retained)
+            prior = dict((key, val[-num_retained:]) for key, val in prior.items())
+
+        if Prior is None:
+            Prior = dict((k, [v]) for k, v in prior.items())
+
+        else:
+            for k, v in prior.items():
+                Prior[k].append(v)
+
+        #---
+
+        if verbose:
+            print('running sampler for posterior with seed=%d for %d warmup and %d samples' % \
+                (s, num_warmup, num_samples))
+
+        mcmc = MCMC(
+            NUTS(sample_posterior, init_strategy=init_to_value(values=init_xcb_values)),
+            num_warmup=num_warmup,
+            num_samples=num_samples,
+        )
+        mcmc.run(random.PRNGKey(s), mom)
+
+        if verbose:
+            mcmc.print_summary(exclude_deterministic=False)
+
+        posterior = mcmc.get_samples()
+        posterior = thin(num_samples, posterior, posterior.keys(), num_segs=num_segs, verbose=verbose)
+
+        if num_retained < np.inf:
+            if verbose:
+                print('retaining the final %d samples' % num_retained)
+            posterior = dict((key, val[-num_retained:]) for key, val in posterior.items())
+
+        # record the likelihood of each sample
+        if verbose:
+            print('computing likelihood at samples')
+
+        posterior.update(numpyro.infer.log_likelihood(sample_posterior, posterior, mom))
+
+        if Posterior is None:
+            Posterior = dict((k, [v]) for k, v in posterior.items())
+
+        else:
+            for k, v in posterior.items():
+                Posterior[k].append(v)
 
     #---
 
-    if verbose:
-        print('running sampler for posterior with seed=%d for %d warmup and %d samples' % (seed, num_warmup, num_samples))
-
-    mcmc = MCMC(
-        NUTS(sample_posterior, init_strategy=init_to_value(values=init_xcb_values)),
-        num_warmup=num_warmup,
-        num_samples=num_samples,
-    )
-    mcmc.run(random.PRNGKey(seed), mom)
-
-    if verbose:
-        mcmc.print_summary(exclude_deterministic=False)
-
-    posterior = mcmc.get_samples()
-    posterior = thin(num_samples, posterior, posterior.keys(), num_segs=num_segs, verbose=verbose)
-
-    if num_retained < np.inf:
-        if verbose:
-            print('retaining the final %d samples' % num_retained)
-        posterior = dict((key, val[-num_retained:]) for key, val in posterior.items())
-
-    # record the likelihood of each sample
-    if verbose:
-        print('computing likelihood at samples')
-
-    posterior.update(numpyro.infer.log_likelihood(sample_posterior, posterior, mom))
-
-    #---
+    Posterior = dict((k, np.concatenate(tuple(v))) for k, v in Posterior.items())
+    Prior = dict((k, np.concatenate(tuple(v))) for k, v in Prior.items())
 
     # return
-    return posterior, prior
+    return Posterior, Prior
 
 #-------------------------------------------------
 
@@ -456,7 +490,7 @@ def sample_structure_function_ansatz(
         num_warmup=DEFAULT_NUM_WARMUP,
         num_samples=DEFAULT_NUM_SAMPLES,
         num_retained=DEFAULT_NUM_RETAINED,
-        seed=DEFAULT_SEED,
+        seed=[DEFAULT_SEED],
         verbose=False,
         num_segs=1,
         **prior_kwargs
@@ -483,56 +517,73 @@ def sample_structure_function_ansatz(
 
     # run the sampler
 
-    if verbose:
-        print('running sampler for prior with seed=%d for %d warmup and %d samples' % (seed, num_warmup, num_samples))
+    Prior = None
+    Posterior = None
 
-    mcmc = MCMC(NUTS(_sample_sfa_prior), num_warmup=num_warmup, num_samples=num_samples)
-    mcmc.run(random.PRNGKey(seed), **prior_kwargs)
+    for s in seed:
 
-    if verbose:
-        mcmc.print_summary(exclude_deterministic=False)
-
-    prior = mcmc.get_samples()
-
-    raise NotImplementedError('only thin based on averaged scaling exponent?')
-
-    prior = thin(num_samples, prior, prior.keys(), num_segs=num_segs, verbose=verbose)
-
-    if num_retained < np.inf:
         if verbose:
-            print('retaining the final %d samples' % num_retained)
-        prior = dict((key, val[-num_retained:]) for key, val in prior.items())
+            print('running sampler for prior with seed=%d for %d warmup and %d samples' % (s, num_warmup, num_samples))
+
+        mcmc = MCMC(NUTS(_sample_sfa_prior), num_warmup=num_warmup, num_samples=num_samples)
+        mcmc.run(random.PRNGKey(s), **prior_kwargs)
+
+        if verbose:
+            mcmc.print_summary(exclude_deterministic=False)
+
+        prior = mcmc.get_samples()
+        prior = thin(num_samples, prior, prior.keys(), num_segs=num_segs, verbose=verbose)
+
+        if num_retained < np.inf:
+            if verbose:
+                print('retaining the final %d samples' % num_retained)
+            prior = dict((key, val[-num_retained:]) for key, val in prior.items())
+
+        if Prior is None:
+            Prior = dict((k, [v]) for k, v in prior.items())
+
+        else:
+            for k, v in prior.items():
+                Prior[k].append(v)
+
+        #---
+
+        if verbose:
+            print('running sampler for posterior with seed=%d for %d warmup and %d samples' % \
+                (s, num_warmup, num_samples))
+
+        mcmc = MCMC(NUTS(sample_posterior), num_warmup=num_warmup, num_samples=num_samples)
+        mcmc.run(random.PRNGKey(s), mom)
+
+        if verbose:
+            mcmc.print_summary(exclude_deterministic=False)
+
+        posterior = mcmc.get_samples()
+        posterior = thin(num_samples, posterior, posterior.keys(), num_segs=num_segs, verbose=verbose)
+
+        if num_retained < np.inf:
+            if verbose:
+                print('retaining the final %d samples' % num_retained)
+            posterior = dict((key, val[-num_retained:]) for key, val in posterior.items())
+
+        # record the likelihood of each sample
+
+        if verbose:
+            print('computing likelihood at samples')
+
+        posterior.update(numpyro.infer.log_likelihood(sample_posterior, posterior, mom))
+
+        if Posterior is None:
+            Posterior = dict((k, [v]) for k, v in posterior.items())
+
+        else:
+            for k, v in posterior.items():
+                Posterior[k].append(v)
 
     #---
 
-    if verbose:
-        print('running sampler for posterior with seed=%d for %d warmup and %d samples' % (seed, num_warmup, num_samples))
-
-    mcmc = MCMC(NUTS(sample_posterior), num_warmup=num_warmup, num_samples=num_samples)
-    mcmc.run(random.PRNGKey(seed), mom)
-
-    if verbose:
-        mcmc.print_summary(exclude_deterministic=False)
-
-    posterior = mcmc.get_samples()
-
-    raise NotImplementedError('only thin based on averaged scaling exponent?')
-
-    posterior = thin(num_samples, prior, posterior.keys(), num_segs=num_segs, verbose=verbose)
-
-    if num_retained < np.inf:
-        if verbose:
-            print('retaining the final %d samples' % num_retained)
-        posterior = dict((key, val[-num_retained:]) for key, val in posterior.items())
-
-    # record the likelihood of each sample
-
-    if verbose:
-        print('computing likelihood at samples')
-
-    posterior.update(numpyro.infer.log_likelihood(sample_posterior, posterior, mom))
-
-    #---
+    Posterior = dict((k, np.concatenate(tuple(v))) for k, v in Posterior.items())
+    Prior = dict((k, np.concatenate(tupe(v))) for k, v in Prior.items())
 
     # return
-    return posterior, prior
+    return Posterior, Prior

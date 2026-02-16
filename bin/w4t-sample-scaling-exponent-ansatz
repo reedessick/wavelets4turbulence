@@ -38,11 +38,14 @@ parser.add_argument('--num-samples', default=infer.DEFAULT_NUM_SAMPLES, type=int
 
 parser.add_argument('--num-retained', default=infer.DEFAULT_NUM_RETAINED, type=int)
 
-parser.add_argument('--seed', default=infer.DEFAULT_SEED, type=int)
+parser.add_argument('--seed', default=[], type=int, action='append')
 
 parser.add_argument('-v', '--verbose', default=False, action='store_true')
 
 args = parser.parse_args()
+
+if not args.seed:
+    args.seed.append(infer.DEFAULT_SEED)
 
 if len(args.ref_scale) == 1:
     args.ref_scale = args.ref_scale[0]

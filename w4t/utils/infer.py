@@ -413,6 +413,10 @@ def sample_scaling_exponent_ansatz(
     Posterior = dict((k, np.concatenate(tuple(v))) for k, v in Posterior.items())
     Prior = dict((k, np.concatenate(tuple(v))) for k, v in Prior.items())
 
+    if verbose:
+        print('\n>>> retained %d total prior samples' % len(list(Prior.values())[0]))
+        print('>>> retained %d total posterior samples\n' % len(list(Posterior.values())[0]))
+
     # return
     return Posterior, Prior
 
@@ -586,6 +590,10 @@ def sample_structure_function_ansatz(
 
     Posterior = dict((k, np.concatenate(tuple(v))) for k, v in Posterior.items())
     Prior = dict((k, np.concatenate(tuple(v))) for k, v in Prior.items())
+
+    if verbose:
+        print('\n>>> retained %d total prior samples' % len(list(Prior.values())[0]))
+        print('>>> retained %d total posterior samples\n' % len(list(Posterior.values())[0]))
 
     # return
     return Posterior, Prior

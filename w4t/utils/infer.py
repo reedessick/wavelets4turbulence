@@ -301,8 +301,9 @@ def simple_sample_scaling_exponent_ansatz(
 
     min_scale, max_scale = ref_scale # could be fragile!
 
-    for ind, i in enumerate(indexex):
-        print('    computing posterior mean, stdv for index=%d with %d samples' % (i, len(samples[i]['amp'])))
+    for ind, i in enumerate(indexes):
+        if verbose:
+            print('    computing KDE for xi(index=%d) with %d samples' % (i, len(samples[i]['amp'])))
 
         if isinstance(ref_scale, (int, float)): # a single reference scale
             samp = logarithmic_derivative_ansatz(
@@ -358,12 +359,15 @@ def simple_sample_scaling_exponent_ansatz(
         grids.append(grid)
         kdes.append(kde)
 
+    grids = np.array(grids, dtype=float)
+    kdes = np.array(kdes, dtype=float)
+
     # finish defining model
 
-    def sample_posterior(index, grids, kdes, **prior_kwargs):
-        x, C0, beta = xcb_prior(**prior_kwargs)                 # sample from prior
-        xi = scaling_exponent_ansatz(index, x, C0, beta)  # compute means
-        for ind, i in enumerate(index): # this shouldn't be too bad, but may need to vmap
+    def sample_posterior(**prior_kwargs):
+        x, C0, beta = _sample_sea_xcb_prior(**prior_kwargs)                 # sample from prior
+        xi = scaling_exponent_ansatz(indexes, x, C0, beta)  # compute means
+        for ind, i in enumerate(indexes): # this shouldn't be too bad, but may need to vmap
             numpyro.factor('data_%d'%i, jnp.log(jnp.interp(xi[ind], grids[ind], kdes[ind])))
 
     #---
@@ -380,11 +384,11 @@ def simple_sample_scaling_exponent_ansatz(
                 (s, num_warmup, num_samples))
 
         mcmc = MCMC(
-            NUTS(_sample_sea_prior, init_strategy=init_to_value(values=init_xcb_values)),
+            NUTS(_sample_sea_xcb_prior, init_strategy=init_to_value(values=init_xcb_values)),
             num_warmup=num_warmup,
             num_samples=num_samples,
         )
-        mcmc.run(random.PRNGKey(s), indexes, ref_scale, **prior_kwargs)
+        mcmc.run(random.PRNGKey(s), **prior_kwargs)
 
         if verbose:
             mcmc.print_summary(exclude_deterministic=False)
@@ -415,7 +419,7 @@ def simple_sample_scaling_exponent_ansatz(
             num_warmup=num_warmup,
             num_samples=num_samples,
         )
-        mcmc.run(random.PRNGKey(s), mom)
+        mcmc.run(random.PRNGKey(s), **prior_kwargs)
 
         if verbose:
             mcmc.print_summary(exclude_deterministic=False)
@@ -432,7 +436,7 @@ def simple_sample_scaling_exponent_ansatz(
         if verbose:
             print('computing likelihood at samples')
 
-        posterior.update(numpyro.infer.log_likelihood(sample_posterior, posterior, mom))
+        posterior.update(numpyro.infer.log_likelihood(sample_posterior, posterior, **prior_kwargs))
 
         if Posterior is None:
             Posterior = dict((k, [v]) for k, v in posterior.items())

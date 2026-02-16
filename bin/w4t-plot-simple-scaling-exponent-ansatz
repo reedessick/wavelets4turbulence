@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+
+"""a simple script to plot the fits for the scaling exponent ansatz
+"""
+__author__ = "Reed Essick (reed.essick@gmail.com)"
+
+#-------------------------------------------------
+
+import os
+
+import numpy as np
+
+from argparse import ArgumentParser
+
+### non-standard libararies
+from w4t.utils import io
+from w4t.plot import moments as plt
+
+#-------------------------------------------------
+
+parser = ArgumentParser()
+
+parser.add_argument('samples', type=str)
+
+parser.add_argument('--structure-function-samples', default=None, type=str,
+    help='if supplied, compare the posterios that include scaling exponent functional form to "independent" fits')
+
+parser.add_argument('--title', default=None, type=str)
+
+parser.add_argument('--max-num-samples', default=None, type=int)
+parser.add_argument('--dlogSdlogs-ylim', nargs=2, type=float, default=None)
+
+parser.add_argument('-v', '--verbose', default=False, action='store_true')
+parser.add_argument('-V', '--Verbose', default=False, action='store_true')
+
+parser.add_argument('-o', '--output-dir', default='.', type=str)
+parser.add_argument('-t', '--tag', default='', type=str)
+parser.add_argument('--figtype', default=[], type=str, action='append')
+parser.add_argument('--dpi', default=None, type=float)
+
+args = parser.parse_args()
+
+os.makedirs(args.output_dir, exist_ok=True)
+
+if args.tag:
+    args.tag = "_"+args.tag
+
+if not args.figtype:
+    args.figtype.append('png')
+
+args.verbose |= args.Verbose
+
+#-------------------------------------------------
+
+# load samples
+posterior, prior, index, ref_scale, _ = io.load_simple_scaling_exponent_ansatz_samples(
+    args.samples,
+    verbose=args.verbose,
+)
+
+if args.max_num_samples is not None:
+    if args.verbose:
+        print('retaining only the last %d samples' % args.max_num_samples)
+
+    for data in [posterior, prior]:
+        for key, val in data.items():
+            data[key] = val[-args.max_num_samples:]
+
+# load structure function samples from "independent fit"
+if args.structure_function_samples:
+    sfa_post = io.load_structure_function_ansatz_samples(args.structure_function_samples, verbose=args.verbose)[0]
+else:
+    sfa_post = None
+
+#------------------------
+
+# plot dlogSdlogs vs. p with violins and inferred She-Leveque curves
+
+fig = plt.simple_scaling_exponent_ansatz_violin(
+    index,
+    posterior,
+    ref_scale,
+    sfa_posterior=sfa_post,
+    title=args.title,
+    verbose=args.Verbose,
+)
+
+if isinstance(ref_scale, (int, float)):
+    figtmp = os.path.join(
+        args.output_dir,
+        os.path.basename(__file__)+'-violin-%03d%s.%s' % (ref_scale, args.tag, '%s'),
+    )
+
+elif len(ref_scale) == 2:
+    figtmp = os.path.join(
+        args.output_dir,
+        os.path.basename(__file__)+'-violin-%03d-%03d%s.%s' % (ref_scale[0], ref_scale[1], args.tag, '%s'),
+    )
+
+else:
+    raise ValueError('ref_scale=%s not understood!' % ref_scale)
+
+plt.save(fig, figtmp, args.figtype, verbose=args.verbose, dpi=args.dpi)
+plt.close(fig)

@@ -96,8 +96,6 @@ io.write_simple_scaling_exponent_ansatz_samples(
     args.target,
     verbose=args.verbose,
     source=args.source,
-    min_scale=min_scale,
-    max_scale=max_scale,
     num_warmup=args.num_warmup,
     num_sapmles=args.num_samples,
     num_retained=args.num_retained,

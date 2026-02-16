@@ -536,6 +536,7 @@ def structure_function_ansatz_violin(
         legend=True,
         label=True,
         fig=None,
+        simple=False,
     ):
     """violin plots of ansatz parameters as a function of structure function order
     """
@@ -563,41 +564,46 @@ def structure_function_ansatz_violin(
 
         c = 'C%d' % ind if color is None else color
 
-        # plot a quick KDE of the logarithmic derivative at a reference scale
-        if isinstance(scale, (int, float)):
-            if verbose:
-                print('        estimating scaling exponent at a single reference scale: %.1f' % scale)
-
-            samp = logarithmic_derivative_ansatz(
-                scale,
-                posterior[index]['amp'],
-                posterior[index]['xi'],
-                posterior[index]['sl'],
-                posterior[index]['bl'],
-                posterior[index]['nl'],
-                posterior[index]['sh'],
-                posterior[index]['bh'],
-                posterior[index]['nh'],
-            )
-
-        elif len(scale) == 2:
-            if verbose:
-                print('        estimating scaling exponent as an average over scales within [%.1f, %.1f]' % tuple(scale))
-
-            samp = averaged_logarithmic_derivative_ansatz(
-                *scale,
-                posterior[index]['amp'],
-                posterior[index]['xi'],
-                posterior[index]['sl'],
-                posterior[index]['bl'],
-                posterior[index]['nl'],
-                posterior[index]['sh'],
-                posterior[index]['bh'],
-                posterior[index]['nh'],
-            )
+        if simple: # do not need to recompute
+            samp = posterior[index]
 
         else:
-            raise ValueError('scale=%s not understood!' % scale)
+            # plot a quick KDE of the logarithmic derivative at a reference scale
+            if isinstance(scale, (int, float)):
+                if verbose:
+                    print('        estimating scaling exponent at a single reference scale: %.1f' % scale)
+
+                samp = logarithmic_derivative_ansatz(
+                    scale,
+                    posterior[index]['amp'],
+                    posterior[index]['xi'],
+                    posterior[index]['sl'],
+                    posterior[index]['bl'],
+                    posterior[index]['nl'],
+                    posterior[index]['sh'],
+                    posterior[index]['bh'],
+                    posterior[index]['nh'],
+                )
+
+            elif len(scale) == 2:
+                if verbose:
+                    print('        estimating scaling exponent as an average over scales within [%.1f, %.1f]' % \
+                        tuple(scale))
+
+                samp = averaged_logarithmic_derivative_ansatz(
+                    *scale,
+                    posterior[index]['amp'],
+                    posterior[index]['xi'],
+                    posterior[index]['sl'],
+                    posterior[index]['bl'],
+                    posterior[index]['nl'],
+                    posterior[index]['sh'],
+                    posterior[index]['bh'],
+                    posterior[index]['nh'],
+                )
+
+            else:
+                raise ValueError('scale=%s not understood!' % scale)
 
         smin = np.min(samp)
         smax = np.max(samp)
@@ -738,6 +744,81 @@ def scaling_exponent_ansatz_violin(
         verbose=verbose,
     )
 
+    if sfa_posterior is not None:
+        if verbose:
+            print('adding independent fits')
+
+        fig = structure_function_ansatz_violin(
+            sfa_posterior,
+            ref_scale,
+            which='left',
+            fill=False,
+            label=False,
+            verbose=verbose,
+            fig=fig,
+        )
+
+    # plot She-Leveque curves
+    ax = fig.gca()
+
+    index_grid = np.linspace(*ax.get_xlim(), num_grid)
+    _alpha = max(0.01, 1./len(sea_posterior['x']))
+    for x, C0, beta in zip(sea_posterior['x'], sea_posterior['C0'], sea_posterior['beta']):
+        ax.plot(
+            index_grid,
+            scaling_exponent_ansatz(index_grid, x, C0, beta),
+            alpha=_alpha,
+            color='k',
+            zorder=-1,
+        )
+
+    ax.set_xlim(xmin=index_grid[0], xmax=index_grid[-1])
+
+    # decorate
+    if title is not None:
+        fig.suptitle(title)
+
+    # return
+    return fig
+
+#---
+
+def _sea_post_2_simple_post(index, sea_posterior):
+    post = dict()
+    for ind in index:
+        post[ind] = scaling_exponent_ansatz(
+            ind,
+            sea_posterior['x'],
+            sea_posterior['C0'],
+            sea_posterior['beta'],
+        )
+    return post
+
+def simple_scaling_exponent_ansatz_violin(
+        index,
+        sea_posterior,
+        ref_scale,
+        sfa_posterior=None,
+        title=None,
+        num_grid=101,
+        verbose=False,
+    ):  
+    """make violins of scaling exponents at ref_scale
+    sea_posterior <-- posterior from sample_scaling_exponent_ansatz
+    sfa_posterior <-- posterior from sample_structure_function_ansatz 
+    """ 
+    
+    # plot violins
+
+    fig = structure_function_ansatz_violin(
+        _sea_post_2_simple_post(index, sea_posterior),
+        ref_scale,
+        which='right',
+        fill=True,
+        verbose=verbose,
+        simple=True,
+    )
+    
     if sfa_posterior is not None:
         if verbose:
             print('adding independent fits')

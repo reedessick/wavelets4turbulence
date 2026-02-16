@@ -120,10 +120,10 @@ def _thin(num_samples, samples, keys=None, verbose=False):
     for k in keys:
         neff = effective_sample_size(samples[k].reshape((1,num_samples)))
         if verbose:
-            print('    neff(%s) = %.3f' % (k, neff))
+            print('        neff(%s) = %.3f' % (k, neff))
         min_neff = min(neff, min_neff)
     if verbose:
-        print('    min neff = %.3f' % min_neff)
+        print('        min neff = %.3f' % min_neff)
 
 #    skip = int(np.ceil(num_samples/min_neff))
     skip = int(round(num_samples/min_neff, 0))

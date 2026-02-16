@@ -40,6 +40,9 @@ parser.add_argument('--num-retained', default=infer.DEFAULT_NUM_RETAINED, type=i
 
 parser.add_argument('--seed', default=[], type=int, action='append')
 
+parser.add_argument('--num-segs', default=1, type=int,
+    help='the number of segments to use when thinning chains')
+
 parser.add_argument('-v', '--verbose', default=False, action='store_true')
 
 args = parser.parse_args()
@@ -100,6 +103,7 @@ posterior, prior = infer.sample_scaling_exponent_ansatz(
     num_samples=args.num_samples,
     num_retained=args.num_retained,
     seed=args.seed,
+    num_segs=args.num_segs,
     verbose=args.verbose,
 )
 
@@ -121,4 +125,5 @@ io.write_scaling_exponent_ansatz_samples(
     num_sapmles=args.num_samples,
     num_retained=args.num_retained,
     seed=args.seed,
+    num_segs=args.num_segs,
 )

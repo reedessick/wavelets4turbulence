@@ -125,7 +125,9 @@ def _thin(num_samples, samples, keys=None, verbose=False):
     if verbose:
         print('    min neff = %.3f' % min_neff)
 
-    skip = int(np.ceil(num_samples/min_neff))
+#    skip = int(np.ceil(num_samples/min_neff))
+    skip = int(round(num_samples/min_neff, 0))
+
     num = num_samples/skip
     if verbose:
         print('    retaining 1 out of every %d steps --> %d samples' % (skip, num))
@@ -583,7 +585,7 @@ def sample_structure_function_ansatz(
     #---
 
     Posterior = dict((k, np.concatenate(tuple(v))) for k, v in Posterior.items())
-    Prior = dict((k, np.concatenate(tupe(v))) for k, v in Prior.items())
+    Prior = dict((k, np.concatenate(tuple(v))) for k, v in Prior.items())
 
     # return
     return Posterior, Prior

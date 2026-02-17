@@ -299,8 +299,6 @@ def simple_sample_scaling_exponent_ansatz(
     grids = []
     kdes = []
 
-    min_scale, max_scale = ref_scale # could be fragile!
-
     for ind, i in enumerate(indexes):
         if verbose:
             print('    computing KDE for xi(index=%d) with %d samples' % (i, len(samples[i]['amp'])))

@@ -410,6 +410,8 @@ def simple_sample_scaling_exponent_ansatz(
             for k, v in prior.items():
                 Prior[k].append(v)
 
+    assert Prior is not None, 'no seeds succeeded for the prior!'
+
     #---
 
     Posterior = None
@@ -455,6 +457,8 @@ def simple_sample_scaling_exponent_ansatz(
         else:
             for k, v in posterior.items():
                 Posterior[k].append(v)
+
+    assert Posterior is not None, 'no seeds succeeded for the posterior!'
 
     #---
 
@@ -558,6 +562,8 @@ def sample_scaling_exponent_ansatz(
             for k, v in prior.items():
                 Prior[k].append(v)
 
+    assert Prior is not None, 'no seeds succeeded for the prior!'
+
     #---
 
     Posterior = None
@@ -602,6 +608,8 @@ def sample_scaling_exponent_ansatz(
         else:
             for k, v in posterior.items():
                 Posterior[k].append(v)
+
+    assert Posterior is not None, 'no seeds succeeded for the posterior!'
 
     #---
 
@@ -751,6 +759,8 @@ def sample_structure_function_ansatz(
             for k, v in prior.items():
                 Prior[k].append(v)
 
+    assert Prior is not None, 'no seeds succeeded for the prior!'
+
     #---
 
     Posterior = None
@@ -792,6 +802,8 @@ def sample_structure_function_ansatz(
         else:
             for k, v in posterior.items():
                 Posterior[k].append(v)
+
+    assert Posterior is not None, 'no seeds succeeded for the posterior!'
 
     #---
 

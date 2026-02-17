@@ -371,7 +371,6 @@ def simple_sample_scaling_exponent_ansatz(
     #---
 
     Prior = None
-    Posterior = None
 
     for s in seed:
 
@@ -381,12 +380,17 @@ def simple_sample_scaling_exponent_ansatz(
             print('running sampler for prior with seed=%d for %d warmup and %d samples' % \
                 (s, num_warmup, num_samples))
 
-        mcmc = MCMC(
-            NUTS(_sample_sea_xcb_prior, init_strategy=init_to_value(values=init_xcb_values)),
-            num_warmup=num_warmup,
-            num_samples=num_samples,
-        )
-        mcmc.run(random.PRNGKey(s), **prior_kwargs)
+        try:
+            mcmc = MCMC(
+                NUTS(_sample_sea_xcb_prior, init_strategy=init_to_value(values=init_xcb_values)),
+                num_warmup=num_warmup,
+                num_samples=num_samples,
+            )
+            mcmc.run(random.PRNGKey(s), **prior_kwargs)
+        except:
+            if verbose:
+                print('>>> sampler failed!')
+            continue
 
         if verbose:
             mcmc.print_summary(exclude_deterministic=False)
@@ -406,18 +410,27 @@ def simple_sample_scaling_exponent_ansatz(
             for k, v in prior.items():
                 Prior[k].append(v)
 
-        #---
+    #---
+
+    Posterior = None
+
+    for s in seed:
 
         if verbose:
             print('running sampler for posterior with seed=%d for %d warmup and %d samples' % \
                 (s, num_warmup, num_samples))
 
-        mcmc = MCMC(
-            NUTS(sample_posterior, init_strategy=init_to_value(values=init_xcb_values)),
-            num_warmup=num_warmup,
-            num_samples=num_samples,
-        )
-        mcmc.run(random.PRNGKey(s), **prior_kwargs)
+        try:
+            mcmc = MCMC(
+                NUTS(sample_posterior, init_strategy=init_to_value(values=init_xcb_values)),
+                num_warmup=num_warmup,
+                num_samples=num_samples,
+            )
+            mcmc.run(random.PRNGKey(s), **prior_kwargs)
+        except:
+            if verbose:
+                print('>>> sampler failed!')
+            continue
 
         if verbose:
             mcmc.print_summary(exclude_deterministic=False)
@@ -506,7 +519,6 @@ def sample_scaling_exponent_ansatz(
     #---
 
     Prior = None
-    Posterior = None
 
     for s in seed:
 
@@ -516,12 +528,17 @@ def sample_scaling_exponent_ansatz(
             print('running sampler for prior with seed=%d for %d warmup and %d samples' % \
                 (s, num_warmup, num_samples))
 
-        mcmc = MCMC(
-            NUTS(_sample_sea_prior, init_strategy=init_to_value(values=init_xcb_values)),
-            num_warmup=num_warmup,
-            num_samples=num_samples,
-        )
-        mcmc.run(random.PRNGKey(s), indexes, ref_scale, **prior_kwargs)
+        try:
+            mcmc = MCMC(
+                NUTS(_sample_sea_prior, init_strategy=init_to_value(values=init_xcb_values)),
+                num_warmup=num_warmup,
+                num_samples=num_samples,
+            )
+            mcmc.run(random.PRNGKey(s), indexes, ref_scale, **prior_kwargs)
+        except:
+            if verbose:
+                print('>>> sampler failed!')
+            continue
 
         if verbose:
             mcmc.print_summary(exclude_deterministic=False)
@@ -541,18 +558,26 @@ def sample_scaling_exponent_ansatz(
             for k, v in prior.items():
                 Prior[k].append(v)
 
-        #---
+    #---
 
+    Posterior = None
+
+    for s in seed:
         if verbose:
             print('running sampler for posterior with seed=%d for %d warmup and %d samples' % \
                 (s, num_warmup, num_samples))
 
-        mcmc = MCMC(
-            NUTS(sample_posterior, init_strategy=init_to_value(values=init_xcb_values)),
-            num_warmup=num_warmup,
-            num_samples=num_samples,
-        )
-        mcmc.run(random.PRNGKey(s), mom)
+        try:
+            mcmc = MCMC(
+                NUTS(sample_posterior, init_strategy=init_to_value(values=init_xcb_values)),
+                num_warmup=num_warmup,
+                num_samples=num_samples,
+            )
+            mcmc.run(random.PRNGKey(s), mom)
+        except:
+            if verbose:
+                print('>>> sampler failed!')
+            continue
 
         if verbose:
             mcmc.print_summary(exclude_deterministic=False)
@@ -694,15 +719,19 @@ def sample_structure_function_ansatz(
     # run the sampler
 
     Prior = None
-    Posterior = None
 
     for s in seed:
 
         if verbose:
             print('running sampler for prior with seed=%d for %d warmup and %d samples' % (s, num_warmup, num_samples))
 
-        mcmc = MCMC(NUTS(_sample_sfa_prior), num_warmup=num_warmup, num_samples=num_samples)
-        mcmc.run(random.PRNGKey(s), **prior_kwargs)
+        try:
+            mcmc = MCMC(NUTS(_sample_sfa_prior), num_warmup=num_warmup, num_samples=num_samples)
+            mcmc.run(random.PRNGKey(s), **prior_kwargs)
+        except:
+            if verbose:
+                print('>>> sampler failed!')
+            continue
 
         if verbose:
             mcmc.print_summary(exclude_deterministic=False)
@@ -722,14 +751,22 @@ def sample_structure_function_ansatz(
             for k, v in prior.items():
                 Prior[k].append(v)
 
-        #---
+    #---
 
+    Posterior = None
+
+    for s in seed:
         if verbose:
             print('running sampler for posterior with seed=%d for %d warmup and %d samples' % \
                 (s, num_warmup, num_samples))
 
-        mcmc = MCMC(NUTS(sample_posterior), num_warmup=num_warmup, num_samples=num_samples)
-        mcmc.run(random.PRNGKey(s), mom)
+        try:
+            mcmc = MCMC(NUTS(sample_posterior), num_warmup=num_warmup, num_samples=num_samples)
+            mcmc.run(random.PRNGKey(s), mom)
+        except:
+            if verbose:
+                print('>>> sampler failed!')
+            continue
 
         if verbose:
             mcmc.print_summary(exclude_deterministic=False)

@@ -28,6 +28,9 @@ parser.add_argument('ref_scale', type=float, nargs='+',
 parser.add_argument('-i', '--index', nargs='*', type=int, default=None,
     help='only fit these indexes. eg: --index 1 2 3')
 
+parser.add_argument('--prior-kwarg', default=[], type=str, nargs=2, action='append',
+    help='specify kwargs passed to the sampler. Can be repeated. eg, "--prior-kwargs min_C0 0.0"')
+
 parser.add_argument('--num-warmup', default=infer.DEFAULT_NUM_WARMUP, type=int)
 parser.add_argument('--num-samples', default=infer.DEFAULT_NUM_SAMPLES, type=int)
 
@@ -53,6 +56,8 @@ elif len(args.ref_scale) == 2:
 
 else:
     raise ValueError('ref_scale=%s not understood!' % args.ref_scale)
+
+prior_kwargs = dict((k, float(v)) for k, v in args.prior_kwarg)
 
 #-------------------------------------------------
 
@@ -83,6 +88,7 @@ posterior, prior = infer.simple_sample_scaling_exponent_ansatz(
     seed=args.seed,
     num_segs=args.num_segs,
     verbose=args.verbose,
+    **prior_kwargs
 )
 
 #-----------
@@ -101,4 +107,5 @@ io.write_simple_scaling_exponent_ansatz_samples(
     num_retained=args.num_retained,
     seed=args.seed,
     num_segs=args.num_segs,
+    **prior_kwargs
 )

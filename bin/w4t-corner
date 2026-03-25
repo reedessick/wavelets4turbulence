@@ -38,6 +38,8 @@ parser.add_argument('--title', default=None, type=str)
 parser.add_argument('--label', nargs=2, default=[], action='append', type=str,
     help='change the field label in the plot to this. Can be repeated. eg: --label old new')
 
+parser.add_argument('--clip', nargs=3, default=[], type=str, action='append')
+
 parser.add_argument('-v', '--verbose', default=False, action='store_true')
 
 parser.add_argument('-o', '--output-dir', default='.', type=str)
@@ -56,6 +58,8 @@ if not args.figtype:
     args.figtype.append('png')
 
 labels = dict(args.label)
+
+clip = dict((k, (float(m), float(M))) for k, m, M in args.clip)
 
 #-------------------------------------------------
 
@@ -100,6 +104,16 @@ for key in args.exp:
 #---
 
 fields = list(samples.keys())
+
+keep = True
+for field in fields:
+    if field in clip:
+        m, M = clip[field]
+        if args.verbose:
+            print('clipping %s to (%.3e, %.3e)' % (field, m, M))
+        keep *= (m <= samples[field])*(samples[field] <= M)
+
+samples = dict((k, v[keep]) for k, v in samples.items())
 
 #------------------------
 
